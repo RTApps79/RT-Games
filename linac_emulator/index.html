@@ -8,21 +8,18 @@
 <body>
 <header>LINAC Control Console Emulator</header>
 <div class="container">
-  <!-- ... (your entire HTML body as before, minus <style> and <script>) ... -->
-  <!-- Copy all your HTML panels and elements here, unchanged -->
-  <!-- (see note below for what to copy) -->
+  <div class="panel emr-panel">
+    <!-- EMR Panel Content -->
+  </div>
+  <div class="panel control-panel">
+    <!-- Control Panel Content -->
+  </div>
+  <div class="panel image-panel">
+    <!-- Image Panel Content -->
+  </div>
 </div>
 <div id="cone-modal" class="modal">
-    <div class="modal-content">
-        <span class="close-button" onclick="closeConeModal()">&times;</span>
-        <h4>Select Electron Cone Size</h4>
-        <ul id="cone-options-list">
-            <li data-cone-size="6">6x6 cm</li>
-            <li data-cone-size="10">10x10 cm</li>
-            <li data-cone-size="15">15x15 cm</li>
-            <li data-cone-size="20">20x20 cm</li>
-        </ul>
-    </div>
+  <!-- Modal Content -->
 </div>
 <div class="status-bar" id="status-bar">Emulator Ready. Generate a patient case.</div>
 <script src="script.js"></script>
