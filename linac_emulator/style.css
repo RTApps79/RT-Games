@@ -554,3 +554,200 @@ header {
   background-color: #4bb1ff;
   color: #fff;
 }
+/* QA/Status bar across top of controls */
+.qa-status-bar {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: stretch;
+  margin-bottom: 0.5em;
+}
+.qa-interlocks-panel.horizontal {
+  display: flex;
+  align-items: center;
+  gap: 2.2em;
+  background: #142035;
+  border-radius: 8px 8px 0 0;
+  padding: 0.5em 1.2em 0.5em 0.9em;
+  color: #cfe8ff;
+  border-bottom: 1.5px solid #234;
+  box-shadow: 0 1.5px 8px #0016;
+  font-size: 1em;
+}
+.qa-interlocks-panel.horizontal .qa-checklist label {
+  display: inline-block;
+  margin: 0 0.6em 0 0;
+  font-size: 0.98em;
+}
+.status-bar-local {
+  width: 100%;
+  margin: 0;
+  border-radius: 0 0 8px 8px;
+  border-top: none;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  font-size: 1.05em;
+}
+.monitor-screen {
+  min-width: 320px;
+  max-width: 550px;
+  padding: 0.7em 0.7em 0.7em 0.7em;
+  overflow: hidden;
+  min-height: 410px;
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.machine-param-box-group, .field-dims-group, .jaws-group {
+  display: flex;
+  justify-content: center;
+  gap: 0.6em;
+  margin: 0.24em 0;
+  flex-wrap: wrap;
+}
+.machine-param-box {
+  background: #17284a;
+  border: 1px dashed #335a9e;
+  border-radius: 7px;
+  color: #e0eaff;
+  min-width: 66px;
+  padding: 0.4em 0.7em;
+  text-align: center;
+  font-size: 1em;
+  margin-bottom: 0.15em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.machine-param-box .param-label {
+  font-size: 0.86em;
+  color: #90cfff;
+  margin-bottom: 0.15em;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+.mlc-visualizer-block h3 {
+  font-size: 1.1em;
+  color: #bfe6ff;
+  margin: 0.2em 0 0.4em 0;
+  text-align: center;
+  font-weight: 500;
+}
+#fieldDisplayContainer {
+  width: 205px;
+  height: 135px;
+  border: 1.5px solid #2b3d56;
+  position: relative;
+  margin: 0 auto 0.4em auto;
+  background-color: #2a3951;
+  overflow: hidden;
+  border-radius: 7px;
+  box-shadow: 0 2px 8px #001b;
+}
+#fieldDisplayRect {
+  position: absolute;
+  background-color: rgba(255, 255, 0, 0.23);
+  border: 1px solid #ffd900;
+  border-radius: 3px;
+  z-index: 2;
+}
+.mlc-leaf-pair {
+  pointer-events: none;
+}
+.leaf-section.inner.left, .leaf-section.inner.right {
+  background: rgba(35,200,255,0.22);
+  border: 1px solid #1a7c9e;
+  height: 100%;
+  top: 0;
+  position: absolute;
+  border-radius: 2px;
+  pointer-events: none;
+  transition: width 0.2s, left 0.2s;
+}
+.field-label {
+  position: absolute;
+  font-size: 9px;
+  font-family: sans-serif;
+  color: #bee9ff;
+  background-color: rgba(21, 34, 44, 0.90);
+  padding: 0 2px;
+  border-radius: 2px;
+  z-index: 12;
+}
+.label-x1 { top: 50%; left: 3px; transform: translateY(-50%); }
+.label-x2 { top: 50%; right: 4px; transform: translateY(-50%); }
+.label-y1 { bottom: 4px; left: 50%; transform: translateX(-50%); }
+.label-y2 { top: 3px; left: 50%; transform: translateX(-50%); }
+.overlay-container.focal {
+  position: relative;
+  width: 98%;
+  height: 240px;
+  background: #171c22;
+  overflow: hidden;
+  border: 1.5px solid #1c2735;
+  border-radius: 9px;
+  margin-bottom: 0.4em;
+  box-shadow: 0 2px 8px #001b inset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.overlay-container.focal img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #111;
+  left: 0;
+  top: 0;
+  border-radius: 6px;
+}
+.compact-image-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  align-items: center;
+  justify-content: center;
+  margin: 0.2em auto 0.3em auto;
+  font-size: 1em;
+}
+.compact-image-controls button {
+  padding: 2px 7px;
+  font-size: 1em;
+  border-radius: 4px;
+  background: #2c394f;
+  color: #bfe6ff;
+  border: 1px solid #234;
+  transition: background 0.13s;
+}
+.compact-image-controls button:hover {
+  background: #4bb1ff;
+  color: #fff;
+}
+.compact-image-controls input[type="range"] {
+  width: 55px;
+  height: 4px;
+  margin: 0 1px;
+  vertical-align: middle;
+}
+.mini-label {
+  min-width: 32px;
+  display: inline-block;
+  color: #eaffb6;
+  font-size: 0.98em;
+  text-align: center;
+}
+.motion-readout {
+  background: #13203d;
+  color: #aef3e8;
+  text-align: center;
+  border-radius: 8px;
+  padding: 3px 0 3px 0;
+  margin: 6px auto 0 auto;
+  font-size: 0.97em;
+  font-family: 'Roboto Mono', monospace;
+  letter-spacing: .03em;
+  box-shadow: 0 1px 6px #001a inset;
+  width: 95%;
+}
