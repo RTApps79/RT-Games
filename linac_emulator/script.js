@@ -532,15 +532,6 @@ function updateCaseAlignmentCounterDisplay() {
 /* -----------------------------
    MLC VISUALIZER LOGIC
 ------------------------------*/
-const NUM_LEAF_PAIRS = 5;
-let leftLeafPositions = [];
-let rightLeafPositions = [];
-let collimatorAngle = 0; // global collimator angle (shared by visualizer and parameters)
-const fieldDisplayContainerSize = 220;
-const maxFieldCoordinate = 20.0;
-const centerPx = fieldDisplayContainerSize / 2.0;
-const scaleFactor = (fieldDisplayContainerSize > 0) ? (fieldDisplayContainerSize / 2.0) / maxFieldCoordinate : 1;
-
 // Create MLC visualizer leaf DOM elements on load
 document.addEventListener('DOMContentLoaded', () => {
   // Main MLC visualizer container
