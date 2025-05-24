@@ -1,5 +1,5 @@
 /* ============================
-   LINAC Console Emulator Styles (Merged w/ DRR MLC Visualizer)
+   LINAC Console Emulator Styles (Three Monitor Layout)
    ============================ */
 
 body {
@@ -17,12 +17,14 @@ header {
   box-shadow: 0 2px 6px #0007;
   border-bottom: 3px solid #2676c9;
 }
-.container {
+
+/* Three Monitor Container Layout */
+.container.three-monitors {
   display: flex;
   flex-direction: row;
   height: calc(100vh - 48px);
   min-height: 680px;
-  max-width: 1700px;
+  max-width: 1920px;
   margin: 12px auto 0 auto;
   border-radius: 14px;
   box-shadow: 0 10px 32px #0018, 0 2px 6px #0024;
@@ -41,71 +43,34 @@ header {
   overflow-y: auto;
 }
 
-/* Main Panel: monitors and controls stacked vertically */
-.main-panel {
+/* Main Panel: 3-screen grid + controls below */
+.main-panel.three-screen-panel {
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
-  min-width: 900px;
-  max-width: 1350px;
+  min-width: 1200px;
+  max-width: 1600px;
   padding: 0.6em 1.2em 0.8em 1.2em;
 }
 
-.qa-status-bar {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  align-items: stretch;
-  margin-bottom: 0.5em;
-}
-.qa-interlocks-panel.horizontal {
-  display: flex;
-  align-items: center;
-  gap: 2.2em;
-  background: #142035;
-  border-radius: 8px 8px 0 0;
-  padding: 0.5em 1.2em 0.5em 0.9em;
-  color: #cfe8ff;
-  border-bottom: 1.5px solid #234;
-  box-shadow: 0 1.5px 8px #0016;
-  font-size: 1em;
-}
-.qa-interlocks-panel.horizontal .qa-checklist label {
-  display: inline-block;
-  margin: 0 0.6em 0 0;
-  font-size: 0.98em;
-}
-.status-bar-local {
-  width: 100%;
-  margin: 0;
-  border-radius: 0 0 8px 8px;
-  border-top: none;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-  font-size: 1.05em;
-  background: #0a2244;
-  color: #f3f6fa;
-  text-align: center;
-  padding: 6px 0 4px 0;
-  letter-spacing: 0.5px;
-  border: 1px solid #16406a;
-  min-height: 1.1em;
+.monitors-row.three-screens-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2vw;
+  margin-bottom: 1.1em;
+  min-height: 410px;
+  max-height: 500px;
 }
 
-.monitors-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2.5vw;
-  margin-bottom: 1.3em;
-  min-height: 400px;
-}
+/* Monitor Screens */
 .monitor-screen {
   min-width: 320px;
-  max-width: 550px;
+  max-width: 500px;
   padding: 0.7em 0.7em 0.7em 0.7em;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: visible;
   min-height: 410px;
-  max-height: 775px;
+  max-height: 600px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -115,16 +80,18 @@ header {
   box-shadow: 0 0 30px #1b2f54, 0 0 7px #3bdcff inset;
   color: #e2eefb;
 }
+
 .monitor-screen h2 {
   text-align: center;
   color: #90cfff;
   margin-bottom: 0.7em;
-  font-size: 1.16em;
+  font-size: 1.14em;
   letter-spacing: 1.5px;
   text-shadow: 0 1px 6px #1b2f54;
   font-weight: 600;
   margin-top: 0;
 }
+
 .machine-param-box-group, .field-dims-group, .jaws-group {
   display: flex;
   justify-content: center;
@@ -153,24 +120,55 @@ header {
   font-weight: bold;
   letter-spacing: 0.5px;
 }
-.mlc-visualizer-block h3 {
-  font-size: 1.1em;
-  color: #bfe6ff;
-  margin: 0.2em 0 0.4em 0;
-  text-align: center;
-  font-weight: 500;
+#console-display {
+  margin-top: 8px;
+  border: 1.2px solid #2b3d56;
+  padding: 6px 7px 3px 7px;
+  background: #202a39;
+  border-radius: 7px;
+  box-shadow: 0 2px 7px #0004;
 }
-.summary-text {
-  text-align: center;
-  font-family: monospace;
-  font-size: 1rem;
-  color: #c1d1e1;
-  margin-top: 5px;
+#console-parameters {
+  font-size: 0.96em;
+  color: #badaff;
+  margin-bottom: 4px;
+  white-space: pre;
+  font-family: 'Roboto Mono', monospace;
 }
-#fieldDisplayContainer {
-  width: 400px; height: 400px; border: 1.5px solid #bbb;
-  margin: 0 auto 20px auto; background-color: #111; overflow: hidden;
-  background-size: contain; background-repeat: no-repeat; background-position: center;
+#console-status {
+  font-size: 1em;
+  color: #fcf7a7;
+  font-weight: bold;
+  min-height: 1.2em;
+  margin-bottom: 2px;
+}
+#console-status.interlock {
+  background-color: #e33f2e;
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px #0005;
+}
+#console-reading {
+  font-size: 1.08em;
+  text-align: right;
+  white-space: pre;
+  font-family: 'Roboto Mono', monospace;
+  margin-top: 2px;
+  color: #c3e4b5;
+}
+
+/* Field/MLC Visualizer */
+.monitor-mlc-visualizer #fieldDisplayContainer {
+  width: 320px;
+  height: 320px;
+  border: 1.5px solid #bbb;
+  margin: 0 auto 18px auto;
+  background-color: #111;
+  overflow: hidden;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
   position: relative;
 }
 #rotatingElementsContainer {
@@ -198,17 +196,16 @@ header {
 .leaf-section.inner { transition: width 1s ease-in-out, left 1s ease-in-out; border-left:none; border-right:none; }
 .leaf-section.left { left: 0; border-left:none; border-right:none;}
 .leaf-section.right { right: 0; left: auto; border-right:none; border-left:none;}
-.mlc-controls { gap: 10px; }
-.mlc-preset-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.mlc-preset-controls button { width: 100%; }
-#animateSquareRandBtn, #animateOffsetRandBtn, #animateDiagonalRandBtn, #slidingWindowBtn, #imrtDemoBtn { grid-column: 1 /-1; }
-#slidingWindowBtn { background-color: #d1e7dd; border-color: #a3cfbb; font-weight: bold; } #slidingWindowBtn:hover { background-color: #bce0c0; }
-#animateSquareRandBtn { background-color: #cfe2ff; border-color: #b6d4fe; } #animateSquareRandBtn:hover { background-color: #b6d4fe; }
-#animateOffsetRandBtn { background-color: #fff3cd; border-color: #ffe69c; } #animateOffsetRandBtn:hover { background-color: #ffe69c; }
-#animateDiagonalRandBtn { background-color: #e2d9f3; border-color: #d0c4e4; } #animateDiagonalRandBtn:hover { background-color: #d0c4e4; }
-#imrtDemoBtn { background-color: #ffdac1; border-color: #ffc9a7; font-weight: bold; } #imrtDemoBtn:hover { background-color: #ffc9a7; }
-.animating { background-color: #f8d7da !important; border-color: #f5c2c7 !important; color: #842029 !important; }
 
+.summary-text {
+  text-align: center;
+  font-family: monospace;
+  font-size: 1rem;
+  color: #c1d1e1;
+  margin-top: 5px;
+}
+
+/* Alignment Screen */
 .overlay-container.focal {
   position: relative;
   width: 98%;
@@ -233,80 +230,49 @@ header {
   top: 0;
   border-radius: 6px;
 }
-.compact-image-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4em;
-  align-items: center;
-  justify-content: center;
-  margin: 0.2em auto 0.3em auto;
-  font-size: 1em;
-}
-.compact-image-controls button {
-  padding: 2px 7px;
-  font-size: 1em;
-  border-radius: 4px;
-  background: #2c394f;
-  color: #bfe6ff;
-  border: 1px solid #234;
-  transition: background 0.13s;
-}
-.compact-image-controls button:hover {
-  background: #4bb1ff;
-  color: #fff;
-}
-.compact-image-controls input[type="range"] {
-  width: 55px;
-  height: 4px;
-  margin: 0 1px;
-  vertical-align: middle;
-}
-.mini-label {
-  min-width: 32px;
-  display: inline-block;
-  color: #eaffb6;
-  font-size: 0.98em;
-  text-align: center;
-}
-.motion-readout {
-  background: #13203d;
-  color: #aef3e8;
-  text-align: center;
-  border-radius: 8px;
-  padding: 3px 0 3px 0;
-  margin: 6px auto 0 auto;
-  font-size: 0.97em;
-  font-family: 'Roboto Mono', monospace;
-  letter-spacing: .03em;
-  box-shadow: 0 1px 6px #001a inset;
-  width: 95%;
-}
 
-/* Console panel group below monitors */
+/* Console Panel & Controls */
 .console-panel-group {
   background: #222d3b;
   border-radius: 9px;
   margin: 1.2em auto 0 auto;
   box-shadow: 0 2px 12px #0015 inset;
   padding: 1em 1.2em 1.2em 1.2em;
-  max-width: 950px;
-  width: 100%;
+  max-width: 1700px;
+  width: 99%;
   display: flex;
   flex-direction: column;
   gap: 0.5em;
 }
+
 .console-buttons {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  align-items: flex-end;
+  justify-content: flex-start;
+  align-items: center;
   gap: 0.45rem 0.6rem;
-  margin-bottom: 11px;
+  margin-bottom: 7px;
   background: #222d3b;
   border-radius: 7px;
   padding: 0.2rem 0.4rem 0.05rem 0.4rem;
   box-shadow: 0 1.5px 9px #0014 inset;
+  min-height: 48px;
 }
+.console-buttons.machine-controls {
+  font-size: 0.97em;
+  gap: 0.3rem 0.4rem;
+  flex-wrap: wrap;
+}
+.console-buttons.image-alignment-controls {
+  font-size: 1em;
+  background: #23334b;
+  box-shadow: 0 1px 6px #001a inset;
+  border-radius: 7px;
+  margin-bottom: 3px;
+  min-height: 44px;
+  align-items: center;
+}
+
 .console-button {
   min-width: 64px;
   flex: 1 1 70px;
@@ -373,42 +339,61 @@ header {
   opacity: 0.72;
   pointer-events: none;
 }
-#console-display {
-  margin-top: 8px;
-  border: 1.2px solid #2b3d56;
-  padding: 6px 7px 3px 7px;
-  background: #202a39;
-  border-radius: 7px;
-  box-shadow: 0 2px 7px #0004;
-}
-#console-parameters {
-  font-size: 0.96em;
-  color: #badaff;
-  margin-bottom: 4px;
-  white-space: pre;
-  font-family: 'Roboto Mono', monospace;
-}
-#console-status {
+
+/* Alignment Controls */
+.compact-image-controls,
+.console-buttons.image-alignment-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  align-items: center;
+  justify-content: flex-start;
   font-size: 1em;
-  color: #fcf7a7;
-  font-weight: bold;
-  min-height: 1.2em;
-  margin-bottom: 2px;
 }
-#console-status.interlock {
-  background-color: #e33f2e;
-  color: #fff;
-  padding: 2px 5px;
+
+.compact-image-controls button,
+.console-buttons.image-alignment-controls button {
+  padding: 2px 7px;
+  font-size: 1em;
   border-radius: 4px;
-  box-shadow: 0 2px 8px #0005;
+  background: #2c394f;
+  color: #bfe6ff;
+  border: 1px solid #234;
+  transition: background 0.13s;
 }
-#console-reading {
-  font-size: 1.08em;
-  text-align: right;
-  white-space: pre;
+.compact-image-controls button:hover,
+.console-buttons.image-alignment-controls button:hover {
+  background: #4bb1ff;
+  color: #fff;
+}
+.compact-image-controls input[type="range"],
+.console-buttons.image-alignment-controls input[type="range"] {
+  width: 55px;
+  height: 4px;
+  margin: 0 1px;
+  vertical-align: middle;
+}
+
+.mini-label {
+  min-width: 32px;
+  display: inline-block;
+  color: #eaffb6;
+  font-size: 0.98em;
+  text-align: center;
+}
+
+.motion-readout {
+  background: #13203d;
+  color: #aef3e8;
+  text-align: center;
+  border-radius: 8px;
+  padding: 3px 0 3px 0;
+  margin: 6px auto 0 auto;
+  font-size: 0.97em;
   font-family: 'Roboto Mono', monospace;
-  margin-top: 2px;
-  color: #c3e4b5;
+  letter-spacing: .03em;
+  box-shadow: 0 1px 6px #001a inset;
+  width: 95%;
 }
 
 /* EMR Tabs and modal (unchanged) */
@@ -459,61 +444,46 @@ header {
   color: #d1eaff;
 }
 
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 100;
-  left: 0;
-  top: 0;
+/* QA/Interlocks */
+.qa-status-bar {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(0,0,0,0.4);
+  align-items: stretch;
+  margin-bottom: 0.5em;
 }
-.modal-content {
-  background-color: #1f2c3d;
-  color: #fff;
-  margin: 13% auto;
-  padding: 17px 12px 16px 12px;
-  border: 1.5px solid #334a67;
-  width: 84%;
-  max-width: 300px;
-  border-radius: 9px;
-  position: relative;
+.qa-interlocks-panel.horizontal {
+  display: flex;
+  align-items: center;
+  gap: 2.2em;
+  background: #142035;
+  border-radius: 8px 8px 0 0;
+  padding: 0.5em 1.2em 0.5em 0.9em;
+  color: #cfe8ff;
+  border-bottom: 1.5px solid #234;
+  box-shadow: 0 1.5px 8px #0016;
+  font-size: 1em;
+}
+.qa-interlocks-panel.horizontal .qa-checklist label {
+  display: inline-block;
+  margin: 0 0.6em 0 0;
+  font-size: 0.98em;
+}
+.status-bar-local {
+  width: 100%;
+  margin: 0;
+  border-radius: 0 0 8px 8px;
+  border-top: none;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  font-size: 1.05em;
+  background: #0a2244;
+  color: #f3f6fa;
   text-align: center;
-  box-shadow: 0 2px 16px #000b;
-}
-.close-button {
-  color: #aaa;
-  position: absolute;
-  top: 8px;
-  right: 13px;
-  font-size: 25px;
-  font-weight: bold;
-}
-.close-button:hover, .close-button:focus {
-  color: #e33f2e;
-  text-decoration: none;
-  cursor: pointer;
-}
-#cone-options-list {
-  list-style: none;
-  padding: 0;
-  margin-top: 11px;
-}
-#cone-options-list li {
-  padding: 6px 10px;
-  border-bottom: 1px solid #334a67;
-  cursor: pointer;
-  background-color: #202a39;
-  margin-bottom: 4px;
-  border-radius: 4px;
-  color: #bfe6ff;
-  transition: background 0.13s;
-}
-#cone-options-list li:hover {
-  background-color: #4bb1ff;
-  color: #fff;
+  padding: 6px 0 4px 0;
+  letter-spacing: 0.5px;
+  border: 1px solid #16406a;
+  min-height: 1.1em;
 }
 
 /* Hide scrollbars for all panels */
