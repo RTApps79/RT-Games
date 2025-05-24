@@ -1,7 +1,7 @@
 // ===========================
 // LINAC Console Emulator Logic
 // ===========================
-
+<script>
 // -----------
 // DOM Elements
 // -----------
@@ -731,3 +731,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   updateCaseAlignmentCounterDisplay();
 });
+</script>
