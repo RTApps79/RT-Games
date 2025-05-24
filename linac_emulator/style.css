@@ -52,109 +52,115 @@ header {
   padding: 0.6em 1.2em 0.8em 1.2em;
 }
 
-/* Monitors Row (on top now) */
 .monitors-row {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 2.5vw;
-  margin-bottom: 1.6em;
-  min-height: 430px;
+  margin-bottom: 1.3em;
+  min-height: 400px;
 }
 
-/* Monitor Screens */
+.monitor-right-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1em;
+}
+
 .monitor-screen {
   flex: 1 1 0;
-  min-width: 375px;
+  min-width: 340px;
   max-width: 620px;
   background: radial-gradient(ellipse at 50% 60%, #18253a 85%, #0a1a28 100%);
   border: 3.5px solid #2c4b79;
   border-radius: 17px;
   box-shadow: 0 0 30px #1b2f54, 0 0 7px #3bdcff inset;
   margin: 0 8px;
-  padding: 1.1em 1.4em 1.25em 1.4em;
+  padding: 1.1em 1.4em 1em 1.4em;
   position: relative;
   color: #e2eefb;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  min-height: 410px;
   overflow-x: hidden;
 }
 .monitor-screen h2 {
   text-align: center;
   color: #90cfff;
   margin-bottom: 0.7em;
-  font-size: 1.18em;
+  font-size: 1.16em;
   letter-spacing: 1.5px;
   text-shadow: 0 1px 6px #1b2f54;
   font-weight: 600;
   margin-top: 0;
 }
 
-.monitor-parameters .section {
-  background: #17284a;
-  border-color: #335a9e;
-  color: #f1f7ff;
-  box-shadow: 0 1.5px 7px #012b4e;
-}
-.monitor-alignment .overlay-container {
-  background: #111c2b;
-  border-color: #297cb3;
-}
-.monitor-alignment .image-controls button {
-  background: #2e4059;
-  border-color: #305f8a;
+.monitor-mlc {
+  margin-top: 0;
+  background: radial-gradient(ellipse at 50% 60%, #2e3c5b 85%, #1a2333 100%);
 }
 
-/* Control Panel (below monitors) */
-.control-panel {
-  width: 100%;
-  min-width: 800px;
-  background: #222c37;
+/* Compact Machine Parameters Layout */
+.compact-machine-params {
+  padding: 9px 10px;
+  background: #18253a;
+  border-radius: 8px;
+  font-size: 1em;
+  margin-bottom: 0.7em;
+}
+.compact-machine-params .params-row {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 3px;
   justify-content: flex-start;
-  border-right: none;
-  box-shadow: none;
-  gap: 2vw;
+  align-items: center;
+}
+.compact-machine-params span {
+  min-width: 58px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.97em;
 }
 
-/* Section Styling */
-.section {
-  margin-bottom: 0.7rem;
-  padding: 0.7rem 0.8rem;
-  background: #142035;
-  border-radius: 7px;
-  box-shadow: 0 1.5px 5px #0006;
-  border: 1.5px solid #2b3d56;
-  min-width: 310px;
-  max-width: 540px;
-}
-.section h3,
-.section h4 {
-  margin: 0 0 8px 0;
-  color: #4bb1ff;
-  font-size: 1.07em;
-  letter-spacing: 0.5px;
-}
-.section h4 {
-  color: #dceeff;
+/* --- Local status bar in controls --- */
+.status-bar-local {
+  background: #0a2244;
+  color: #f3f6fa;
+  text-align: center;
+  padding: 6px 0 4px 0;
   font-size: 1em;
-  margin-top: 0.5em;
+  margin-top: 9px;
+  border-radius: 6px;
+  box-shadow: 0 1px 10px #001a;
+  letter-spacing: 0.5px;
+  border: 1px solid #16406a;
+  width: 100%;
+  min-height: 1.1em;
 }
 
-/* Console Control "Keyboard" */
+/* Console panel group below monitors */
+.console-panel-group {
+  background: #222d3b;
+  border-radius: 9px;
+  margin: 1.5em auto 0 auto;
+  box-shadow: 0 2px 12px #0015 inset;
+  padding: 1em 1.2em 1.2em 1.2em;
+  max-width: 950px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
 .console-buttons {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: flex-end;
   gap: 0.45rem 0.6rem;
-  margin-bottom: 14px;
-  background: #222c37;
+  margin-bottom: 11px;
+  background: #222d3b;
   border-radius: 7px;
   padding: 0.2rem 0.4rem 0.05rem 0.4rem;
   box-shadow: 0 1.5px 9px #0014 inset;
@@ -264,88 +270,12 @@ header {
   margin-top: 2px;
   color: #c3e4b5;
 }
-/* Local status bar in controls */
-.status-bar-local {
-  background: #0a2244;
-  color: #f3f6fa;
-  text-align: center;
-  padding: 6px 0 4px 0;
-  font-size: 1em;
-  margin-top: 9px;
-  border-radius: 6px;
-  box-shadow: 0 1px 10px #001a;
-  letter-spacing: 0.5px;
-  border: 1px solid #16406a;
-  width: 100%;
-  min-height: 1.1em;
-}
-/* Motion Controls */
-.motion-controls-row {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.2rem;
-  margin-bottom: 8px;
-  margin-top: 2px;
-}
-.gantry-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 3px 0;
-}
-.gantry-display,
-.collimator-display,
-.couch-display,
-.field-size-display {
-  font-weight: bold;
-  min-width: 48px;
-  text-align: center;
-  font-family: 'Roboto Mono', monospace;
-  font-size: 0.95em;
-  color: #b1e0ff;
-}
 
-/* Field Size Controls */
-.field-size-controls {
-  gap: 7px;
-  margin-top: 7px;
-  display: flex;
-  flex-direction: column;
+/* MLC Visualizer */
+#mlc-section {
+  margin: 0 auto;
+  padding-top: 0.5em;
 }
-.field-row {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  gap: 8px;
-}
-.field-control-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.field-control-group label {
-  min-width: 26px;
-  font-weight: bold;
-  color: #b6d4ff;
-  font-size: 0.95em;
-}
-.field-control-group button {
-  padding: 1.5px 6px;
-  font-size: 1em;
-  line-height: 1;
-  background: #2c394f;
-  color: #eaf6ff;
-  border: 1.2px solid #456;
-  border-radius: 3px;
-  transition: background 0.13s;
-}
-.field-control-group button:hover:not(:disabled) {
-  background: #4a6b92;
-  color: #fff;
-}
-
 #fieldDisplayContainer {
   width: 220px;
   height: 220px;
@@ -433,6 +363,7 @@ header {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
+  margin: 0.5em 0 0.3em 0;
 }
 .mlc-preset-controls button {
   width: 100%;
@@ -450,6 +381,7 @@ header {
 }
 .animating { background-color: #f8d7da !important; border-color: #f5c2c7 !important; color: #842029 !important; }
 
+/* Alignment monitor specifics (unchanged) */
 .overlay-container {
   position: relative;
   width: 100%;
@@ -517,7 +449,7 @@ header {
   color: #e9e1b3;
 }
 
-/* EMR Tabs */
+/* EMR Tabs and modal (unchanged) */
 .emr-tabs .tab-button {
   padding: 3px 7px;
   background: #32405a;
