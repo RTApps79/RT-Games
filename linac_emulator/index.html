@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>LINAC Console Emulator - Two Monitor Enhanced</title>
+  <title>LINAC Console Emulator - Three Monitor Enhanced</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>LINAC Control Console Emulator</header>
-<div class="container">
+<div class="container three-monitors">
   <!-- EMR Panel (left monitor) -->
   <div class="panel emr-panel">
     <h3>Patient EMR</h3>
@@ -31,8 +31,8 @@
         <p><strong>WBC:</strong> <span id="labWBC">---</span></p>
     </div>
   </div>
-  <!-- Main (right monitor) -->
-  <div class="main-panel">
+  <!-- Center: Machine Parameters & Status -->
+  <div class="main-panel three-screen-panel">
     <!-- QA & Interlocks + Status Bar -->
     <div class="qa-status-bar">
       <div class="qa-interlocks-panel horizontal">
@@ -47,9 +47,9 @@
       </div>
       <div class="status-bar-local" id="local-status-bar">Emulator Ready. Generate a patient case.</div>
     </div>
-    <div class="monitors-row">
-      <!-- Machine Parameters + Field Visualizer + DRR + MLC controls -->
-      <div class="monitor-screen monitor-parameters-mlc">
+    <div class="monitors-row three-screens-row">
+      <!-- Machine Parameters (center screen) -->
+      <div class="monitor-screen monitor-parameters">
         <h2>Machine Parameters</h2>
         <div class="machine-param-box-group">
           <div class="machine-param-box"><span class="param-label">Beam</span><span id="mp-energy">6 MV</span></div>
@@ -65,103 +65,40 @@
           <div class="machine-param-box"><span class="param-label">Y1</span><span id="jawY1">5.0</span></div>
           <div class="machine-param-box"><span class="param-label">Y2</span><span id="jawY2">5.0</span></div>
         </div>
-        <!-- Enhanced Field/MLC Visualizer with DRR -->
-        <div class="mlc-visualizer-block">
-          <h3>Field/MLC Visualizer &amp; DRR</h3>
-          <div id="fieldDisplayContainer">
-            <div id="rotatingElementsContainer">
-              <div id="fieldDisplayRect"></div>
-            </div>
-          </div>
-          <div class="summary-text" style="margin-top:10px;">
-            Field: <span id="totalFieldX">10.0</span> x <span id="totalFieldY">10.0</span> cm |
-            Collimator: <span id="collimatorDisplay">0°</span>
-          </div>
-        </div>
-        <!-- DRR & visualizer controls -->
-        <div class="drr-mlc-controls-block">
-          <div class="control-group image-controls" style="margin-bottom:8px;">
-            <label for="drrImageSelect" style="font-weight:bold;">DRR Image:</label>
-            <select id="drrImageSelect" style="width: 180px;">
-                <option value="">-- None --</option>
-                <option value="https://prod-images-static.radiopaedia.org/images/2089213/f12063879a29e672f675977fabdc89_gallery.jpeg">Chest AP</option>
-                <option value="https://prod-images-static.radiopaedia.org/images/13205453/221b52a9fd6ca1675dccde4728534d_big_gallery.jpg">Brain Lat</option>
-                <option value="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRcK9oD-R3O3Nt7FQeUZ_jAjfws1z48JyKQcA&s">Pelvis AP</option>
-                <option value="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6AdTnLxJ_MVHgTFu27PNRV-P62fjSKoFvBQ&s">Spine AP</option>
-            </select>
-          </div>
-          <div class="control-group field-size-controls" style="margin-bottom:8px;">
-            <div class="control-row">
-                <div class="control-item"><label>X1:</label><button onclick="changeFieldSize('X1', -0.5)">–</button><span class="control-display" id="control-jawX1">5.0</span><button onclick="changeFieldSize('X1', 0.5)">+</button></div>
-                <div class="control-item"><label>X2:</label><button onclick="changeFieldSize('X2', -0.5)">–</button><span class="control-display" id="control-jawX2">5.0</span><button onclick="changeFieldSize('X2', 0.5)">+</button></div>
-            </div>
-            <div class="control-row">
-                <div class="control-item"><label>Y1:</label><button onclick="changeFieldSize('Y1', -0.5)">–</button><span class="control-display" id="control-jawY1">5.0</span><button onclick="changeFieldSize('Y1', 0.5)">+</button></div>
-                <div class="control-item"><label>Y2:</label><button onclick="changeFieldSize('Y2', -0.5)">–</button><span class="control-display" id="control-jawY2">5.0</span><button onclick="changeFieldSize('Y2', 0.5)">+</button></div>
-            </div>
-          </div>
-          <div class="control-group collimator-controls" style="margin-bottom:8px;">
-            <div class="control-row">
-                <div class="control-item"><button id="collRotateNegBtn">– 5°</button><span class="control-display" id="collimatorDisplay2">0°</span><button id="collRotatePosBtn">+ 5°</button></div>
-            </div>
-          </div>
-          <div class="control-group mlc-controls">
-            <div class="mlc-preset-controls">
-                <button id="presetMatchJaw">Match Jaws</button>
-                <button id="presetMultiBlock">Multi-Block</button>
-                <button id="presetSquare">Square</button>
-                <button id="presetOffset">Offset</button>
-                <button id="presetBlock">Block</button>
-                <button id="presetCshape">C-Shape</button>
-                <button id="presetDiagonal">Diagonal</button>
-                <button id="presetDiagRev">Rev Diag</button>
-                <button id="presetDiagShallow">Shallow</button>
-                <button id="animateSquareRandBtn">Animate Square</button>
-                <button id="animateOffsetRandBtn">Animate Offset</button>
-                <button id="animateDiagonalRandBtn">Animate Diagonal</button>
-                <button id="slidingWindowBtn">Sliding Window</button>
-                <button id="imrtDemoBtn">IMRT Demo</button>
-            </div>
-          </div>
+        <div id="console-display" style="margin: 0.7em 0 0 0;">
+          <div id="console-parameters">Energy: 6 MV | MU: 000 | Field: ---x--- </div>
+          <div id="console-status">Status: Idle</div>
+          <div id="console-reading">Delivered MU: 000 | Dose Rate: ---</div>
         </div>
       </div>
-      <!-- Image Alignment remains as second monitor -->
+      <!-- Image Alignment (left of center, in the three screen row) -->
       <div class="monitor-screen monitor-alignment">
         <h2>Image Alignment</h2>
         <div class="overlay-container focal">
           <img src="https://via.placeholder.com/400x320.png?text=Base+(Load+Case)" class="base-image" id="baseImage" alt="Base Patient Anatomy">
           <img src="https://via.placeholder.com/400x320.png?text=Overlay+(Load+Case)" id="overlayImage" class="overlay-image" alt="Overlay Reference Image">
         </div>
-        <div class="compact-image-controls">
-          <button onclick="moveOverlay(0,-1)" title="Up">↑</button>
-          <button onclick="moveOverlay(-1,0)" title="Left">←</button>
-          <button onclick="moveOverlay(1,0)" title="Right">→</button>
-          <button onclick="moveOverlay(0,1)" title="Down">↓</button>
-          <button onclick="rotateOverlay(-1)" title="Rotate Left">↺</button>
-          <span id="rotationDisplay" class="mini-label">0°</span>
-          <button onclick="rotateOverlay(1)" title="Rotate Right">↻</button>
-          <button onclick="scaleOverlay(false)" title="Zoom Out">-</button>
-          <span id="scaleDisplay" class="mini-label">1.00x</span>
-          <button onclick="scaleOverlay(true)" title="Zoom In">+</button>
-          <input type="range" id="opacitySlider" min="0" max="100" value="50" style="width:70px;vertical-align:middle;" title="Opacity"/>
-          <span id="opacityValue" class="mini-label">50%</span>
-        </div>
-        <div class="motion-readout">
-          <strong>Couch Shift:</strong>
-          X: <span id="couchShiftX">0</span> px,
-          Y: <span id="couchShiftY">0</span> px,
-          <strong>Rotation:</strong>
-          <span id="couchRotation">0°</span>,
-          <strong>Zoom:</strong>
-          <span id="couchZoom">1.00x</span>
-        </div>
         <p id="alignmentMessage" style="text-align: center;"></p>
         <p id="shiftFeedback" style="color: orange; min-height: 1em; text-align: center;"></p>
         <p id="alignmentCounterDisplay" style="text-align: center; font-weight: bold; margin-top: 5px;">Correct Case Alignments: 0</p>
       </div>
+      <!-- Field/MLC Visualizer (rightmost screen) -->
+      <div class="monitor-screen monitor-mlc-visualizer">
+        <h2>Field/MLC Visualizer &amp; DRR</h2>
+        <div id="fieldDisplayContainer">
+          <div id="rotatingElementsContainer">
+            <div id="fieldDisplayRect"></div>
+          </div>
+        </div>
+        <div class="summary-text" style="margin-top:10px;">
+          Field: <span id="totalFieldX">10.0</span> x <span id="totalFieldY">10.0</span> cm |
+          Collimator: <span id="collimatorDisplay">0°</span>
+        </div>
+      </div>
     </div>
-    <!-- Console controls below -->
+    <!-- Console panel rows below monitors -->
     <div class="console-panel-group">
+      <!-- Row 1: Console Buttons -->
       <div class="console-buttons">
         <button id="energyToggleButton" class="console-button">Set Energy</button>
         <span class="field-size-display" id="currentEnergyDisplay" style="min-width: 80px; text-align: center;">6 MV</span>
@@ -174,10 +111,60 @@
         <button class="console-button door-control" id="btn-door-control">Open Door</button>
         <button class="console-button disabled" id="btn-override">Override</button>
       </div>
-      <div id="console-display">
-        <div id="console-parameters">Energy: 6 MV | MU: 000 | Field: ---x--- </div>
-        <div id="console-status">Status: Idle</div>
-        <div id="console-reading">Delivered MU: 000 | Dose Rate: ---</div>
+      <!-- Row 2: Image Alignment Controls -->
+      <div class="console-buttons image-alignment-controls">
+        <button onclick="moveOverlay(0,-1)" title="Up">↑</button>
+        <button onclick="moveOverlay(-1,0)" title="Left">←</button>
+        <button onclick="moveOverlay(1,0)" title="Right">→</button>
+        <button onclick="moveOverlay(0,1)" title="Down">↓</button>
+        <button onclick="rotateOverlay(-1)" title="Rotate Left">↺</button>
+        <span id="rotationDisplay" class="mini-label">0°</span>
+        <button onclick="rotateOverlay(1)" title="Rotate Right">↻</button>
+        <button onclick="scaleOverlay(false)" title="Zoom Out">-</button>
+        <span id="scaleDisplay" class="mini-label">1.00x</span>
+        <button onclick="scaleOverlay(true)" title="Zoom In">+</button>
+        <input type="range" id="opacitySlider" min="0" max="100" value="50" style="width:70px;vertical-align:middle;" title="Opacity"/>
+        <span id="opacityValue" class="mini-label">50%</span>
+        <strong style="margin-left:16px;">Couch Shift:</strong>
+        X: <span id="couchShiftX">0</span> px,
+        Y: <span id="couchShiftY">0</span> px,
+        <strong>Rotation:</strong>
+        <span id="couchRotation">0°</span>,
+        <strong>Zoom:</strong>
+        <span id="couchZoom">1.00x</span>
+      </div>
+      <!-- Row 3: Machine/MLC/DRR Controls -->
+      <div class="console-buttons machine-controls">
+        <label for="drrImageSelect" style="font-weight:bold;">DRR Image:</label>
+        <select id="drrImageSelect" style="width: 120px;">
+            <option value="">-- None --</option>
+            <option value="https://prod-images-static.radiopaedia.org/images/2089213/f12063879a29e672f675977fabdc89_gallery.jpeg">Chest AP</option>
+            <option value="https://prod-images-static.radiopaedia.org/images/13205453/221b52a9fd6ca1675dccde4728534d_big_gallery.jpg">Brain Lat</option>
+            <option value="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRcK9oD-R3O3Nt7FQeUZ_jAjfws1z48JyKQcA&s">Pelvis AP</option>
+            <option value="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6AdTnLxJ_MVHgTFu27PNRV-P62fjSKoFvBQ&s">Spine AP</option>
+        </select>
+        <span style="margin-left:16px;">Jaws:</span>
+        X1:<button onclick="changeFieldSize('X1', -0.5)">–</button><span class="control-display" id="control-jawX1">5.0</span><button onclick="changeFieldSize('X1', 0.5)">+</button>
+        X2:<button onclick="changeFieldSize('X2', -0.5)">–</button><span class="control-display" id="control-jawX2">5.0</span><button onclick="changeFieldSize('X2', 0.5)">+</button>
+        Y1:<button onclick="changeFieldSize('Y1', -0.5)">–</button><span class="control-display" id="control-jawY1">5.0</span><button onclick="changeFieldSize('Y1', 0.5)">+</button>
+        Y2:<button onclick="changeFieldSize('Y2', -0.5)">–</button><span class="control-display" id="control-jawY2">5.0</span><button onclick="changeFieldSize('Y2', 0.5)">+</button>
+        <span style="margin-left:16px;">Collimator:</span>
+        <button id="collRotateNegBtn">– 5°</button><span class="control-display" id="collimatorDisplay2">0°</span><button id="collRotatePosBtn">+ 5°</button>
+        <span style="margin-left:16px;">MLC Presets:</span>
+        <button id="presetMatchJaw">Match Jaws</button>
+        <button id="presetMultiBlock">Multi-Block</button>
+        <button id="presetSquare">Square</button>
+        <button id="presetOffset">Offset</button>
+        <button id="presetBlock">Block</button>
+        <button id="presetCshape">C-Shape</button>
+        <button id="presetDiagonal">Diagonal</button>
+        <button id="presetDiagRev">Rev Diag</button>
+        <button id="presetDiagShallow">Shallow</button>
+        <button id="animateSquareRandBtn">Animate Square</button>
+        <button id="animateOffsetRandBtn">Animate Offset</button>
+        <button id="animateDiagonalRandBtn">Animate Diagonal</button>
+        <button id="slidingWindowBtn">Sliding Window</button>
+        <button id="imrtDemoBtn">IMRT Demo</button>
       </div>
     </div>
   </div>
