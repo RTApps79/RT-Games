@@ -1,10 +1,10 @@
 // ===========================
-// LINAC Console Emulator Logic (Merged with DRR/MLC Demo)
+// LINAC Console Emulator Logic (Three Monitor Layout)
 // ===========================
 
-/* === Global Constants & State === */
-const NUM_LEAF_PAIRS = 20; // More leaf pairs for DRR/MLC
-const fieldDisplayContainerSize = 400;
+// ------------ GLOBAL STATE -------------
+const NUM_LEAF_PAIRS = 20;
+const fieldDisplayContainerSize = 320;
 const maxJawDistance = 20.0;
 const centerPx = fieldDisplayContainerSize / 2.0;
 const scaleFactor = fieldDisplayContainerSize / (maxJawDistance * 2);
@@ -15,33 +15,38 @@ let rightLeafPositions = Array(NUM_LEAF_PAIRS).fill(jawX2);
 let collimatorAngle = 0;
 let rotatingContainerLeft = 0, rotatingContainerTop = 0;
 
-/* --- Emulator parameters --- */
+// Emulator parameters
 let selectedEnergy = '6 MV';
 let isPrepared = false;
 let isBeaming = false;
 let isDoorOpen = false;
 let deliveredMU = 0;
 let setMU = 0;
-let gantryAngle = 0;
-let couchAngle = 0;
+let gantryAngle = 0, couchAngle = 0;
 let fieldAdjustmentLocked = false;
 let currentLoadedPlan = null;
 let loadedFieldIndex = -1;
 let overrideActive = false;
 
-/* === DRR/MLC/Field Visualizer DOM === */
-let fieldDisplayContainer, rotatingElementsContainer, fieldRectEl;
+// Alignment UI state
+let overlayOffsetX = 0, overlayOffsetY = 0, initialOverlayShiftX = 0, initialOverlayShiftY = 0;
+let overlayOpacity = 0.5, overlayRotationAngle = 0, overlayScale = 1.0;
+let correctCaseAlignments = 0, hasCurrentCaseAlignmentBeenCounted = false;
+const alignmentTolerance = 2;
 
-/* === HTML Control References (set in DOMContentLoaded) === */
+// DOM references
+let fieldDisplayContainer, rotatingElementsContainer, fieldRectEl;
 let presetMatchJawBtn, presetSquareBtn, presetOffsetBtn, presetBlockBtn, presetCshapeBtn, presetDiagonalBtn, presetDiagRevBtn, presetDiagShallowBtn;
 let animateSquareRandBtn, animateOffsetRandBtn, animateDiagonalRandBtn, slidingWindowBtn, imrtDemoBtn, presetMultiBlockBtn;
 let collRotateNegBtn, collRotatePosBtn, collimatorDisplay, collimatorDisplay2;
 let drrImageSelect;
 
-/* === Utility Functions === */
+// UTILITY
 function roundToDecimalPlace(num, places) { const factor = 10 ** places; return Math.round(num * factor) / factor; }
 function lerp(start, end, t) { return start * (1 - t) + end * t; }
+function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
 
+// FIELD/MLC VISUALIZER
 function getActualCoords() {
   const actual_x1 = -jawX1, actual_x2 = jawX2, actual_y1 = -jawY1, actual_y2 = jawY2;
   return { actual_x1, actual_x2, actual_y1, actual_y2 };
@@ -57,7 +62,6 @@ function getFieldDimensionsPx() {
   return { leftPx, topPx, widthPx, heightPx };
 }
 
-/* === Visualizer/DRR UI === */
 function updateOuterVisualsAndContainers() {
   if (!fieldRectEl || !rotatingElementsContainer) return;
   document.getElementById('control-jawX1').textContent = jawX1.toFixed(1);
@@ -131,8 +135,6 @@ function handleImageChange() {
     fieldDisplayContainer.style.backgroundColor = '#111';
   }
 }
-
-/* === Field/MLC Control Logic === */
 function changeFieldSize(jawLabel, delta) {
   let controlDisplayId = 'control-jaw' + jawLabel;
   let currentValue = 0;
@@ -140,10 +142,10 @@ function changeFieldSize(jawLabel, delta) {
   delta = Math.sign(delta) * step;
   const minDistance = 0.1;
   switch(jawLabel) {
-    case 'X1': jawX1 = Math.min(maxJawDistance, Math.max(minDistance, roundToDecimalPlace(jawX1 + delta, 1))); currentValue = jawX1; break;
-    case 'X2': jawX2 = Math.min(maxJawDistance, Math.max(minDistance, roundToDecimalPlace(jawX2 + delta, 1))); currentValue = jawX2; break;
-    case 'Y1': jawY1 = Math.min(maxJawDistance, Math.max(minDistance, roundToDecimalPlace(jawY1 + delta, 1))); currentValue = jawY1; break;
-    case 'Y2': jawY2 = Math.min(maxJawDistance, Math.max(minDistance, roundToDecimalPlace(jawY2 + delta, 1))); currentValue = jawY2; break;
+    case 'X1': jawX1 = clamp(roundToDecimalPlace(jawX1 + delta, 1), minDistance, maxJawDistance); currentValue = jawX1; break;
+    case 'X2': jawX2 = clamp(roundToDecimalPlace(jawX2 + delta, 1), minDistance, maxJawDistance); currentValue = jawX2; break;
+    case 'Y1': jawY1 = clamp(roundToDecimalPlace(jawY1 + delta, 1), minDistance, maxJawDistance); currentValue = jawY1; break;
+    case 'Y2': jawY2 = clamp(roundToDecimalPlace(jawY2 + delta, 1), minDistance, maxJawDistance); currentValue = jawY2; break;
     default: return;
   }
   for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
@@ -154,32 +156,23 @@ function changeFieldSize(jawLabel, delta) {
   updateOuterVisualsAndContainers();
   updateInnerLeafVisuals(leftLeafPositions, rightLeafPositions, false);
 }
-
-/* --- Collimator --- */
 function changeCollimator(delta) {
   collimatorAngle = (collimatorAngle + delta + 360) % 360;
   if (collimatorDisplay) collimatorDisplay.textContent = `${collimatorAngle}°`;
   if (collimatorDisplay2) collimatorDisplay2.textContent = `${collimatorAngle}°`;
   updateOuterVisualsAndContainers();
 }
-
-/* --- Leaf Presets --- */
 function calculatePresetPositions(presetType) {
   const targetLeft = [];
   const targetRight = [];
-  const currentJawX1 = jawX1;
-  const currentJawX2 = jawX2;
-  const currentJawY1 = jawY1;
-  const currentJawY2 = jawY2;
+  const currentJawX1 = jawX1, currentJawX2 = jawX2, currentJawY1 = jawY1, currentJawY2 = jawY2;
   const totalWidth = currentJawX1 + currentJawX2;
   const squareDist = Math.min(currentJawX1, currentJawX2, currentJawY1, currentJawY2, 4.0);
   const offsetDistR = Math.min(currentJawX2, 2.0);
   const blockDist = Math.min(currentJawX1, currentJawX2, 1.0);
   const cShapeInnerDist = Math.min(currentJawX1, currentJawX2, 3.0);
   const cShapeOuterDist = Math.min(currentJawX1, currentJawX2, 8.0);
-  const diagStep = (totalWidth > 0) ? totalWidth / Math.max(1, NUM_LEAF_PAIRS - 1) : 0;
   const minGap = 0.5;
-
   for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
     let leftDist, rightDist;
     switch (presetType) {
@@ -231,7 +224,6 @@ function calculatePresetPositions(presetType) {
         break;
       }
       case 'multiBlock': {
-        // You can implement more advanced pattern here if desired
         leftDist = (i % 4 < 2) ? currentJawX1 : blockDist * 1.2;
         rightDist = (i % 4 < 2) ? currentJawX2 : blockDist * 1.2;
         break;
@@ -251,18 +243,66 @@ function setLeafPreset(presetType) {
   updateInnerLeafVisuals(leftLeafPositions, rightLeafPositions, false);
 }
 
-/* === Animation Logic (shortened: DRR demo, not full IMRT logic here) === */
-function stopAllAnimations() {}
-function startSlidingWindowDemo() {}
-function startPresetAnimation(presetType) {}
-function startImrtDemo() {}
+// ------------- IMAGE ALIGNMENT CONTROLS (Same as before, but for the controls row) ----------------
+function moveOverlay(dx, dy) {
+  overlayOffsetX += dx;
+  overlayOffsetY += dy;
+  applyOverlayTransformsAndFilters();
+  updateShiftFeedback();
+}
+function rotateOverlay(deltaAngle) {
+  overlayRotationAngle = (overlayRotationAngle + deltaAngle + 360) % 360;
+  applyOverlayTransformsAndFilters();
+  updateShiftFeedback();
+}
+function scaleOverlay(zoomIn) {
+  const SCALE_STEP_MULTIPLIER = 1.1, MIN_SCALE = 0.2, MAX_SCALE = 5.0;
+  if (zoomIn) overlayScale = Math.min(MAX_SCALE, overlayScale * SCALE_STEP_MULTIPLIER);
+  else overlayScale = Math.max(MIN_SCALE, overlayScale / SCALE_STEP_MULTIPLIER);
+  applyOverlayTransformsAndFilters();
+  updateShiftFeedback();
+}
+function handleOpacityChange() {
+  const overlayImageElement = document.getElementById('overlayImage');
+  const opacitySlider = document.getElementById('opacitySlider');
+  if (overlayImageElement && opacitySlider) {
+    overlayOpacity = opacitySlider.value / 100;
+    applyOverlayTransformsAndFilters();
+  }
+}
+function applyOverlayTransformsAndFilters() {
+  const overlayImageElement = document.getElementById('overlayImage');
+  if (!overlayImageElement) return;
+  const transformValue =
+    `translate(${overlayOffsetX}px, ${overlayOffsetY}px) ` +
+    `rotate(${overlayRotationAngle}deg) ` +
+    `scale(${overlayScale})`;
+  overlayImageElement.style.transform = transformValue;
+  overlayImageElement.style.opacity = overlayOpacity;
+  document.getElementById('rotationDisplay').textContent = `${overlayRotationAngle}°`;
+  document.getElementById('scaleDisplay').textContent = `${overlayScale.toFixed(2)}x`;
+  document.getElementById('opacityValue').textContent = `${Math.round(overlayOpacity * 100)}%`;
+  document.getElementById('couchShiftX').textContent = overlayOffsetX;
+  document.getElementById('couchShiftY').textContent = overlayOffsetY;
+  document.getElementById('couchRotation').textContent = `${overlayRotationAngle}°`;
+  document.getElementById('couchZoom').textContent = `${overlayScale.toFixed(2)}x`;
+}
+function updateShiftFeedback() {
+  const shiftFeedback = document.getElementById('shiftFeedback');
+  if(shiftFeedback) {
+    shiftFeedback.textContent = `Corrected Offset: X=${overlayOffsetX}, Y=${overlayOffsetY} | Rotation: ${overlayRotationAngle}°`;
+  }
+}
 
-/* === Initialization & Event Listeners === */
+// ------------ INIT & EVENT BINDINGS -------------
 document.addEventListener('DOMContentLoaded', () => {
-  // Assign DOM element references
+  // --- MLC Visualizer ---
   fieldDisplayContainer = document.getElementById('fieldDisplayContainer');
   rotatingElementsContainer = document.getElementById('rotatingElementsContainer');
   fieldRectEl = document.getElementById('fieldDisplayRect');
+  collimatorDisplay = document.getElementById('collimatorDisplay');
+  collimatorDisplay2 = document.getElementById('collimatorDisplay2');
+  drrImageSelect = document.getElementById('drrImageSelect');
   presetMatchJawBtn = document.getElementById('presetMatchJaw');
   presetSquareBtn = document.getElementById('presetSquare');
   presetOffsetBtn = document.getElementById('presetOffset');
@@ -279,11 +319,8 @@ document.addEventListener('DOMContentLoaded', () => {
   presetMultiBlockBtn = document.getElementById('presetMultiBlock');
   collRotateNegBtn = document.getElementById('collRotateNegBtn');
   collRotatePosBtn = document.getElementById('collRotatePosBtn');
-  collimatorDisplay = document.getElementById('collimatorDisplay');
-  collimatorDisplay2 = document.getElementById('collimatorDisplay2');
-  drrImageSelect = document.getElementById('drrImageSelect');
 
-  // Create Leaf Pair HTML elements and append
+  // --- Create leaf DOM ---
   for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
     leftLeafPositions[i] = jawX1; rightLeafPositions[i] = jawX2;
     const pairContainer = document.createElement('div'); pairContainer.className = 'leaf-pair-container'; pairContainer.id = `leafPairContainer_${i}`;
@@ -295,13 +332,26 @@ document.addEventListener('DOMContentLoaded', () => {
     rotatingElementsContainer.appendChild(pairContainer);
   }
 
-  // DRR image
+  // DRR
   if (drrImageSelect) {
     drrImageSelect.addEventListener('change', handleImageChange);
     handleImageChange();
   }
 
-  // Drag logic for rotatingElementsContainer
+  // MLC Presets
+  presetMatchJawBtn?.addEventListener('click', () => setLeafPreset('match'));
+  presetSquareBtn?.addEventListener('click', () => setLeafPreset('square'));
+  presetOffsetBtn?.addEventListener('click', () => setLeafPreset('offset'));
+  presetBlockBtn?.addEventListener('click', () => setLeafPreset('block'));
+  presetCshapeBtn?.addEventListener('click', () => setLeafPreset('cshape'));
+  presetDiagonalBtn?.addEventListener('click', () => setLeafPreset('diagonal'));
+  presetDiagRevBtn?.addEventListener('click', () => setLeafPreset('diagRev'));
+  presetDiagShallowBtn?.addEventListener('click', () => setLeafPreset('diagShallow'));
+  presetMultiBlockBtn?.addEventListener('click', () => setLeafPreset('multiBlock'));
+  collRotateNegBtn?.addEventListener('click', () => changeCollimator(-5));
+  collRotatePosBtn?.addEventListener('click', () => changeCollimator(5));
+
+  // Field/MLC Visualizer drag
   let isDragging = false, dragOffsetX = 0, dragOffsetY = 0;
   rotatingElementsContainer.addEventListener('mousedown', (e) => {
     isDragging = true;
@@ -330,28 +380,38 @@ document.addEventListener('DOMContentLoaded', () => {
     rotatingElementsContainer.classList.remove('dragging');
   });
 
+  // Alignment controls
+  document.getElementById('opacitySlider')?.addEventListener('input', handleOpacityChange);
+
   updateOuterVisualsAndContainers();
   updateInnerLeafVisuals(leftLeafPositions, rightLeafPositions, false);
+  applyOverlayTransformsAndFilters();
 
-  // Preset Buttons
-  presetMatchJawBtn?.addEventListener('click', () => setLeafPreset('match'));
-  presetSquareBtn?.addEventListener('click', () => setLeafPreset('square'));
-  presetOffsetBtn?.addEventListener('click', () => setLeafPreset('offset'));
-  presetBlockBtn?.addEventListener('click', () => setLeafPreset('block'));
-  presetCshapeBtn?.addEventListener('click', () => setLeafPreset('cshape'));
-  presetDiagonalBtn?.addEventListener('click', () => setLeafPreset('diagonal'));
-  presetDiagRevBtn?.addEventListener('click', () => setLeafPreset('diagRev'));
-  presetDiagShallowBtn?.addEventListener('click', () => setLeafPreset('diagShallow'));
-  presetMultiBlockBtn?.addEventListener('click', () => setLeafPreset('multiBlock'));
-
-  // Animation Buttons
-  slidingWindowBtn?.addEventListener('click', startSlidingWindowDemo);
-  animateSquareRandBtn?.addEventListener('click', () => startPresetAnimation('square'));
-  animateOffsetRandBtn?.addEventListener('click', () => startPresetAnimation('offset'));
-  animateDiagonalRandBtn?.addEventListener('click', () => startPresetAnimation('diagonal'));
-  imrtDemoBtn?.addEventListener('click', startImrtDemo);
-
-  // Collimator Buttons
-  collRotateNegBtn?.addEventListener('click', () => changeCollimator(-5));
-  collRotatePosBtn?.addEventListener('click', () => changeCollimator(5));
+  // Keyboard shortcuts for alignment
+  document.addEventListener('keydown', function(e) {
+    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+    let step = 1, handled = false;
+    switch (e.key) {
+      case 'ArrowUp': moveOverlay(0, -step); handled = true; break;
+      case 'ArrowDown': moveOverlay(0, step); handled = true; break;
+      case 'ArrowLeft': moveOverlay(-step, 0); handled = true; break;
+      case 'ArrowRight': moveOverlay(step, 0); handled = true; break;
+      case '[': rotateOverlay(-1); handled = true; break;
+      case ']': rotateOverlay(1); handled = true; break;
+      case '-': if(e.ctrlKey || e.metaKey) { scaleOverlay(false); handled = true; } break;
+      case '=': if(e.ctrlKey || e.metaKey) { scaleOverlay(true); handled = true; } break;
+      case '+': if(e.ctrlKey || e.metaKey) { scaleOverlay(true); handled = true; } break;
+    }
+    if (handled) e.preventDefault();
+  });
 });
+
+// ---------------- EMR TABS ---------------
+function showTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+  document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+  const content = document.getElementById(tabId);
+  const button = document.querySelector(`.tab-button[onclick="showTab('${tabId}')"]`);
+  if(content) content.classList.add('active');
+  if(button) button.classList.add('active');
+}
