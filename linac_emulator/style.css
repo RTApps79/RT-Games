@@ -1,192 +1,304 @@
 /* ============================
    LINAC Console Emulator Styles
    ============================ */
- <style>
-/* ---- Layout & Structure ---- */
+
+/* ---- General Reset & Layout ---- */
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f2f2f2;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #222;
 }
 header {
   background: #003366;
   color: white;
-  padding: 1rem;
+  padding: 0.4rem 0;
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 6px #0007;
+  border-bottom: 3px solid #2676c9;
 }
 .container {
   display: flex;
-  height: calc(100vh - 60px); /* Adjusted for status bar */
+  height: calc(100vh - 48px);
+  min-height: 520px;
+  max-width: 1420px;
+  margin: 12px auto 0 auto;
+  border-radius: 14px;
+  box-shadow: 0 10px 32px #0018, 0 2px 6px #0024;
+  overflow: hidden;
 }
+
+/* ---- Panels "Monitor" Look ---- */
 .panel {
-  padding: 1rem;
+  padding: 0.5rem 0.7rem;
   overflow-y: auto;
+  border-right: 1.5px solid #111a;
+  background: #232e3a;
+  color: #e0e4f3;
+  min-width: 220px;
 }
 .emr-panel {
-  width: 25%;
-  background: #e6f0ff;
-  border-right: 1px solid #ccc;
+  width: 22%;
+  background: #181f25;
+  border-right: 2.5px solid #003366;
+  box-shadow: 2px 0 6px #0005 inset;
 }
 .control-panel {
-  width: 55%;
-  background: #fff;
+  width: 78%;
+  background: #222c37;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #ccc;
+  align-items: stretch;
+  border-right: none;
+  box-shadow: 2px 0 8px #0006 inset;
 }
-.image-panel {
-  width: 20%;
-  background: #e6f0ff;
+
+/* MONITOR SCREENS ROW */
+.monitors-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.8vw;
+  margin: 1.1em 0 0.6em 0;
+}
+
+.monitor-screen {
+  flex: 1 1 0;
+  min-width: 320px;
+  max-width: 520px;
+  background: radial-gradient(ellipse at 50% 60%, #18253a 85%, #0a1a28 100%);
+  border: 3.5px solid #2c4b79;
+  border-radius: 17px;
+  box-shadow: 0 0 30px #1b2f54, 0 0 7px #3bdcff inset;
+  margin: 0 8px;
+  padding: 1.1em 1.4em 1.25em 1.4em;
+  position: relative;
+  min-height: 350px;
+  color: #e2eefb;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.monitor-screen h2 {
+  text-align: center;
+  color: #90cfff;
+  margin-bottom: 0.7em;
+  font-size: 1.18em;
+  letter-spacing: 1.5px;
+  text-shadow: 0 1px 6px #1b2f54;
+  font-weight: 600;
+  margin-top: 0;
+}
+
+/* Example: Style the parameter section inside the monitor */
+.monitor-parameters .section {
+  background: #17284a;
+  border-color: #335a9e;
+  color: #f1f7ff;
+  box-shadow: 0 1.5px 7px #012b4e;
+}
+
+.monitor-alignment .overlay-container {
+  background: #111c2b;
+  border-color: #297cb3;
+}
+.monitor-alignment .image-controls button {
+  background: #2e4059;
+  border-color: #305f8a;
 }
 
 /* ---- Sections ---- */
 .section {
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+  margin-bottom: 0.7rem;
+  padding: 0.7rem 0.8rem;
+  background: #142035;
+  border-radius: 7px;
+  box-shadow: 0 1.5px 5px #0006;
+  border: 1.5px solid #2b3d56;
 }
-.section h3 {
-  margin-top: 0;
+.section h3,
+.section h4 {
+  margin: 0 0 8px 0;
+  color: #4bb1ff;
+  font-size: 1.07em;
+  letter-spacing: 0.5px;
 }
 .section h4 {
-  margin-top: 10px;
-  margin-bottom: 10px;
-  color: #003366;
+  color: #dceeff;
+  font-size: 1em;
+  margin-top: 0.5em;
 }
+
 label {
   display: block;
-  margin-top: 0.5rem;
+  margin-top: 0.3rem;
+  color: #b8cae8;
+  font-size: 0.97em;
 }
 input, select {
   width: 100%;
-  padding: 0.3rem;
-  margin-bottom: 0.5rem;
+  padding: 0.18rem;
+  margin-bottom: 0.4rem;
+  background: #141a23;
+  color: #e0e4f3;
+  border: 1px solid #334a67;
+  border-radius: 2.5px;
+  font-size: 0.98em;
   box-sizing: border-box;
 }
 
-/* ---- Console Area ---- */
+/* ---- Console Control "Keyboard" ---- */
 .console-buttons {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 0.4rem 0.6rem;
+  margin-bottom: 14px;
+  background: #222c37;
+  border-radius: 7px;
+  padding: 0.2rem 0.4rem 0.05rem 0.4rem;
+  box-shadow: 0 1.5px 9px #0014 inset;
 }
 .console-button {
-  padding: 10px 5px;
-  font-size: 0.9em;
-  background-color: #6c757d;
-  color: white;
-  border: 1px outset #999;
-  border-radius: 4px;
+  min-width: 64px;
+  flex: 1 1 70px;
+  margin: 2.5px 1px;
+  padding: 7px 7px 6px 7px;
+  font-size: 0.97em;
+  background: linear-gradient(180deg, #344a67 80%, #23374c);
+  color: #ecf6ff;
+  border: 2px solid #3c4a5a;
+  border-radius: 9px;
+  box-shadow: 0 2.5px 6px #0006 inset, 0 2px 8px #001a;
   cursor: pointer;
   text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: background 0.2s;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: background 0.15s, box-shadow 0.15s, border 0.12s;
+  outline: none;
 }
-.console-button:hover {
-  background-color: #5a6268;
+.console-button:hover:not(.disabled) {
+  background: linear-gradient(180deg, #476fa3 60%, #2a4769 100%);
+  border-color: #91b6e9;
+  color: #fff;
 }
-.console-button:active {
-  border-style: inset;
+.console-button:active:not(.disabled) {
+  background: #1c2d44;
+  box-shadow: 0 1.5px 2.5px #0009 inset;
+  border-color: #455a73;
 }
 .console-button.beam-on {
-  background-color: #ffc107;
+  background: linear-gradient(180deg, #ffc107 80%, #a87f10);
   color: #333;
+  border-color: #f5e781;
 }
 .console-button.beam-on:hover {
-  background-color: #e0a800;
+  background: linear-gradient(180deg, #ffe165, #bfa311 100%);
 }
 .console-button.beam-active {
-  background-color: #dc3545;
-  color: white;
+  background: linear-gradient(180deg, #e33f2e 80%, #7a1818);
+  color: #fff;
+  border-color: #ffaba2;
 }
 .console-button.beam-off {
-  background-color: #dc3545;
+  background: linear-gradient(180deg, #e33f2e 80%, #7a1818);
+  color: #fff;
+  border-color: #ffaba2;
 }
 .console-button.beam-off:hover {
-  background-color: #c82333;
+  background: linear-gradient(180deg, #ff6565, #c82333 100%);
 }
 .console-button.door-control.open {
-  background-color: #fd7e14;
+  background: linear-gradient(180deg, #fd7e14 80%, #a24d07);
+  color: #fff;
+  border-color: #ffca9f;
 }
 .console-button.door-control.open:hover {
-  background-color: #e66a0a;
+  background: linear-gradient(180deg, #ffdca6 80%, #b25e09);
 }
 .console-button.disabled {
-  background-color: #aaa;
-  color: #eee;
+  background: #3a3c44;
+  color: #8b99b2;
   cursor: not-allowed;
   border-style: inset;
+  opacity: 0.72;
+  pointer-events: none;
 }
 
 /* ---- Console Display ---- */
 #console-display {
-  margin-top: 15px;
-  border: 1px solid #ccc;
-  padding: 5px;
-  background: #eee;
+  margin-top: 8px;
+  border: 1.2px solid #2b3d56;
+  padding: 6px 7px 3px 7px;
+  background: #202a39;
+  border-radius: 7px;
+  box-shadow: 0 2px 7px #0004;
 }
 #console-parameters {
-  font-size: 0.9em;
-  color: #114;
-  margin-bottom: 5px;
+  font-size: 0.96em;
+  color: #badaff;
+  margin-bottom: 4px;
   white-space: pre;
-  font-family: monospace;
+  font-family: 'Roboto Mono', monospace;
 }
 #console-status {
-  font-size: 0.9em;
-  color: #333;
+  font-size: 1em;
+  color: #fcf7a7;
   font-weight: bold;
   min-height: 1.2em;
+  margin-bottom: 2px;
 }
 #console-status.interlock {
+  background-color: #e33f2e;
   color: #fff;
-  background-color: #dc3545;
-  padding: 2px 4px;
-  border-radius: 3px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px #0005;
 }
 #console-reading {
-  font-size: 1.1em;
+  font-size: 1.08em;
   text-align: right;
   white-space: pre;
-  font-family: monospace;
-  margin-top: 5px;
+  font-family: 'Roboto Mono', monospace;
+  margin-top: 2px;
+  color: #c3e4b5;
 }
 
 /* ---- Motion Controls ---- */
 .motion-controls-row {
   display: flex;
   flex-direction: row;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
+  gap: 0.2rem;
+  margin-bottom: 8px;
+  margin-top: 2px;
 }
 .gantry-controls {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 5px 0;
+  margin: 3px 0;
 }
 .gantry-display,
 .collimator-display,
 .couch-display,
 .field-size-display {
   font-weight: bold;
-  min-width: 60px;
+  min-width: 48px;
   text-align: center;
-  font-family: monospace;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.95em;
+  color: #b1e0ff;
 }
 
 /* ---- Field Size Controls ---- */
 .field-size-controls {
-  gap: 10px;
-  margin-top: 10px;
+  gap: 7px;
+  margin-top: 7px;
   display: flex;
   flex-direction: column;
 }
@@ -194,38 +306,52 @@ input, select {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  gap: 15px;
+  gap: 8px;
 }
 .field-control-group {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 .field-control-group label {
-  min-width: 30px;
+  min-width: 26px;
   font-weight: bold;
+  color: #b6d4ff;
+  font-size: 0.95em;
 }
 .field-control-group button {
-  padding: 1px 6px;
+  padding: 1.5px 6px;
   font-size: 1em;
   line-height: 1;
+  background: #2c394f;
+  color: #eaf6ff;
+  border: 1.2px solid #456;
+  border-radius: 3px;
+  transition: background 0.13s;
+}
+.field-control-group button:hover:not(:disabled) {
+  background: #4a6b92;
+  color: #fff;
 }
 
-/* ---- Field Visualizer ---- */
+/* ---- Field Visualizer and MLC ---- */
 #fieldDisplayContainer {
-  width: 150px;
-  height: 150px;
-  border: 1px solid #ccc;
+  width: 220px;
+  height: 220px;
+  border: 1.5px solid #2b3d56;
   position: relative;
-  margin: 10px auto;
-  background-color: #e0e0e0;
+  margin: 7px auto 0 auto;
+  background-color: #2a3951;
   overflow: hidden;
+  border-radius: 7px;
+  box-shadow: 0 2px 8px #001b;
 }
 #fieldDisplayContainer::before,
 #fieldDisplayContainer::after {
   content: '';
   position: absolute;
-  background-color: #999;
+  background-color: #4bb1ff;
+  z-index: 100;
 }
 #fieldDisplayContainer::before {
   width: 1px;
@@ -243,39 +369,119 @@ input, select {
 }
 #fieldDisplayRect {
   position: absolute;
-  background-color: rgba(255, 255, 0, 0.5);
-  border: 1px solid #cc0;
+  background-color: rgba(255, 255, 0, 0.36);
+  border: 1.2px solid #ffd900;
+  border-radius: 3px;
+  z-index: 80;
 }
+.field-label {
+  position: absolute;
+  font-size: 9px;
+  font-family: sans-serif;
+  color: #bee9ff;
+  background-color: rgba(21, 34, 44, 0.90);
+  padding: 0 2px;
+  border-radius: 2px;
+  z-index: 120;
+}
+.label-x1 { top: 50%; left: 3px; transform: translateY(-50%); }
+.label-x2 { top: 50%; right: 4px; transform: translateY(-50%); }
+.label-y1 { bottom: 4px; left: 50%; transform: translateX(-50%); }
+.label-y2 { top: 3px; left: 50%; transform: translateX(-50%); }
+/* MLC visualizer leaves */
+.leaf-pair-container {
+  position: absolute;
+  width: 100%;
+  left: 0;
+  box-sizing: border-box;
+  pointer-events: none;
+  z-index: 110;
+}
+.leaf-section {
+  position: absolute;
+  height: 100%;
+  box-sizing: border-box;
+  background-color: rgba(150, 155, 170, 0.7);
+  border: 1px solid rgba(100, 105, 120, 0.8);
+  z-index: 2;
+}
+.leaf-section.outer {
+  background-color: rgba(190, 195, 200, 0.55);
+  border-color: rgba(150, 155, 160, 0.7);
+  z-index: 1;
+  transition: width 0.1s linear, left 0.1s linear, right 0.1s linear;
+}
+.leaf-section.inner {
+  transition: width 1s ease-in-out, left 1s ease-in-out;
+  border-left:none; border-right:none;
+}
+.leaf-section.left { left: 0; border-left:none; border-right:none;}
+.leaf-section.right { right: 0; left: auto; border-right:none; border-left:none;}
+
+.mlc-controls { gap: 9px; margin-top: 5px; }
+.mlc-preset-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+.mlc-preset-controls button {
+  width: 100%;
+  padding: 4px 0.5em;
+  font-size: 0.93em;
+  border-radius: 4px;
+  background: #2c394f;
+  color: #bfe6ff;
+  border: 1.2px solid #456;
+  transition: background 0.13s;
+}
+.mlc-preset-controls button:hover:not(.animating) {
+  background: #4bb1ff;
+  color: #fff;
+}
+.animating { background-color: #f8d7da !important; border-color: #f5c2c7 !important; color: #842029 !important; }
 
 /* ---- Image Alignment ---- */
 .overlay-container {
   position: relative;
   width: 100%;
-  height: 300px;
-  background: black;
+  height: 180px;
+  background: #171c22;
   overflow: hidden;
-  border: 1px solid #555;
+  border: 1.5px solid #1c2735;
+  border-radius: 7px;
+  box-shadow: 0 2px 8px #001b inset;
+  margin-bottom: 0.5em;
 }
 .overlay-container img {
   position: absolute;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background-color: black;
+  background-color: #111;
   left: 0;
   top: 0;
+  border-radius: 6px;
 }
 #overlayImage {
   opacity: 0.5;
 }
 .image-controls {
-  margin-top: 5px;
+  margin-top: 3px;
   text-align: center;
 }
 .image-controls button {
-  padding: 3px 8px;
+  padding: 2px 9px;
   margin: 2px;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  background: #2c394f;
+  color: #bfe6ff;
+  border: 1.2px solid #456;
+  border-radius: 3px;
+  transition: background 0.13s;
+}
+.image-controls button:hover {
+  background: #4a6b92;
+  color: #fff;
 }
 
 /* Opacity Slider */
@@ -283,40 +489,46 @@ input, select {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 8px;
+  margin-top: 5px;
   gap: 5px;
 }
 .opacity-control label {
   margin: 0;
-  font-size: 0.8em;
+  font-size: 0.87em;
+  color: #b8cae8;
 }
 .opacity-control input[type="range"] {
-  width: 100px;
-  height: 5px;
+  width: 70px;
+  height: 4px;
   cursor: pointer;
   margin: 0;
 }
 .opacity-control span {
-  font-size: 0.8em;
+  font-size: 0.85em;
   min-width: 30px;
   text-align: right;
+  color: #e9e1b3;
 }
 
 /* ---- EMR Tabs ---- */
 .emr-tabs .tab-button {
-  padding: 5px;
-  background: #ccc;
-  margin: 2px;
+  padding: 3px 7px;
+  background: #32405a;
+  margin: 1.5px;
   border: none;
   cursor: pointer;
+  border-radius: 4px;
+  color: #a9eaff;
+  font-size: 0.93em;
+  transition: background 0.13s;
 }
 .emr-tabs .tab-button.active {
-  background: #4CAF50;
-  color: white;
+  background: #4bb1ff;
+  color: #fff;
 }
 .tab-content {
   display: none;
-  padding-top: 10px;
+  padding-top: 7px;
 }
 .tab-content.active {
   display: block;
@@ -324,24 +536,27 @@ input, select {
 
 /* Treatment Fields */
 .treatment-field {
-  border: 1px solid #ddd;
-  padding: 8px;
-  margin-bottom: 8px;
-  background-color: #f0f8ff;
+  border: 1.2px solid #334a67;
+  padding: 5px 7px;
+  margin-bottom: 7px;
+  background-color: #24364a;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.14s;
+  box-shadow: 0 1.5px 6px #0017;
 }
 .treatment-field:hover {
-  background-color: #d6eaff;
+  background-color: #2d4d72;
 }
 .treatment-field h5 {
-  margin: 0 0 5px 0;
-  color: #003366;
+  margin: 0 0 3px 0;
+  color: #4bb1ff;
+  font-size: 1em;
 }
 .treatment-field p {
   margin: 2px 0;
-  font-size: 0.9em;
+  font-size: 0.92em;
+  color: #d1eaff;
 }
 
 /* ---- Status Bar ---- */
@@ -350,12 +565,14 @@ input, select {
   bottom: 0;
   left: 0;
   width: 100%;
-  background-color: #003366;
-  color: white;
+  background-color: #0a2244;
+  color: #f3f6fa;
   text-align: center;
-  padding: 5px 0;
-  font-size: 0.9em;
+  padding: 5px 0 3px 0;
+  font-size: 0.93em;
   z-index: 50;
+  letter-spacing: 0.5px;
+  box-shadow: 0 -2px 10px #0018;
 }
 
 /* ---- Modal Styling ---- */
@@ -371,44 +588,47 @@ input, select {
   background-color: rgba(0,0,0,0.4);
 }
 .modal-content {
-  background-color: #fefefe;
-  margin: 15% auto;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 80%;
+  background-color: #1f2c3d;
+  color: #fff;
+  margin: 13% auto;
+  padding: 17px 12px 16px 12px;
+  border: 1.5px solid #334a67;
+  width: 84%;
   max-width: 300px;
-  border-radius: 8px;
+  border-radius: 9px;
   position: relative;
   text-align: center;
+  box-shadow: 0 2px 16px #000b;
 }
 .close-button {
   color: #aaa;
   position: absolute;
-  top: 10px;
-  right: 15px;
-  font-size: 28px;
+  top: 8px;
+  right: 13px;
+  font-size: 25px;
   font-weight: bold;
 }
 .close-button:hover, .close-button:focus {
-  color: black;
+  color: #e33f2e;
   text-decoration: none;
   cursor: pointer;
 }
 #cone-options-list {
   list-style: none;
   padding: 0;
-  margin-top: 15px;
+  margin-top: 11px;
 }
 #cone-options-list li {
-  padding: 8px 12px;
-  border-bottom: 1px solid #eee;
+  padding: 6px 10px;
+  border-bottom: 1px solid #334a67;
   cursor: pointer;
-  background-color: #f9f9f9;
-  margin-bottom: 5px;
+  background-color: #202a39;
+  margin-bottom: 4px;
   border-radius: 4px;
-  transition: background 0.2s;
+  color: #bfe6ff;
+  transition: background 0.13s;
 }
 #cone-options-list li:hover {
-  background-color: #e6f0ff;
+  background-color: #4bb1ff;
+  color: #fff;
 }
-</style>
