@@ -2,7 +2,7 @@
    LINAC Console Emulator Styles
    ============================ */
 
-/* ---- General Reset & Layout ---- */
+/* Make emulator extra wide */
 body {
   margin: 0;
   font-family: 'Segoe UI', Arial, sans-serif;
@@ -20,52 +20,54 @@ header {
 }
 .container {
   display: flex;
+  flex-direction: row;
   height: calc(100vh - 48px);
-  min-height: 520px;
-  max-width: 1420px;
+  min-height: 680px;
+  max-width: 1700px;
   margin: 12px auto 0 auto;
   border-radius: 14px;
   box-shadow: 0 10px 32px #0018, 0 2px 6px #0024;
   overflow: hidden;
+  background: #222;
 }
 
-/* ---- Panels "Monitor" Look ---- */
-.panel {
-  padding: 0.5rem 0.7rem;
-  overflow-y: auto;
-  border-right: 1.5px solid #111a;
-  background: #232e3a;
-  color: #e0e4f3;
-  min-width: 220px;
-}
-.emr-panel {
-  width: 22%;
+/* EMR Panel */
+.panel.emr-panel {
+  width: 320px;
+  min-width: 285px;
   background: #181f25;
   border-right: 2.5px solid #003366;
   box-shadow: 2px 0 6px #0005 inset;
+  padding: 0.7em 1.2em 0.7em 1.2em;
+  overflow-y: auto;
 }
-.control-panel {
-  width: 78%;
-  background: #222c37;
+
+/* Main Panel: monitors and controls stacked vertically */
+.main-panel {
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  border-right: none;
-  box-shadow: 2px 0 8px #0006 inset;
+  min-width: 900px;
+  max-width: 1350px;
+  padding: 0.6em 1.2em 0.8em 1.2em;
 }
 
-/* MONITOR SCREENS ROW */
+/* Monitors Row (on top now) */
 .monitors-row {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
-  gap: 1.8vw;
-  margin: 1.1em 0 0.6em 0;
+  align-items: flex-start;
+  gap: 2.5vw;
+  margin-bottom: 1.6em;
+  min-height: 430px;
 }
 
+/* Monitor Screens */
 .monitor-screen {
   flex: 1 1 0;
-  min-width: 320px;
-  max-width: 520px;
+  min-width: 375px;
+  max-width: 620px;
   background: radial-gradient(ellipse at 50% 60%, #18253a 85%, #0a1a28 100%);
   border: 3.5px solid #2c4b79;
   border-radius: 17px;
@@ -73,13 +75,13 @@ header {
   margin: 0 8px;
   padding: 1.1em 1.4em 1.25em 1.4em;
   position: relative;
-  min-height: 350px;
   color: #e2eefb;
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  min-height: 410px;
+  overflow-x: hidden;
 }
-
 .monitor-screen h2 {
   text-align: center;
   color: #90cfff;
@@ -91,14 +93,12 @@ header {
   margin-top: 0;
 }
 
-/* Example: Style the parameter section inside the monitor */
 .monitor-parameters .section {
   background: #17284a;
   border-color: #335a9e;
   color: #f1f7ff;
   box-shadow: 0 1.5px 7px #012b4e;
 }
-
 .monitor-alignment .overlay-container {
   background: #111c2b;
   border-color: #297cb3;
@@ -108,7 +108,21 @@ header {
   border-color: #305f8a;
 }
 
-/* ---- Sections ---- */
+/* Control Panel (below monitors) */
+.control-panel {
+  width: 100%;
+  min-width: 800px;
+  background: #222c37;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+  border-right: none;
+  box-shadow: none;
+  gap: 2vw;
+}
+
+/* Section Styling */
 .section {
   margin-bottom: 0.7rem;
   padding: 0.7rem 0.8rem;
@@ -116,6 +130,8 @@ header {
   border-radius: 7px;
   box-shadow: 0 1.5px 5px #0006;
   border: 1.5px solid #2b3d56;
+  min-width: 310px;
+  max-width: 540px;
 }
 .section h3,
 .section h4 {
@@ -130,31 +146,13 @@ header {
   margin-top: 0.5em;
 }
 
-label {
-  display: block;
-  margin-top: 0.3rem;
-  color: #b8cae8;
-  font-size: 0.97em;
-}
-input, select {
-  width: 100%;
-  padding: 0.18rem;
-  margin-bottom: 0.4rem;
-  background: #141a23;
-  color: #e0e4f3;
-  border: 1px solid #334a67;
-  border-radius: 2.5px;
-  font-size: 0.98em;
-  box-sizing: border-box;
-}
-
-/* ---- Console Control "Keyboard" ---- */
+/* Console Control "Keyboard" */
 .console-buttons {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: flex-end;
-  gap: 0.4rem 0.6rem;
+  gap: 0.45rem 0.6rem;
   margin-bottom: 14px;
   background: #222c37;
   border-radius: 7px;
@@ -228,7 +226,7 @@ input, select {
   pointer-events: none;
 }
 
-/* ---- Console Display ---- */
+/* Console Display */
 #console-display {
   margin-top: 8px;
   border: 1.2px solid #2b3d56;
@@ -267,7 +265,7 @@ input, select {
   color: #c3e4b5;
 }
 
-/* ---- Motion Controls ---- */
+/* Motion Controls */
 .motion-controls-row {
   display: flex;
   flex-direction: row;
@@ -295,7 +293,7 @@ input, select {
   color: #b1e0ff;
 }
 
-/* ---- Field Size Controls ---- */
+/* Field Size Controls */
 .field-size-controls {
   gap: 7px;
   margin-top: 7px;
@@ -334,7 +332,6 @@ input, select {
   color: #fff;
 }
 
-/* ---- Field Visualizer and MLC ---- */
 #fieldDisplayContainer {
   width: 220px;
   height: 220px;
@@ -388,7 +385,6 @@ input, select {
 .label-x2 { top: 50%; right: 4px; transform: translateY(-50%); }
 .label-y1 { bottom: 4px; left: 50%; transform: translateX(-50%); }
 .label-y2 { top: 3px; left: 50%; transform: translateX(-50%); }
-/* MLC visualizer leaves */
 .leaf-pair-container {
   position: absolute;
   width: 100%;
@@ -440,7 +436,6 @@ input, select {
 }
 .animating { background-color: #f8d7da !important; border-color: #f5c2c7 !important; color: #842029 !important; }
 
-/* ---- Image Alignment ---- */
 .overlay-container {
   position: relative;
   width: 100%;
@@ -483,8 +478,6 @@ input, select {
   background: #4a6b92;
   color: #fff;
 }
-
-/* Opacity Slider */
 .opacity-control {
   display: flex;
   align-items: center;
@@ -510,7 +503,7 @@ input, select {
   color: #e9e1b3;
 }
 
-/* ---- EMR Tabs ---- */
+/* EMR Tabs */
 .emr-tabs .tab-button {
   padding: 3px 7px;
   background: #32405a;
@@ -559,7 +552,6 @@ input, select {
   color: #d1eaff;
 }
 
-/* ---- Status Bar ---- */
 .status-bar {
   position: fixed;
   bottom: 0;
@@ -574,8 +566,6 @@ input, select {
   letter-spacing: 0.5px;
   box-shadow: 0 -2px 10px #0018;
 }
-
-/* ---- Modal Styling ---- */
 .modal {
   display: none;
   position: fixed;
