@@ -10,27 +10,6 @@
 <div class="container">
   <!-- EMR Panel -->
   <div class="panel emr-panel">
-  <h3>Patient EMR</h3>
-  <div class="emr-tabs">
-      <button class="tab-button active" onclick="showTab('demographics')">Demographics</button>
-      <button class="tab-button" onclick="showTab('treatment')">Treatment</button>
-      <button class="tab-button" onclick="showTab('labs')">Labs</button>
-  </div>
-  <div class="tab-content active" id="demographics">
-      <p><strong>Name:</strong> <span id="patientName">---</span></p>
-      <p><strong>DOB:</strong> <span id="patientDOB">---</span></p>
-      <p><strong>Diagnosis:</strong> <span id="patientDiagnosis">---</span></p>
-      <p><strong>Patient Type:</strong> <span id="patientType">---</span></p>
-      <button id="generateCaseBtn" style="margin-top: 15px; padding: 8px;">Generate New Patient Case</button>
-  </div>
-  <div class="tab-content" id="treatment">
-      <p>Generate a new patient case to see the treatment plan.</p>
-  </div>
-  <div class="tab-content" id="labs">
-      <p><strong>Creatinine:</strong> <span id="labCreat">---</span></p>
-      <p><strong>WBC:</strong> <span id="labWBC">---</span></p>
-  </div>
-</div>
     <h3>Patient EMR</h3>
     <div class="emr-tabs">
         <button class="tab-button active" onclick="showTab('demographics')">Demographics</button>
@@ -172,9 +151,8 @@
         </div>
       </div>
     </div>
-    <!-- Console controls and status bar below (unchanged) -->
+    <!-- Console controls and status bar below -->
     <div class="console-panel-group">
-      <!-- ...your console button block, as before... -->
       <div class="console-buttons">
         <button id="energyToggleButton" class="console-button">Set Energy</button>
         <span class="field-size-display" id="currentEnergyDisplay" style="min-width: 80px; text-align: center;">6 MV</span>
@@ -196,7 +174,7 @@
     </div>
   </div>
 </div>
-<!-- Modals and scripts (unchanged) -->
+<!-- Modal for cone selection -->
 <div id="cone-modal" class="modal">
     <div class="modal-content">
         <span class="close-button" onclick="closeConeModal()">&times;</span>
