@@ -2,9 +2,6 @@
 // LINAC Console Emulator Logic (with QA, MLC, Realistic Case & Image Alignment)
 // ===========================
 
-/* -----------------------------
-   GLOBAL VARIABLES & CONSTANTS
-------------------------------*/
 const energyOptions = ['6 MV', '10 MV', '15 MV', '18 MV', '6 MeV', '9 MeV', '12 MeV', '15 MeV', '18 MeV'];
 let currentEnergyIndex = 0;
 let selectedEnergy = energyOptions[0];
@@ -44,7 +41,7 @@ const MAX_SCALE = 5.0;
 const NUM_LEAF_PAIRS = 5;
 let leftLeafPositions = Array(NUM_LEAF_PAIRS).fill(jawX1);
 let rightLeafPositions = Array(NUM_LEAF_PAIRS).fill(jawX2);
-const fieldDisplayContainerSize = 220;
+const fieldDisplayContainerSize = 205;
 const centerPx = fieldDisplayContainerSize / 2.0;
 const maxFieldCoordinate = 20.0;
 const scaleFactor = (fieldDisplayContainerSize / 2.0) / maxFieldCoordinate;
@@ -157,20 +154,6 @@ function updateMachineParameterDisplays() {
 function updateControlPanelDisplays() {
   const ce = document.getElementById('currentEnergyDisplay');
   if (ce) ce.textContent = selectedEnergy || '---';
-  const cd = document.getElementById('collimatorDisplay');
-  if (cd) cd.textContent = 'Collimator ' + collimatorAngle + '°';
-  const gd = document.getElementById('gantryDisplay');
-  if (gd) gd.textContent = 'Gantry ' + gantryAngle + '°';
-  const cch = document.getElementById('couchDisplay');
-  if (cch) cch.textContent = 'Couch ' + couchAngle + '°';
-  const cx1 = document.getElementById('control-jawX1');
-  if (cx1) cx1.textContent = jawX1.toFixed(1);
-  const cx2 = document.getElementById('control-jawX2');
-  if (cx2) cx2.textContent = jawX2.toFixed(1);
-  const cy1 = document.getElementById('control-jawY1');
-  if (cy1) cy1.textContent = jawY1.toFixed(1);
-  const cy2 = document.getElementById('control-jawY2');
-  if (cy2) cy2.textContent = jawY2.toFixed(1);
 }
 function updateConsoleDisplay() {
   const energyStr = selectedEnergy || "---";
@@ -213,15 +196,12 @@ function updateStatusBar() {
    QA & INTERLOCK PANEL LOGIC
 ------------------------------*/
 function updateInterlocksPanel() {
-  // Door
   const doorStat = isDoorOpen ? "Open" : "Closed";
   document.getElementById('doorStatus').textContent = doorStat;
   document.getElementById('interlock-door').className = "interlock-status " + (isDoorOpen ? "danger" : "ok");
-  // Beam
   const beamStat = isBeaming ? "On" : "Off";
   document.getElementById('beamStatus').textContent = beamStat;
   document.getElementById('interlock-beam').className = "interlock-status " + (isBeaming ? "warning" : "ok");
-  // Override
   const overrideStat = overrideActive ? "Active" : "Inactive";
   document.getElementById('overrideStatus').textContent = overrideStat;
   document.getElementById('interlock-override').className = "interlock-status " + (overrideActive ? "danger" : "ok");
@@ -256,14 +236,6 @@ function handleOpacityChange() {
     applyOverlayTransformsAndFilters();
   }
 }
-function handleBrightnessChange() {
-  overlayBrightness = parseInt(document.getElementById('brightnessSlider').value);
-  applyOverlayTransformsAndFilters();
-}
-function handleContrastChange() {
-  overlayContrast = parseInt(document.getElementById('contrastSlider').value);
-  applyOverlayTransformsAndFilters();
-}
 function applyOverlayTransformsAndFilters() {
   const transformValue =
     `translate(${overlayOffsetX}px, ${overlayOffsetY}px) ` +
@@ -271,14 +243,9 @@ function applyOverlayTransformsAndFilters() {
     `scale(${overlayScale})`;
   overlayImageElement.style.transform = transformValue;
   overlayImageElement.style.opacity = overlayOpacity;
-  overlayImageElement.style.filter = `brightness(${overlayBrightness}%) contrast(${overlayContrast}%)`;
-  // Update display spans
   document.getElementById('rotationDisplay').textContent = `${overlayRotationAngle}°`;
   document.getElementById('scaleDisplay').textContent = `${overlayScale.toFixed(2)}x`;
   document.getElementById('opacityValue').textContent = `${Math.round(overlayOpacity * 100)}%`;
-  document.getElementById('brightnessValue').textContent = `${overlayBrightness}`;
-  document.getElementById('contrastValue').textContent = `${overlayContrast}`;
-  // Also update the motion readout
   document.getElementById('couchShiftX').textContent = overlayOffsetX;
   document.getElementById('couchShiftY').textContent = overlayOffsetY;
   document.getElementById('couchRotation').textContent = `${overlayRotationAngle}°`;
@@ -288,13 +255,9 @@ function resetOverlayManipulations() {
   overlayRotationAngle = 0;
   overlayScale = 1.0;
   overlayOpacity = 0.5;
-  overlayBrightness = 100;
-  overlayContrast = 100;
   overlayOffsetX = initialOverlayShiftX;
   overlayOffsetY = initialOverlayShiftY;
   document.getElementById('opacitySlider').value = 50;
-  document.getElementById('brightnessSlider').value = 100;
-  document.getElementById('contrastSlider').value = 100;
   applyOverlayTransformsAndFilters();
   updateShiftFeedback();
   if (alignmentMessage) alignmentMessage.textContent = "View reset. Adjust overlay to align.";
@@ -333,10 +296,7 @@ function updateCaseAlignmentCounterDisplay() {
   if(alignmentCounterDisplay) alignmentCounterDisplay.textContent = `Correct Case Alignments: ${correctCaseAlignments}`;
 }
 
-/* -----------------------------
-   MLC VISUALIZER LOGIC (STUB)
-------------------------------*/
-/** Create MLC leaves in the visualizer */
+/* --- MLC LEAF CREATION AND UPDATE --- */
 function createMLCLeaves() {
   const container = document.getElementById('fieldDisplayContainer');
   if (!container) return;
@@ -397,11 +357,6 @@ function updateMLCLeaves() {
     }
   }
 }
-document.addEventListener('DOMContentLoaded', function() {
-  createMLCLeaves();
-  updateMLCLeaves();
-  // ...rest of your DOMContentLoaded logic...
-});
 function updateFieldDisplay() {
   const rect = document.getElementById('fieldDisplayRect');
   if (!rect) return;
@@ -417,41 +372,127 @@ function updateFieldDisplay() {
   rect.style.top = `${topPx}px`;
   updateMLCLeaves();
 }
-function updateFieldDisplay() {
-  const rect = document.getElementById('fieldDisplayRect');
-  if (!rect) return;
-  const leftPx = centerPx - (jawX1 * scaleFactor);
-  const rightPx = centerPx + (jawX2 * scaleFactor);
-  const topPx = centerPx - (jawY2 * scaleFactor);
-  const bottomPx = centerPx + (jawY1 * scaleFactor);
-  const widthPx = Math.max(0, rightPx - leftPx);
-  const heightPx = Math.max(0, bottomPx - topPx);
-  rect.style.width = `${widthPx}px`;
-  rect.style.height = `${heightPx}px`;
-  rect.style.left = `${leftPx}px`;
-  rect.style.top = `${topPx}px`;
-}
-// Add additional MLC visualizer logic as required for your demo.
 
 /* -----------------------------
-   PATIENT/PLAN & FIELD LOGIC (STUB)
+   PATIENT/PLAN & FIELD LOGIC
 ------------------------------*/
 function generateAndDisplayPatientCase() {
-  // Stub: Randomly generate a case and update the EMR and plan display.
-  // In your actual implementation, populate the DOM with patient info, image, and field plan.
-  alert("Stub: Patient case generation not implemented in this snippet.");
+  // Randomly pick case type: MSCC or SVCS
+  const isMSCC = Math.random() < 0.5;
+  const data = isMSCC ? msccData : svcsData;
+
+  // Generate random demographics
+  const names = ["Alex Lee", "Jordan Smith", "Morgan Chen", "Taylor Patel", "Casey Kim"];
+  const dob = `${getRandomInt(1950, 2005)}-${getRandomInt(1,12).toString().padStart(2,'0')}-${getRandomInt(1,28).toString().padStart(2,'0')}`;
+  const diagnosis = getRandomElement(data.primaries);
+  const patientName = getRandomElement(names);
+
+  // Random lab values
+  const creat = getRandomFloat(0.6, 2.2, 1);
+  const wbc = getRandomFloat(3.2, 13.7, 1);
+
+  // Prescription and plan
+  const prescription = getRandomElement(data.prescriptions);
+  const imageUrl = getRandomElement(data.imageUrls);
+
+  // Fields (for SVCS: AP & PA; for MSCC: Post Spine)
+  let fields = [];
+  if (isMSCC) {
+    const fs = data.fieldSetups[0];
+    fields.push({
+      name: fs.name,
+      gantry: fs.gantry,
+      coll: fs.coll,
+      couch: fs.couch,
+      x1: getRandomFloat(fs.xSizeRange[0]-2, fs.xSizeRange[0], 1),
+      x2: getRandomFloat(fs.xSizeRange[0]-2, fs.xSizeRange[1], 1),
+      y1: getRandomFloat(fs.ySizeRange[0]-3, fs.ySizeRange[0], 1),
+      y2: getRandomFloat(fs.ySizeRange[0]-3, fs.ySizeRange[1], 1)
+    });
+  } else {
+    data.fieldSetups.forEach((setup, idx) => {
+      fields.push({
+        name: setup.name,
+        gantry: setup.gantry,
+        coll: setup.coll,
+        couch: setup.couch,
+        x1: getRandomFloat(setup.xSizeRange[0]-2, setup.xSizeRange[0], 1),
+        x2: getRandomFloat(setup.xSizeRange[0]-2, setup.xSizeRange[1], 1),
+        y1: getRandomFloat(setup.ySizeRange[0]-3, setup.ySizeRange[0], 1),
+        y2: getRandomFloat(setup.ySizeRange[0]-3, setup.ySizeRange[1], 1)
+      });
+    });
+  }
+
+  // Save plan
+  currentLoadedPlan = {
+    patientType: data.patientType,
+    patientName,
+    dob,
+    diagnosis,
+    prescription,
+    imageUrl,
+    fields
+  };
+  loadedFieldIndex = 0; // default to first field
+
+  // Populate EMR
+  document.getElementById('patientName').textContent = patientName;
+  document.getElementById('patientDOB').textContent = dob;
+  document.getElementById('patientDiagnosis').textContent = diagnosis;
+  document.getElementById('patientType').textContent = data.patientType;
+  document.getElementById('labCreat').textContent = creat;
+  document.getElementById('labWBC').textContent = wbc;
+
+  // Treatment tab
+  let planHtml = `<strong>Diagnosis:</strong> ${diagnosis} <br>
+    <strong>Rx:</strong> ${prescription.text} (${prescription.energy}, ${prescription.technique})<br>
+    <strong>Fields:</strong> <ul>`;
+  fields.forEach((f,i) => {
+    planHtml += `<li><button onclick="loadFieldToConsole(${i})">${f.name}</button> (Gantry: ${f.gantry}°, Coll: ${f.coll}°, Couch: ${f.couch}°, X1/X2: ${f.x1}/${f.x2}cm, Y1/Y2: ${f.y1}/${f.y2}cm)</li>`;
+  });
+  planHtml += `</ul>`;
+  document.getElementById('treatment').innerHTML = planHtml;
+
+  // Images
+  baseImageElement.src = imageUrl;
+  overlayImageElement.src = imageUrl;
+
+  // Reset overlay alignment state
+  overlayOffsetX = 0; overlayOffsetY = 0; overlayRotationAngle = 0; overlayScale = 1.0;
+  initialOverlayShiftX = 0; initialOverlayShiftY = 0;
+  hasCurrentCaseAlignmentBeenCounted = false;
+  applyOverlayTransformsAndFilters();
+  updateShiftFeedback();
+  updateCaseAlignmentCounterDisplay();
+
+  // Load first field to console
+  loadFieldToConsole(0);
 }
+
 function loadFieldToConsole(index) {
-  // Stub: Load the field setup into parameters and update displays.
-  alert("Stub: Field loading not implemented in this snippet.");
+  if (!currentLoadedPlan || !currentLoadedPlan.fields || !currentLoadedPlan.fields[index]) return;
+  const f = currentLoadedPlan.fields[index];
+  loadedFieldIndex = index;
+  gantryAngle = f.gantry;
+  collimatorAngle = f.coll;
+  couchAngle = f.couch;
+  jawX1 = f.x1;
+  jawX2 = f.x2;
+  jawY1 = f.y1;
+  jawY2 = f.y2;
+  setMU = currentLoadedPlan.prescription.muPerFx;
+  updateMachineParameterDisplays();
+  updateControlPanelDisplays();
+  updateConsoleDisplay();
+  updateFieldDisplay();
 }
 
 /* -----------------------------
-   CONTROL PANEL BUTTON LOGIC (STUB)
+   CONTROL PANEL BUTTON LOGIC
 ------------------------------*/
 function handleSetMU() {
-  // Stub: Prompt for MU and update setMU variable.
-  setMU = getRandomInt(50, 300); // Example: random MU for stub
+  setMU = getRandomInt(50, 300);
   updateConsoleDisplay();
 }
 function cycleEnergy() {
@@ -498,69 +539,10 @@ function handleReset() {
 }
 
 /* -----------------------------
-   FIELD SIZE & MOTION BUTTONS (STUB)
-------------------------------*/
-function changeFieldSize(jaw, delta) {
-  const step = 0.5;
-  delta = Math.sign(delta) * step;
-  switch(jaw) {
-    case 'X1': jawX1 = Math.max(0.1, jawX1 + delta); break;
-    case 'X2': jawX2 = Math.max(0.1, jawX2 + delta); break;
-    case 'Y1': jawY1 = Math.max(0.1, jawY1 + delta); break;
-    case 'Y2': jawY2 = Math.max(0.1, jawY2 + delta); break;
-  }
-  updateMachineParameterDisplays();
-  updateControlPanelDisplays();
-  updateConsoleDisplay();
-}
-function changeCollimator(delta) {
-  collimatorAngle = (collimatorAngle + delta + 360) % 360;
-  updateMachineParameterDisplays();
-  updateControlPanelDisplays();
-  updateConsoleDisplay();
-}
-function changeGantry(delta) {
-  gantryAngle = (gantryAngle + delta + 360) % 360;
-  updateMachineParameterDisplays();
-  updateControlPanelDisplays();
-  updateConsoleDisplay();
-}
-function changeCouch(delta) {
-  couchAngle = (couchAngle + delta + 360) % 360;
-  updateMachineParameterDisplays();
-  updateControlPanelDisplays();
-  updateConsoleDisplay();
-}
-
-/* -----------------------------
-   ENABLE/DISABLE PARAM BUTTONS (STUB)
-------------------------------*/
-function enableParameterSettingButtons(enable) {
-  // Stub: Enable/disable parameter setting buttons in your UI.
-}
-function setFieldAdjustmentEnabled(enabled) {
-  // Stub: Enable/disable field size controls.
-}
-
-/* -----------------------------
-   MODAL/CONES (STUB)
-------------------------------*/
-function openConeModal() {
-  // Stub: Open modal for cone selection.
-}
-function closeConeModal() {
-  // Stub: Close modal for cone selection.
-}
-function selectConeSize() {
-  // Stub: Handle cone size selection from modal.
-}
-
-/* -----------------------------
    INIT & EVENT LISTENERS
 ------------------------------*/
 document.addEventListener('DOMContentLoaded', function() {
   if (generateCaseBtn) generateCaseBtn.onclick = generateAndDisplayPatientCase;
-  // Control panel
   let btnSetMu = document.getElementById('btn-set-mu');
   let btnEnergy = document.getElementById('energyToggleButton');
   let btnPrepare = document.getElementById('btn-prepare');
@@ -576,15 +558,11 @@ document.addEventListener('DOMContentLoaded', function() {
   if (btnReset) btnReset.onclick = handleReset;
   if (btnDoor) btnDoor.onclick = handleDoorControl;
   if (opacitySlider) opacitySlider.addEventListener('input', handleOpacityChange);
-  document.getElementById('brightnessSlider').addEventListener('input', handleBrightnessChange);
-  document.getElementById('contrastSlider').addEventListener('input', handleContrastChange);
 
-  // Example: field/motion controls
-  // (You should wire up your field/jaw/gantry/collimator/couch buttons here.)
-
+  createMLCLeaves();
+  updateMLCLeaves();
   document.addEventListener('keydown', function(e) {
     if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
-    if (!currentLoadedPlan) return;
     let step = 1, handled = false;
     switch (e.key) {
       case 'ArrowUp': moveOverlay(0, -step); handled = true; break;
