@@ -8,6 +8,7 @@
 <body>
 <header>LINAC Control Console Emulator</header>
 <div class="container">
+  <!-- EMR Panel -->
   <div class="panel emr-panel">
     <h3>Patient EMR</h3>
     <div class="emr-tabs">
@@ -20,7 +21,7 @@
         <p><strong>DOB:</strong> <span id="patientDOB">---</span></p>
         <p><strong>Diagnosis:</strong> <span id="patientDiagnosis">---</span></p>
         <p><strong>Patient Type:</strong> <span id="patientType">---</span></p>
-        <button onclick="generateAndDisplayPatientCase()" style="margin-top: 15px; padding: 8px;">Generate New Patient Case</button>
+        <button id="generateCaseBtn" style="margin-top: 15px; padding: 8px;">Generate New Patient Case</button>
     </div>
     <div class="tab-content" id="treatment">
         <p>Generate a new patient case to see the treatment plan.</p>
@@ -31,82 +32,9 @@
     </div>
   </div>
 
-  <div class="panel control-panel">
-    <div class="section">
-      <h3>Beam Control</h3>
-      <div class="console-buttons">
-          <button id="energyToggleButton" onclick="cycleEnergy()" style="flex-grow: 1;" class="console-button">Set Energy</button>
-          <span class="field-size-display" id="currentEnergyDisplay" style="min-width: 80px; text-align: center;">6 MV</span>
-          <button class="console-button" id="btn-set-mu">Set MU</button>
-          <button id="btn-conesize" class="console-button disabled">Electron Cone</button>
-          <button class="console-button disabled" id="btn-prepare">Prepare</button>
-          <button class="console-button beam-on disabled" id="btn-beam-on">Beam On</button>
-          <button class="console-button beam-off disabled" id="btn-beam-off">Beam Off</button>
-          <button class="console-button" id="btn-reset">Reset State</button>
-          <button class="console-button door-control" id="btn-door-control">Open Door</button>
-          <button class="console-button disabled" id="btn-override">Override</button>
-      </div>
-      <div id="console-display">
-          <div id="console-parameters">Energy: 6 MV | MU: 000 | Field: ---x--- </div>
-          <div id="console-status">Status: Idle</div>
-          <div id="console-reading">Delivered MU: 000 | Dose Rate: ---</div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h3>LINAC Controls</h3>
-      <div class="motion-controls-row">
-          <div class="gantry-controls">
-            <button onclick="changeCollimator(-1)">–</button>
-            <span class="collimator-display" id="collimatorDisplay">Collimator 0°</span>
-            <button onclick="changeCollimator(1)">+</button>
-          </div>
-          <div class="gantry-controls">
-            <button onclick="changeGantry(-1)">–</button>
-            <span class="gantry-display" id="gantryDisplay">Gantry 0°</span>
-            <button onclick="changeGantry(1)">+</button>
-          </div>
-          <div class="gantry-controls">
-            <button onclick="changeCouch(-1)">–</button>
-            <span class="couch-display" id="couchDisplay">Couch 0°</span>
-            <button onclick="changeCouch(1)">+</button>
-          </div>
-      </div>
-
-      <div class="field-size-controls">
-          <h4>Field Size (cm)</h4>
-          <div class="field-row">
-              <div class="field-control-group">
-                  <label for="control-jawX1">X1:</label>
-                  <button onclick="changeFieldSize('X1', -0.5)">–</button>
-                  <span class="field-size-display" id="control-jawX1">5.0</span>
-                  <button onclick="changeFieldSize('X1', 0.5)">+</button>
-              </div>
-              <div class="field-control-group">
-                  <label for="control-jawX2">X2:</label>
-                  <button onclick="changeFieldSize('X2', -0.5)">–</button>
-                  <span class="field-size-display" id="control-jawX2">5.0</span>
-                  <button onclick="changeFieldSize('X2', 0.5)">+</button>
-              </div>
-          </div>
-          <div class="field-row">
-              <div class="field-control-group">
-                  <label for="control-jawY1">Y1:</label>
-                  <button onclick="changeFieldSize('Y1', -0.5)">–</button>
-                  <span class="field-size-display" id="control-jawY1">5.0</span>
-                  <button onclick="changeFieldSize('Y1', 0.5)">+</button>
-              </div>
-              <div class="field-control-group">
-                  <label for="control-jawY2">Y2:</label>
-                  <button onclick="changeFieldSize('Y2', -0.5)">–</button>
-                  <span class="field-size-display" id="control-jawY2">5.0</span>
-                  <button onclick="changeFieldSize('Y2', 0.5)">+</button>
-              </div>
-          </div>
-      </div>
-    </div>
-
-    <!-- DUAL MONITORS: Machine Parameters + Image Alignment -->
+  <!-- Main Panel: Monitors on top, Controls below -->
+  <div class="main-panel">
+    <!-- Monitors Row -->
     <div class="monitors-row">
       <div class="monitor-screen monitor-parameters">
         <h2>Machine Parameters</h2>
@@ -123,7 +51,6 @@
         </div>
         <div class="section" id="mlc-section">
           <h4>MLC Visualizer</h4>
-          <!-- Interactive MLC Visualizer -->
           <div id="fieldDisplayContainer" style="margin-bottom: 0.7em;">
             <div id="fieldDisplayRect"></div>
             <span class="field-label label-x1">X1</span> <span class="field-label label-x2">X2</span>
@@ -169,6 +96,83 @@
         <p id="alignmentMessage" style="text-align: center;"></p>
         <p id="shiftFeedback" style="color: orange; min-height: 1em; text-align: center;"></p>
         <p id="alignmentCounterDisplay" style="text-align: center; font-weight: bold; margin-top: 5px;">Correct Case Alignments: 0</p>
+      </div>
+    </div>
+
+    <!-- Controls Section -->
+    <div class="control-panel">
+      <div class="section">
+        <h3>Beam Control</h3>
+        <div class="console-buttons">
+            <button id="energyToggleButton" class="console-button">Set Energy</button>
+            <span class="field-size-display" id="currentEnergyDisplay" style="min-width: 80px; text-align: center;">6 MV</span>
+            <button class="console-button" id="btn-set-mu">Set MU</button>
+            <button id="btn-conesize" class="console-button disabled">Electron Cone</button>
+            <button class="console-button disabled" id="btn-prepare">Prepare</button>
+            <button class="console-button beam-on disabled" id="btn-beam-on">Beam On</button>
+            <button class="console-button beam-off disabled" id="btn-beam-off">Beam Off</button>
+            <button class="console-button" id="btn-reset">Reset State</button>
+            <button class="console-button door-control" id="btn-door-control">Open Door</button>
+            <button class="console-button disabled" id="btn-override">Override</button>
+        </div>
+        <div id="console-display">
+            <div id="console-parameters">Energy: 6 MV | MU: 000 | Field: ---x--- </div>
+            <div id="console-status">Status: Idle</div>
+            <div id="console-reading">Delivered MU: 000 | Dose Rate: ---</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>LINAC Controls</h3>
+        <div class="motion-controls-row">
+            <div class="gantry-controls">
+              <button onclick="changeCollimator(-1)">–</button>
+              <span class="collimator-display" id="collimatorDisplay">Collimator 0°</span>
+              <button onclick="changeCollimator(1)">+</button>
+            </div>
+            <div class="gantry-controls">
+              <button onclick="changeGantry(-1)">–</button>
+              <span class="gantry-display" id="gantryDisplay">Gantry 0°</span>
+              <button onclick="changeGantry(1)">+</button>
+            </div>
+            <div class="gantry-controls">
+              <button onclick="changeCouch(-1)">–</button>
+              <span class="couch-display" id="couchDisplay">Couch 0°</span>
+              <button onclick="changeCouch(1)">+</button>
+            </div>
+        </div>
+
+        <div class="field-size-controls">
+            <h4>Field Size (cm)</h4>
+            <div class="field-row">
+                <div class="field-control-group">
+                    <label for="control-jawX1">X1:</label>
+                    <button onclick="changeFieldSize('X1', -0.5)">–</button>
+                    <span class="field-size-display" id="control-jawX1">5.0</span>
+                    <button onclick="changeFieldSize('X1', 0.5)">+</button>
+                </div>
+                <div class="field-control-group">
+                    <label for="control-jawX2">X2:</label>
+                    <button onclick="changeFieldSize('X2', -0.5)">–</button>
+                    <span class="field-size-display" id="control-jawX2">5.0</span>
+                    <button onclick="changeFieldSize('X2', 0.5)">+</button>
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-control-group">
+                    <label for="control-jawY1">Y1:</label>
+                    <button onclick="changeFieldSize('Y1', -0.5)">–</button>
+                    <span class="field-size-display" id="control-jawY1">5.0</span>
+                    <button onclick="changeFieldSize('Y1', 0.5)">+</button>
+                </div>
+                <div class="field-control-group">
+                    <label for="control-jawY2">Y2:</label>
+                    <button onclick="changeFieldSize('Y2', -0.5)">–</button>
+                    <span class="field-size-display" id="control-jawY2">5.0</span>
+                    <button onclick="changeFieldSize('Y2', 0.5)">+</button>
+                </div>
+            </div>
+        </div>
       </div>
     </div>
   </div>
