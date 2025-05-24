@@ -148,16 +148,30 @@
      </div>
      <div class="section" id="mlc-section">
        <h4>MLC Leaves</h4>
-       <img
-         id="mlcImage"
-         src="https://via.placeholder.com/200x100.png?text=Static+MLC"
-         alt="MLC Leaf Pattern"
-         style="width: 100%; max-width: 200px; display: block; margin: 5px auto;" />
-       <p>MLC Pattern: <code id="mlcPatternDisplay">3DCRT</code></p>
-     </div>
-     </div>
+       <!-- Interactive MLC Visualizer -->
+  <div id="fieldDisplayContainer" style="margin-bottom: 0.7em;">
+    <div id="fieldDisplayRect"></div>
+    <span class="field-label label-x1">X1</span> <span class="field-label label-x2">X2</span>
+    <span class="field-label label-y1">Y1</span> <span class="field-label label-y2">Y2</span>
+  </div>
+  <div class="mlc-controls">
+    <div class="mlc-preset-controls">
+      <button id="presetMatchJaw">Set Match</button>
+      <button id="presetSquare">Set Square</button>
+      <button id="presetOffset">Set Offset</button>
+      <button id="presetBlock">Set Block</button>
+      <button id="presetCshape">Set C-Shape</button>
+      <button id="presetDiagonal">Set Diagonal</button>
+      <button id="presetDiagRev">Set Rev Diag</button>
+      <button id="presetDiagShallow">Set Shallow</button>
+      <button id="animateSquareRandBtn">Animate Square (Rand.)</button>
+      <button id="animateOffsetRandBtn">Animate Offset (Rand.)</button>
+      <button id="animateDiagonalRandBtn">Animate Diagonal (Rand.)</button>
+      <button id="slidingWindowBtn">Sliding Window Demo</button>
+      <button id="imrtDemoBtn">IMRT Demo</button>
+    </div>
+  </div>
 
-</div>
 <div id="cone-modal" class="modal">
     <div class="modal-content">
         <span class="close-button" onclick="closeConeModal()">&times;</span>
