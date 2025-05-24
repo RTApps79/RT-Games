@@ -1,7 +1,7 @@
 /* ============================
    LINAC Console Emulator Styles
    ============================ */
-
+ <style>
 /* ---- Layout & Structure ---- */
 body {
   margin: 0;
@@ -411,3 +411,4 @@ input, select {
 #cone-options-list li:hover {
   background-color: #e6f0ff;
 }
+</style>
