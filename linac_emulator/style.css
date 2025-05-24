@@ -1,673 +1,521 @@
-// ===========================
-// LINAC Console Emulator Logic (with QA, MLC, Realistic Case & Image Alignment)
-// ===========================
+/* ============================
+   LINAC Console Emulator Styles
+   ============================ */
 
-/* --- All previous code sections and functions, including stubs and patient case logic, are included as described in previous completions. --- */
-/* --- The code below is full and ready for use as of your last requested features and requirements. --- */
-
-const energyOptions = ['6 MV', '10 MV', '15 MV', '18 MV', '6 MeV', '9 MeV', '12 MeV', '15 MeV', '18 MeV'];
-let currentEnergyIndex = 0;
-let selectedEnergy = energyOptions[0];
-
-let isPrepared = false;
-let isBeaming = false;
-let isDoorOpen = false;
-let deliveredMU = 0;
-let setMU = 0;
-let beamTimeoutId = null;
-let gantryAngle = 0;
-let collimatorAngle = 0;
-let couchAngle = 0;
-let jawX1 = 5.0, jawX2 = 5.0, jawY1 = 5.0, jawY2 = 5.0;
-let fieldAdjustmentLocked = false;
-let currentLoadedPlan = null;
-let loadedFieldIndex = -1;
-
-let overlayOffsetX = 0, overlayOffsetY = 0, initialOverlayShiftX = 0, initialOverlayShiftY = 0;
-const alignmentTolerance = 2;
-let correctCaseAlignments = 0;
-let hasCurrentCaseAlignmentBeenCounted = false;
-const defaultImageUrl = "https://via.placeholder.com/400x300.png?text=Load+Case";
-
-/* --- Overlay Manipulation --- */
-let overlayOpacity = 0.5;
-let overlayRotationAngle = 0;
-let overlayScale = 1.0;
-let overlayBrightness = 100;
-let overlayContrast = 100;
-const ROTATION_STEP = 1;
-const SCALE_STEP_MULTIPLIER = 1.1;
-const MIN_SCALE = 0.2;
-const MAX_SCALE = 5.0;
-
-/* --- MLC Visualizer --- */
-const NUM_LEAF_PAIRS = 5;
-let leftLeafPositions = Array(NUM_LEAF_PAIRS).fill(jawX1);
-let rightLeafPositions = Array(NUM_LEAF_PAIRS).fill(jawX2);
-const fieldDisplayContainerSize = 205;
-const centerPx = fieldDisplayContainerSize / 2.0;
-const maxFieldCoordinate = 20.0;
-const scaleFactor = (fieldDisplayContainerSize / 2.0) / maxFieldCoordinate;
-
-/* --- QA / Interlocks --- */
-let overrideActive = false;
-
-/* --- DOM ELEMENTS --- */
-const baseImageElement = document.getElementById('baseImage');
-const overlayImageElement = document.getElementById('overlayImage');
-const opacitySlider = document.getElementById('opacitySlider');
-const opacityValueDisplay = document.getElementById('opacityValue');
-const alignmentMessage = document.getElementById('alignmentMessage');
-const shiftFeedback = document.getElementById('shiftFeedback');
-const alignmentCounterDisplay = document.getElementById('alignmentCounterDisplay');
-const statusBar = document.getElementById('status-bar') || document.getElementById('local-status-bar');
-const treatmentTabContent = document.getElementById('treatment');
-const generateCaseBtn = document.getElementById('generateCaseBtn');
-
-/* --- Data for Case Generation --- */
-const msccImageUrls = [
-  "https://dizziness-and-balance.com/disorders/central/images/cervical-MRI.jpg",
-  "https://www.wikidoc.org/images/7/7e/CT_spine.gif.gif",
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/CoalitionCervicalCageL.png/1200px-CoalitionCervicalCageL.png",
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2Y6OxtDNC-P5iSe_fThxG9YObCyAS6xheaHFOEaHcuud3ujFmQlo1d6UA2hLYL2auCYA&usqp=CAU",
-  "https://mrimaster.com/wp-content/uploads/2023/11/T1-TSE-axial-image-shows-Metastatic-Spinal-Cord-Compression-1024x601.jpg.webp"
-];
-const svcsImageUrls = [
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRClKqn7zvFDw6GRWq18Gu-hLAvDW7FmzLlXg&s",
-  "https://prod-images-static.radiopaedia.org/images/832357/d98d7c55811dc0fc35e02d6e218bf3_gallery.jpg",
-  "https://ajronline.org/cms/10.2214/AJR.09.2894/asset/images/04_09_2894_03a.jpeg",
-  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQlH2yihr02Vjyt1C2rkCyFE6dHp8HrtUfZssfNRkFftqNovHztGdNFTS1S43vmM4lvAlk&usqp=CAU",
-  "https://www.jto.org/cms/10.1016/j.jtho.2019.09.010/asset/123a5f83-20e9-49fc-87d2-0a283220a360/main.assets/gr1_lrg.jpg"
-];
-const msccData = {
-  patientType: "MSCC",
-  primaries: ["Lung cancer", "Breast cancer", "Prostate cancer", "Kidney cancer", "Unknown primary"],
-  prescriptions: [
-    { text: "30 Gy / 10 fx", energy: "6 MV", muPerFx: 150, technique: "3DCRT", numFields: 1 },
-    { text: "30 Gy / 10 fx", energy: "10 MV", muPerFx: 140, technique: "3DCRT", numFields: 1 },
-    { text: "20 Gy / 5 fx", energy: "6 MV", muPerFx: 200, technique: "3DCRT", numFields: 1 },
-    { text: "20 Gy / 5 fx", energy: "10 MV", muPerFx: 190, technique: "3DCRT", numFields: 1 },
-    { text: "8 Gy / 1 fx", energy: "6 MV", muPerFx: 450, technique: "3DCRT", numFields: 1 }
-  ],
-  fieldSetups: [
-    { name: "Post Spine", gantry: 0, coll: 0, couch: 0, xSizeRange: [6, 10], ySizeRange: [15, 25] }
-  ],
-  imageUrls: msccImageUrls
-};
-const svcsData = {
-  patientType: "SVCS",
-  primaries: ["Small cell lung cancer", "Non-Hodgkin lymphoma", "Non-small cell lung cancer (NSCLC)", "Breast cancer"],
-  prescriptions: [
-    { text: "20 Gy / 5 fx AP/PA", energy: "6 MV", muPerFx: 110, technique: "3DCRT", numFields: 2 },
-    { text: "3 Gy x 3 fx -> 1.8 Gy daily to 36 Gy", energy: "6 MV", muPerFx: 100, technique: "3DCRT", numFields: 2 },
-    { text: "8 Gy / 1 fx AP/PA", energy: "6 MV", muPerFx: 450, technique: "3DCRT", numFields: 2 },
-    { text: "30 Gy / 10 fx AP/PA", energy: "6 MV", muPerFx: 160, technique: "3DCRT", numFields: 2 },
-    { text: "4 Gy x 2 fx -> 2 Gy daily to 40 Gy", energy: "6 MV", muPerFx: 110, technique: "3DCRT", numFields: 2 }
-  ],
-  fieldSetups: [
-    { name: "AP Chest", gantry: 180, coll: 0, couch: 0, xSizeRange: [8, 15], ySizeRange: [10, 20] },
-    { name: "PA Chest", gantry: 0, coll: 0, couch: 0, xSizeRange: [8, 15], ySizeRange: [10, 20] }
-  ],
-  imageUrls: svcsImageUrls
-};
-
-/* -----------------------------
-   UTILITY FUNCTIONS
-------------------------------*/
-function getRandomInt(min, max) {
-  min = Math.ceil(min); max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+/* Make emulator extra wide */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #222;
 }
-function getRandomFloat(min, max, decimals) {
-  const factor = Math.pow(10, decimals);
-  const value = Math.random() * (max - min) + min;
-  return Math.round(value * factor) / factor;
+header {
+  background: #003366;
+  color: white;
+  padding: 0.4rem 0;
+  text-align: center;
+  font-size: 1.3rem;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 6px #0007;
+  border-bottom: 3px solid #2676c9;
 }
-function getRandomElement(arr) {
-  if (!arr || arr.length === 0) return null;
-  return arr[getRandomInt(0, arr.length - 1)];
+.container {
+  display: flex;
+  flex-direction: row;
+  height: calc(100vh - 48px);
+  min-height: 680px;
+  max-width: 1700px;
+  margin: 12px auto 0 auto;
+  border-radius: 14px;
+  box-shadow: 0 10px 32px #0018, 0 2px 6px #0024;
+  overflow: hidden;
+  background: #222;
 }
 
-/* -----------------------------
-   EMR TAB LOGIC
-------------------------------*/
-function showTab(tabId) {
-  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-  document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-  const content = document.getElementById(tabId);
-  const button = document.querySelector(`.tab-button[onclick="showTab('${tabId}')"]`);
-  if(content) content.classList.add('active');
-  if(button) button.classList.add('active');
+/* EMR Panel */
+.panel.emr-panel {
+  width: 320px;
+  min-width: 285px;
+  background: #181f25;
+  border-right: 2.5px solid #003366;
+  box-shadow: 2px 0 6px #0005 inset;
+  padding: 0.7em 1.2em 0.7em 1.2em;
+  overflow-y: auto;
 }
 
-/* -----------------------------
-   MACHINE PARAMETER & DISPLAY LOGIC
-------------------------------*/
-function updateMachineParameterDisplays() {
-  document.getElementById('mp-energy').textContent = selectedEnergy || '---';
-  document.getElementById('mp-collimator').textContent = collimatorAngle + '°';
-  document.getElementById('mp-gantry').textContent = gantryAngle + '°';
-  document.getElementById('mp-couch').textContent = couchAngle + '°';
-  document.getElementById('jawX1').textContent = jawX1.toFixed(1);
-  document.getElementById('jawX2').textContent = jawX2.toFixed(1);
-  document.getElementById('jawY1').textContent = jawY1.toFixed(1);
-  document.getElementById('jawY2').textContent = jawY2.toFixed(1);
-  updateFieldDisplay();
-}
-function updateControlPanelDisplays() {
-  const ce = document.getElementById('currentEnergyDisplay');
-  if (ce) ce.textContent = selectedEnergy || '---';
-  const cd = document.getElementById('collimatorDisplay');
-  if (cd) cd.textContent = 'Collimator ' + collimatorAngle + '°';
-  const gd = document.getElementById('gantryDisplay');
-  if (gd) gd.textContent = 'Gantry ' + gantryAngle + '°';
-  const cch = document.getElementById('couchDisplay');
-  if (cch) cch.textContent = 'Couch ' + couchAngle + '°';
-  const cx1 = document.getElementById('control-jawX1');
-  if (cx1) cx1.textContent = jawX1.toFixed(1);
-  const cx2 = document.getElementById('control-jawX2');
-  if (cx2) cx2.textContent = jawX2.toFixed(1);
-  const cy1 = document.getElementById('control-jawY1');
-  if (cy1) cy1.textContent = jawY1.toFixed(1);
-  const cy2 = document.getElementById('control-jawY2');
-  if (cy2) cy2.textContent = jawY2.toFixed(1);
-}
-function updateConsoleDisplay() {
-  const energyStr = selectedEnergy || "---";
-  const muStr = setMU.toString().padStart(3, '0');
-  const deliveredMuStr = deliveredMU.toString().padStart(3, '0');
-  const fieldStr = `${(jawX1 + jawX2).toFixed(1)}x${(jawY1 + jawY2).toFixed(1)}`;
-  document.getElementById('console-parameters').textContent = `Energy: ${energyStr} | MU: ${muStr} | Field: ${fieldStr}`;
-  const consoleStatus = document.getElementById('console-status');
-  let statusMsg = "Status: Idle";
-  if (isBeaming) statusMsg = "Status: Beam On Active";
-  else if (isPrepared) statusMsg = "Status: Prepared";
-  else if (fieldAdjustmentLocked) statusMsg = "Status: Field Locked (Electron)";
-  if (consoleStatus) {
-    if (statusMsg.includes("INTERLOCK") || statusMsg.includes("FAIL")) {
-      consoleStatus.classList.add('interlock');
-    } else {
-      consoleStatus.classList.remove('interlock');
-    }
-    consoleStatus.textContent = statusMsg;
-  }
-  document.getElementById('console-reading').textContent = `Delivered MU: ${deliveredMuStr} | Dose Rate: ${isBeaming ? "Active" : "---"}`;
-  updateStatusBar();
-  updateInterlocksPanel();
-}
-function updateStatusBar() {
-  let statusText = "";
-  let fieldName = (currentLoadedPlan && loadedFieldIndex !== -1 && currentLoadedPlan.fields && currentLoadedPlan.fields[loadedFieldIndex])
-    ? currentLoadedPlan.fields[loadedFieldIndex].name : "Field ?";
-  if (isDoorOpen) statusText = "INTERLOCK: Door Open";
-  else if (isBeaming) statusText = `Beam Active - Delivering ${setMU} MU - ${fieldName}`;
-  else if (isPrepared) statusText = `Prepared - ${fieldName} - ${setMU} MU`;
-  else if (loadedFieldIndex !== -1) statusText = `${fieldName} loaded. Adjust parameters or Prepare.`;
-  else if (currentLoadedPlan) statusText = `${currentLoadedPlan.patientType} Case "${currentLoadedPlan.patientName}" generated. Select a field to load.`;
-  else statusText = "Emulator Ready. Generate a patient case or set parameters manually.";
-  if (statusBar) statusBar.textContent = statusText;
-  if (statusBar) statusBar.style.backgroundColor = isDoorOpen ? "#dc3545" : "#003366";
+/* Main Panel: monitors and controls stacked vertically */
+.main-panel {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 900px;
+  max-width: 1350px;
+  padding: 0.6em 1.2em 0.8em 1.2em;
 }
 
-/* -----------------------------
-   QA & INTERLOCK PANEL LOGIC
-------------------------------*/
-function updateInterlocksPanel() {
-  // Door
-  const doorStat = isDoorOpen ? "Open" : "Closed";
-  document.getElementById('doorStatus').textContent = doorStat;
-  document.getElementById('interlock-door').className = "interlock-status " + (isDoorOpen ? "danger" : "ok");
-  // Beam
-  const beamStat = isBeaming ? "On" : "Off";
-  document.getElementById('beamStatus').textContent = beamStat;
-  document.getElementById('interlock-beam').className = "interlock-status " + (isBeaming ? "warning" : "ok");
-  // Override
-  const overrideStat = overrideActive ? "Active" : "Inactive";
-  document.getElementById('overrideStatus').textContent = overrideStat;
-  document.getElementById('interlock-override').className = "interlock-status " + (overrideActive ? "danger" : "ok");
+.qa-status-bar {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: stretch;
+  margin-bottom: 0.5em;
+}
+.qa-interlocks-panel.horizontal {
+  display: flex;
+  align-items: center;
+  gap: 2.2em;
+  background: #142035;
+  border-radius: 8px 8px 0 0;
+  padding: 0.5em 1.2em 0.5em 0.9em;
+  color: #cfe8ff;
+  border-bottom: 1.5px solid #234;
+  box-shadow: 0 1.5px 8px #0016;
+  font-size: 1em;
+}
+.qa-interlocks-panel.horizontal .qa-checklist label {
+  display: inline-block;
+  margin: 0 0.6em 0 0;
+  font-size: 0.98em;
+}
+.status-bar-local {
+  width: 100%;
+  margin: 0;
+  border-radius: 0 0 8px 8px;
+  border-top: none;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  font-size: 1.05em;
+  background: #0a2244;
+  color: #f3f6fa;
+  text-align: center;
+  padding: 6px 0 4px 0;
+  letter-spacing: 0.5px;
+  border: 1px solid #16406a;
+  min-height: 1.1em;
 }
 
-/* -----------------------------
-   IMAGE ALIGNMENT LOGIC
-------------------------------*/
-function moveOverlay(dx, dy) {
-  overlayOffsetX += dx;
-  overlayOffsetY += dy;
-  applyOverlayTransformsAndFilters();
-  updateShiftFeedback();
+/* Monitor Layout */
+.monitors-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.5vw;
+  margin-bottom: 1.3em;
+  min-height: 400px;
 }
-function rotateOverlay(deltaAngle) {
-  overlayRotationAngle = (overlayRotationAngle + deltaAngle + 360) % 360;
-  applyOverlayTransformsAndFilters();
-  updateShiftFeedback();
+.monitor-screen {
+  min-width: 320px;
+  max-width: 550px;
+  padding: 0.7em 0.7em 0.7em 0.7em;
+  overflow: hidden;
+  min-height: 410px;
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: radial-gradient(ellipse at 50% 60%, #18253a 85%, #0a1a28 100%);
+  border: 3.5px solid #2c4b79;
+  border-radius: 17px;
+  box-shadow: 0 0 30px #1b2f54, 0 0 7px #3bdcff inset;
+  color: #e2eefb;
 }
-function scaleOverlay(zoomIn) {
-  if (zoomIn) {
-    overlayScale = Math.min(MAX_SCALE, overlayScale * SCALE_STEP_MULTIPLIER);
-  } else {
-    overlayScale = Math.max(MIN_SCALE, overlayScale / SCALE_STEP_MULTIPLIER);
-  }
-  applyOverlayTransformsAndFilters();
-  updateShiftFeedback();
+.monitor-screen h2 {
+  text-align: center;
+  color: #90cfff;
+  margin-bottom: 0.7em;
+  font-size: 1.16em;
+  letter-spacing: 1.5px;
+  text-shadow: 0 1px 6px #1b2f54;
+  font-weight: 600;
+  margin-top: 0;
 }
-function handleOpacityChange() {
-  if (overlayImageElement && opacitySlider && opacityValueDisplay) {
-    overlayOpacity = opacitySlider.value / 100;
-    applyOverlayTransformsAndFilters();
-  }
+.machine-param-box-group, .field-dims-group, .jaws-group {
+  display: flex;
+  justify-content: center;
+  gap: 0.6em;
+  margin: 0.24em 0;
+  flex-wrap: wrap;
 }
-function handleBrightnessChange() {
-  overlayBrightness = parseInt(document.getElementById('brightnessSlider').value);
-  applyOverlayTransformsAndFilters();
+.machine-param-box {
+  background: #17284a;
+  border: 1px dashed #335a9e;
+  border-radius: 7px;
+  color: #e0eaff;
+  min-width: 66px;
+  padding: 0.4em 0.7em;
+  text-align: center;
+  font-size: 1em;
+  margin-bottom: 0.15em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-function handleContrastChange() {
-  overlayContrast = parseInt(document.getElementById('contrastSlider').value);
-  applyOverlayTransformsAndFilters();
+.machine-param-box .param-label {
+  font-size: 0.86em;
+  color: #90cfff;
+  margin-bottom: 0.15em;
+  font-weight: bold;
+  letter-spacing: 0.5px;
 }
-function applyOverlayTransformsAndFilters() {
-  const transformValue =
-    `translate(${overlayOffsetX}px, ${overlayOffsetY}px) ` +
-    `rotate(${overlayRotationAngle}deg) ` +
-    `scale(${overlayScale})`;
-  overlayImageElement.style.transform = transformValue;
-  overlayImageElement.style.opacity = overlayOpacity;
-  overlayImageElement.style.filter = `brightness(${overlayBrightness}%) contrast(${overlayContrast}%)`;
-  // Update display spans
-  document.getElementById('rotationDisplay').textContent = `${overlayRotationAngle}°`;
-  document.getElementById('scaleDisplay').textContent = `${overlayScale.toFixed(2)}x`;
-  document.getElementById('opacityValue').textContent = `${Math.round(overlayOpacity * 100)}%`;
-  document.getElementById('brightnessValue') && (document.getElementById('brightnessValue').textContent = `${overlayBrightness}`);
-  document.getElementById('contrastValue') && (document.getElementById('contrastValue').textContent = `${overlayContrast}`);
-  // Also update the motion readout
-  document.getElementById('couchShiftX').textContent = overlayOffsetX;
-  document.getElementById('couchShiftY').textContent = overlayOffsetY;
-  document.getElementById('couchRotation').textContent = `${overlayRotationAngle}°`;
-  document.getElementById('couchZoom').textContent = `${overlayScale.toFixed(2)}x`;
+.mlc-visualizer-block h3 {
+  font-size: 1.1em;
+  color: #bfe6ff;
+  margin: 0.2em 0 0.4em 0;
+  text-align: center;
+  font-weight: 500;
 }
-function resetOverlayManipulations() {
-  overlayRotationAngle = 0;
-  overlayScale = 1.0;
-  overlayOpacity = 0.5;
-  overlayBrightness = 100;
-  overlayContrast = 100;
-  overlayOffsetX = initialOverlayShiftX;
-  overlayOffsetY = initialOverlayShiftY;
-  document.getElementById('opacitySlider').value = 50;
-  document.getElementById('brightnessSlider') && (document.getElementById('brightnessSlider').value = 100);
-  document.getElementById('contrastSlider') && (document.getElementById('contrastSlider').value = 100);
-  applyOverlayTransformsAndFilters();
-  updateShiftFeedback();
-  if (alignmentMessage) alignmentMessage.textContent = "View reset. Adjust overlay to align.";
-  hasCurrentCaseAlignmentBeenCounted = false;
+#fieldDisplayContainer {
+  width: 205px;
+  height: 135px;
+  border: 1.5px solid #2b3d56;
+  position: relative;
+  margin: 0 auto 0.4em auto;
+  background-color: #2a3951;
+  overflow: hidden;
+  border-radius: 7px;
+  box-shadow: 0 2px 8px #001b;
 }
-function updateShiftFeedback() {
-  if(shiftFeedback) {
-    const currentCorrectedX = overlayOffsetX - initialOverlayShiftX;
-    const currentCorrectedY = overlayOffsetY - initialOverlayShiftY;
-    shiftFeedback.textContent = `Corrected Offset: X=${currentCorrectedX}, Y=${currentCorrectedY} | Rotation: ${overlayRotationAngle}°`;
-  }
+#fieldDisplayRect {
+  position: absolute;
+  background-color: rgba(255, 255, 0, 0.23);
+  border: 1px solid #ffd900;
+  border-radius: 3px;
+  z-index: 2;
 }
-function checkAlignment() {
-  if (Math.abs(overlayOffsetX) <= alignmentTolerance &&
-      Math.abs(overlayOffsetY) <= alignmentTolerance &&
-      Math.abs(overlayRotationAngle) <= alignmentTolerance) {
-    if(alignmentMessage) {
-      alignmentMessage.textContent = "Alignment OK!";
-      alignmentMessage.style.color = "green";
-    }
-    if(shiftFeedback) shiftFeedback.textContent = "Perfectly Aligned!";
-    if (!hasCurrentCaseAlignmentBeenCounted) {
-      correctCaseAlignments++;
-      hasCurrentCaseAlignmentBeenCounted = true;
-      updateCaseAlignmentCounterDisplay();
-    }
-  } else {
-    if(alignmentMessage) {
-      alignmentMessage.textContent = "Alignment Check Needed";
-      alignmentMessage.style.color = "red";
-    }
-    updateShiftFeedback();
-  }
+.mlc-leaf-pair {
+  pointer-events: none;
 }
-function updateCaseAlignmentCounterDisplay() {
-  if(alignmentCounterDisplay) alignmentCounterDisplay.textContent = `Correct Case Alignments: ${correctCaseAlignments}`;
+.leaf-section.inner.left, .leaf-section.inner.right {
+  background: rgba(35,200,255,0.22);
+  border: 1px solid #1a7c9e;
+  height: 100%;
+  top: 0;
+  position: absolute;
+  border-radius: 2px;
+  pointer-events: none;
+  transition: width 0.2s, left 0.2s;
 }
-
-/* --- MLC LEAF CREATION AND UPDATE --- */
-function createMLCLeaves() {
-  const container = document.getElementById('fieldDisplayContainer');
-  if (!container) return;
-  Array.from(container.querySelectorAll('.mlc-leaf-pair')).forEach(e => e.remove());
-  const fieldHeight = container.offsetHeight || 135;
-  const leafHeight = fieldHeight / NUM_LEAF_PAIRS;
-  for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
-    const pairDiv = document.createElement('div');
-    pairDiv.className = 'mlc-leaf-pair';
-    pairDiv.style.position = 'absolute';
-    pairDiv.style.left = '0';
-    pairDiv.style.top = `${i * leafHeight}px`;
-    pairDiv.style.width = '100%';
-    pairDiv.style.height = `${leafHeight}px`;
-    pairDiv.style.pointerEvents = 'none';
-
-    // Left leaf
-    const leftLeaf = document.createElement('div');
-    leftLeaf.className = 'leaf-section inner left';
-    leftLeaf.id = `innerLeftLeaf_${i}`;
-    leftLeaf.style.position = 'absolute';
-    leftLeaf.style.top = '0';
-    leftLeaf.style.left = '0';
-    leftLeaf.style.height = '100%';
-
-    // Right leaf
-    const rightLeaf = document.createElement('div');
-    rightLeaf.className = 'leaf-section inner right';
-    rightLeaf.id = `innerRightLeaf_${i}`;
-    rightLeaf.style.position = 'absolute';
-    rightLeaf.style.top = '0';
-    rightLeaf.style.height = '100%';
-
-    pairDiv.appendChild(leftLeaf);
-    pairDiv.appendChild(rightLeaf);
-    container.appendChild(pairDiv);
-  }
+.field-label {
+  position: absolute;
+  font-size: 9px;
+  font-family: sans-serif;
+  color: #bee9ff;
+  background-color: rgba(21, 34, 44, 0.90);
+  padding: 0 2px;
+  border-radius: 2px;
+  z-index: 12;
 }
-function updateMLCLeaves() {
-  const container = document.getElementById('fieldDisplayContainer');
-  if (!container) return;
-  const fieldWidth = container.offsetWidth || 205;
-  const centerX = fieldWidth / 2;
-  for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
-    const leftPosCm = Math.min(jawX1, leftLeafPositions[i]);
-    const rightPosCm = Math.min(jawX2, rightLeafPositions[i]);
-    const leftLeafPx = centerX - leftPosCm * scaleFactor;
-    const rightLeafPx = centerX + rightPosCm * scaleFactor;
-    const leftLeaf = document.getElementById(`innerLeftLeaf_${i}`);
-    const rightLeaf = document.getElementById(`innerRightLeaf_${i}`);
-    if (leftLeaf) {
-      leftLeaf.style.left = '0px';
-      leftLeaf.style.width = `${leftLeafPx}px`;
-    }
-    if (rightLeaf) {
-      rightLeaf.style.left = `${rightLeafPx}px`;
-      rightLeaf.style.width = `${fieldWidth - rightLeafPx}px`;
-    }
-  }
+.label-x1 { top: 50%; left: 3px; transform: translateY(-50%); }
+.label-x2 { top: 50%; right: 4px; transform: translateY(-50%); }
+.label-y1 { bottom: 4px; left: 50%; transform: translateX(-50%); }
+.label-y2 { top: 3px; left: 50%; transform: translateX(-50%); }
+.overlay-container.focal {
+  position: relative;
+  width: 98%;
+  height: 240px;
+  background: #171c22;
+  overflow: hidden;
+  border: 1.5px solid #1c2735;
+  border-radius: 9px;
+  margin-bottom: 0.4em;
+  box-shadow: 0 2px 8px #001b inset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-function updateFieldDisplay() {
-  const rect = document.getElementById('fieldDisplayRect');
-  if (!rect) return;
-  const leftPx = centerPx - (jawX1 * scaleFactor);
-  const rightPx = centerPx + (jawX2 * scaleFactor);
-  const topPx = centerPx - (jawY2 * scaleFactor);
-  const bottomPx = centerPx + (jawY1 * scaleFactor);
-  const widthPx = Math.max(0, rightPx - leftPx);
-  const heightPx = Math.max(0, bottomPx - topPx);
-  rect.style.width = `${widthPx}px`;
-  rect.style.height = `${heightPx}px`;
-  rect.style.left = `${leftPx}px`;
-  rect.style.top = `${topPx}px`;
-  updateMLCLeaves();
+.overlay-container.focal img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #111;
+  left: 0;
+  top: 0;
+  border-radius: 6px;
 }
-
-/* -----------------------------
-   PATIENT/PLAN & FIELD LOGIC
-------------------------------*/
-function generateAndDisplayPatientCase() {
-  // Randomly pick case type: MSCC or SVCS
-  const isMSCC = Math.random() < 0.5;
-  const data = isMSCC ? msccData : svcsData;
-
-  // Generate random demographics
-  const names = ["Alex Lee", "Jordan Smith", "Morgan Chen", "Taylor Patel", "Casey Kim"];
-  const dob = `${getRandomInt(1950, 2005)}-${getRandomInt(1,12).toString().padStart(2,'0')}-${getRandomInt(1,28).toString().padStart(2,'0')}`;
-  const diagnosis = getRandomElement(data.primaries);
-  const patientName = getRandomElement(names);
-
-  // Random lab values
-  const creat = getRandomFloat(0.6, 2.2, 1);
-  const wbc = getRandomFloat(3.2, 13.7, 1);
-
-  // Prescription and plan
-  const prescription = getRandomElement(data.prescriptions);
-  const imageUrl = getRandomElement(data.imageUrls);
-
-  // Fields (for SVCS: AP & PA; for MSCC: Post Spine)
-  let fields = [];
-  if (isMSCC) {
-    const fs = data.fieldSetups[0];
-    fields.push({
-      name: fs.name,
-      gantry: fs.gantry,
-      coll: fs.coll,
-      couch: fs.couch,
-      x1: getRandomFloat(fs.xSizeRange[0]-2, fs.xSizeRange[0], 1),
-      x2: getRandomFloat(fs.xSizeRange[0]-2, fs.xSizeRange[1], 1),
-      y1: getRandomFloat(fs.ySizeRange[0]-3, fs.ySizeRange[0], 1),
-      y2: getRandomFloat(fs.ySizeRange[0]-3, fs.ySizeRange[1], 1)
-    });
-  } else {
-    data.fieldSetups.forEach((setup, idx) => {
-      fields.push({
-        name: setup.name,
-        gantry: setup.gantry,
-        coll: setup.coll,
-        couch: setup.couch,
-        x1: getRandomFloat(setup.xSizeRange[0]-2, setup.xSizeRange[0], 1),
-        x2: getRandomFloat(setup.xSizeRange[0]-2, setup.xSizeRange[1], 1),
-        y1: getRandomFloat(setup.ySizeRange[0]-3, setup.ySizeRange[0], 1),
-        y2: getRandomFloat(setup.ySizeRange[0]-3, setup.ySizeRange[1], 1)
-      });
-    });
-  }
-
-  // Save plan
-  currentLoadedPlan = {
-    patientType: data.patientType,
-    patientName,
-    dob,
-    diagnosis,
-    prescription,
-    imageUrl,
-    fields
-  };
-  loadedFieldIndex = 0; // default to first field
-
-  // Populate EMR
-  document.getElementById('patientName').textContent = patientName;
-  document.getElementById('patientDOB').textContent = dob;
-  document.getElementById('patientDiagnosis').textContent = diagnosis;
-  document.getElementById('patientType').textContent = data.patientType;
-  document.getElementById('labCreat').textContent = creat;
-  document.getElementById('labWBC').textContent = wbc;
-
-  // Treatment tab
-  let planHtml = `<strong>Diagnosis:</strong> ${diagnosis} <br>
-    <strong>Rx:</strong> ${prescription.text} (${prescription.energy}, ${prescription.technique})<br>
-    <strong>Fields:</strong> <ul>`;
-  fields.forEach((f,i) => {
-    planHtml += `<li><button onclick="loadFieldToConsole(${i})">${f.name}</button> (Gantry: ${f.gantry}°, Coll: ${f.coll}°, Couch: ${f.couch}°, X1/X2: ${f.x1}/${f.x2}cm, Y1/Y2: ${f.y1}/${f.y2}cm)</li>`;
-  });
-  planHtml += `</ul>`;
-  document.getElementById('treatment').innerHTML = planHtml;
-
-  // Images
-  baseImageElement.src = imageUrl;
-  overlayImageElement.src = imageUrl; // Use same for now; real case could use different overlays
-
-  // Reset overlay alignment state
-  overlayOffsetX = 0; overlayOffsetY = 0; overlayRotationAngle = 0; overlayScale = 1.0;
-  initialOverlayShiftX = 0; initialOverlayShiftY = 0;
-  hasCurrentCaseAlignmentBeenCounted = false;
-  applyOverlayTransformsAndFilters();
-  updateShiftFeedback();
-  updateCaseAlignmentCounterDisplay();
-
-  // Load first field to console
-  loadFieldToConsole(0);
+.compact-image-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  align-items: center;
+  justify-content: center;
+  margin: 0.2em auto 0.3em auto;
+  font-size: 1em;
+}
+.compact-image-controls button {
+  padding: 2px 7px;
+  font-size: 1em;
+  border-radius: 4px;
+  background: #2c394f;
+  color: #bfe6ff;
+  border: 1px solid #234;
+  transition: background 0.13s;
+}
+.compact-image-controls button:hover {
+  background: #4bb1ff;
+  color: #fff;
+}
+.compact-image-controls input[type="range"] {
+  width: 55px;
+  height: 4px;
+  margin: 0 1px;
+  vertical-align: middle;
+}
+.mini-label {
+  min-width: 32px;
+  display: inline-block;
+  color: #eaffb6;
+  font-size: 0.98em;
+  text-align: center;
+}
+.motion-readout {
+  background: #13203d;
+  color: #aef3e8;
+  text-align: center;
+  border-radius: 8px;
+  padding: 3px 0 3px 0;
+  margin: 6px auto 0 auto;
+  font-size: 0.97em;
+  font-family: 'Roboto Mono', monospace;
+  letter-spacing: .03em;
+  box-shadow: 0 1px 6px #001a inset;
+  width: 95%;
 }
 
-function loadFieldToConsole(index) {
-  if (!currentLoadedPlan || !currentLoadedPlan.fields || !currentLoadedPlan.fields[index]) return;
-  const f = currentLoadedPlan.fields[index];
-  loadedFieldIndex = index;
-  gantryAngle = f.gantry;
-  collimatorAngle = f.coll;
-  couchAngle = f.couch;
-  jawX1 = f.x1;
-  jawX2 = f.x2;
-  jawY1 = f.y1;
-  jawY2 = f.y2;
-  setMU = currentLoadedPlan.prescription.muPerFx;
-  updateMachineParameterDisplays();
-  updateControlPanelDisplays();
-  updateConsoleDisplay();
-  updateFieldDisplay();
+/* Console panel group below monitors */
+.console-panel-group {
+  background: #222d3b;
+  border-radius: 9px;
+  margin: 1.2em auto 0 auto;
+  box-shadow: 0 2px 12px #0015 inset;
+  padding: 1em 1.2em 1.2em 1.2em;
+  max-width: 950px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+.console-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 0.45rem 0.6rem;
+  margin-bottom: 11px;
+  background: #222d3b;
+  border-radius: 7px;
+  padding: 0.2rem 0.4rem 0.05rem 0.4rem;
+  box-shadow: 0 1.5px 9px #0014 inset;
+}
+.console-button {
+  min-width: 64px;
+  flex: 1 1 70px;
+  margin: 2.5px 1px;
+  padding: 7px 7px 6px 7px;
+  font-size: 0.97em;
+  background: linear-gradient(180deg, #344a67 80%, #23374c);
+  color: #ecf6ff;
+  border: 2px solid #3c4a5a;
+  border-radius: 9px;
+  box-shadow: 0 2.5px 6px #0006 inset, 0 2px 8px #001a;
+  cursor: pointer;
+  text-align: center;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: background 0.15s, box-shadow 0.15s, border 0.12s;
+  outline: none;
+}
+.console-button:hover:not(.disabled) {
+  background: linear-gradient(180deg, #476fa3 60%, #2a4769 100%);
+  border-color: #91b6e9;
+  color: #fff;
+}
+.console-button:active:not(.disabled) {
+  background: #1c2d44;
+  box-shadow: 0 1.5px 2.5px #0009 inset;
+  border-color: #455a73;
+}
+.console-button.beam-on {
+  background: linear-gradient(180deg, #ffc107 80%, #a87f10);
+  color: #333;
+  border-color: #f5e781;
+}
+.console-button.beam-on:hover {
+  background: linear-gradient(180deg, #ffe165, #bfa311 100%);
+}
+.console-button.beam-active {
+  background: linear-gradient(180deg, #e33f2e 80%, #7a1818);
+  color: #fff;
+  border-color: #ffaba2;
+}
+.console-button.beam-off {
+  background: linear-gradient(180deg, #e33f2e 80%, #7a1818);
+  color: #fff;
+  border-color: #ffaba2;
+}
+.console-button.beam-off:hover {
+  background: linear-gradient(180deg, #ff6565, #c82333 100%);
+}
+.console-button.door-control.open {
+  background: linear-gradient(180deg, #fd7e14 80%, #a24d07);
+  color: #fff;
+  border-color: #ffca9f;
+}
+.console-button.door-control.open:hover {
+  background: linear-gradient(180deg, #ffdca6 80%, #b25e09);
+}
+.console-button.disabled {
+  background: #3a3c44;
+  color: #8b99b2;
+  cursor: not-allowed;
+  border-style: inset;
+  opacity: 0.72;
+  pointer-events: none;
+}
+#console-display {
+  margin-top: 8px;
+  border: 1.2px solid #2b3d56;
+  padding: 6px 7px 3px 7px;
+  background: #202a39;
+  border-radius: 7px;
+  box-shadow: 0 2px 7px #0004;
+}
+#console-parameters {
+  font-size: 0.96em;
+  color: #badaff;
+  margin-bottom: 4px;
+  white-space: pre;
+  font-family: 'Roboto Mono', monospace;
+}
+#console-status {
+  font-size: 1em;
+  color: #fcf7a7;
+  font-weight: bold;
+  min-height: 1.2em;
+  margin-bottom: 2px;
+}
+#console-status.interlock {
+  background-color: #e33f2e;
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px #0005;
+}
+#console-reading {
+  font-size: 1.08em;
+  text-align: right;
+  white-space: pre;
+  font-family: 'Roboto Mono', monospace;
+  margin-top: 2px;
+  color: #c3e4b5;
 }
 
-/* -----------------------------
-   CONTROL PANEL BUTTON LOGIC (STUB)
-------------------------------*/
-function handleSetMU() {
-  setMU = getRandomInt(50, 300); // Example: random MU for stub
-  updateConsoleDisplay();
+/* EMR Tabs and modal (unchanged) */
+.emr-tabs .tab-button {
+  padding: 3px 7px;
+  background: #32405a;
+  margin: 1.5px;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  color: #a9eaff;
+  font-size: 0.93em;
+  transition: background 0.13s;
 }
-function cycleEnergy() {
-  currentEnergyIndex = (currentEnergyIndex + 1) % energyOptions.length;
-  selectedEnergy = energyOptions[currentEnergyIndex];
-  updateMachineParameterDisplays();
-  updateControlPanelDisplays();
-  updateConsoleDisplay();
+.emr-tabs .tab-button.active {
+  background: #4bb1ff;
+  color: #fff;
 }
-function handlePrepare() {
-  isPrepared = true;
-  updateConsoleDisplay();
+.tab-content {
+  display: none;
+  padding-top: 7px;
 }
-function handleBeamOn() {
-  isBeaming = true;
-  updateConsoleDisplay();
-}
-function handleBeamOff() {
-  isBeaming = false;
-  updateConsoleDisplay();
-}
-function handleDoorControl() {
-  isDoorOpen = !isDoorOpen;
-  updateConsoleDisplay();
-}
-function handleReset() {
-  isPrepared = false;
-  isBeaming = false;
-  isDoorOpen = false;
-  deliveredMU = 0;
-  setMU = 0;
-  gantryAngle = 0;
-  collimatorAngle = 0;
-  couchAngle = 0;
-  jawX1 = 5.0; jawX2 = 5.0; jawY1 = 5.0; jawY2 = 5.0;
-  fieldAdjustmentLocked = false;
-  correctCaseAlignments = 0;
-  hasCurrentCaseAlignmentBeenCounted = false;
-  updateMachineParameterDisplays();
-  updateControlPanelDisplays();
-  updateConsoleDisplay();
-  updateCaseAlignmentCounterDisplay();
-  resetOverlayManipulations();
+.tab-content.active {
+  display: block;
 }
 
-/* -----------------------------
-   FIELD SIZE & MOTION BUTTONS (STUB)
-------------------------------*/
-function changeFieldSize(jaw, delta) {
-  const step = 0.5;
-  delta = Math.sign(delta) * step;
-  switch(jaw) {
-    case 'X1': jawX1 = Math.max(0.1, jawX1 + delta); break;
-    case 'X2': jawX2 = Math.max(0.1, jawX2 + delta); break;
-    case 'Y1': jawY1 = Math.max(0.1, jawY1 + delta); break;
-    case 'Y2': jawY2 = Math.max(0.1, jawY2 + delta); break;
-  }
-  updateMachineParameterDisplays();
-  updateControlPanelDisplays();
-  updateConsoleDisplay();
-  updateMLCLeaves();
+.treatment-field {
+  border: 1.2px solid #334a67;
+  padding: 5px 7px;
+  margin-bottom: 7px;
+  background-color: #24364a;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.14s;
+  box-shadow: 0 1.5px 6px #0017;
 }
-function changeCollimator(delta) {
-  collimatorAngle = (collimatorAngle + delta + 360) % 360;
-  updateMachineParameterDisplays();
-  updateControlPanelDisplays();
-  updateConsoleDisplay();
+.treatment-field:hover {
+  background-color: #2d4d72;
 }
-function changeGantry(delta) {
-  gantryAngle = (gantryAngle + delta + 360) % 360;
-  updateMachineParameterDisplays();
-  updateControlPanelDisplays();
-  updateConsoleDisplay();
+.treatment-field h5 {
+  margin: 0 0 3px 0;
+  color: #4bb1ff;
+  font-size: 1em;
 }
-function changeCouch(delta) {
-  couchAngle = (couchAngle + delta + 360) % 360;
-  updateMachineParameterDisplays();
-  updateControlPanelDisplays();
-  updateConsoleDisplay();
+.treatment-field p {
+  margin: 2px 0;
+  font-size: 0.92em;
+  color: #d1eaff;
 }
 
-/* -----------------------------
-   ENABLE/DISABLE PARAM BUTTONS (STUB)
-------------------------------*/
-function enableParameterSettingButtons(enable) {}
-function setFieldAdjustmentEnabled(enabled) {}
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+.modal-content {
+  background-color: #1f2c3d;
+  color: #fff;
+  margin: 13% auto;
+  padding: 17px 12px 16px 12px;
+  border: 1.5px solid #334a67;
+  width: 84%;
+  max-width: 300px;
+  border-radius: 9px;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 2px 16px #000b;
+}
+.close-button {
+  color: #aaa;
+  position: absolute;
+  top: 8px;
+  right: 13px;
+  font-size: 25px;
+  font-weight: bold;
+}
+.close-button:hover, .close-button:focus {
+  color: #e33f2e;
+  text-decoration: none;
+  cursor: pointer;
+}
+#cone-options-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 11px;
+}
+#cone-options-list li {
+  padding: 6px 10px;
+  border-bottom: 1px solid #334a67;
+  cursor: pointer;
+  background-color: #202a39;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  color: #bfe6ff;
+  transition: background 0.13s;
+}
+#cone-options-list li:hover {
+  background-color: #4bb1ff;
+  color: #fff;
+}
 
-/* -----------------------------
-   MODAL/CONES (STUB)
-------------------------------*/
-function openConeModal() {}
-function closeConeModal() {}
-function selectConeSize() {}
-
-/* -----------------------------
-   INIT & EVENT LISTENERS
-------------------------------*/
-document.addEventListener('DOMContentLoaded', function() {
-  if (generateCaseBtn) generateCaseBtn.onclick = generateAndDisplayPatientCase;
-  let btnSetMu = document.getElementById('btn-set-mu');
-  let btnEnergy = document.getElementById('energyToggleButton');
-  let btnPrepare = document.getElementById('btn-prepare');
-  let btnBeamOn = document.getElementById('btn-beam-on');
-  let btnBeamOff = document.getElementById('btn-beam-off');
-  let btnReset = document.getElementById('btn-reset');
-  let btnDoor = document.getElementById('btn-door-control');
-  if (btnSetMu) btnSetMu.onclick = handleSetMU;
-  if (btnEnergy) btnEnergy.onclick = cycleEnergy;
-  if (btnPrepare) btnPrepare.onclick = handlePrepare;
-  if (btnBeamOn) btnBeamOn.onclick = handleBeamOn;
-  if (btnBeamOff) btnBeamOff.onclick = handleBeamOff;
-  if (btnReset) btnReset.onclick = handleReset;
-  if (btnDoor) btnDoor.onclick = handleDoorControl;
-  if (opacitySlider) opacitySlider.addEventListener('input', handleOpacityChange);
-  document.getElementById('brightnessSlider') && document.getElementById('brightnessSlider').addEventListener('input', handleBrightnessChange);
-  document.getElementById('contrastSlider') && document.getElementById('contrastSlider').addEventListener('input', handleContrastChange);
-  createMLCLeaves();
-  updateMLCLeaves();
-  document.addEventListener('keydown', function(e) {
-    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
-    let step = 1, handled = false;
-    switch (e.key) {
-      case 'ArrowUp': moveOverlay(0, -step); handled = true; break;
-      case 'ArrowDown': moveOverlay(0, step); handled = true; break;
-      case 'ArrowLeft': moveOverlay(-step, 0); handled = true; break;
-      case 'ArrowRight': moveOverlay(step, 0); handled = true; break;
-      case '[': rotateOverlay(-ROTATION_STEP); handled = true; break;
-      case ']': rotateOverlay(ROTATION_STEP); handled = true; break;
-      case '-': if(e.ctrlKey || e.metaKey) { scaleOverlay(false); handled = true; } break;
-      case '=': if(e.ctrlKey || e.metaKey) { scaleOverlay(true); handled = true; } break;
-      case '+': if(e.ctrlKey || e.metaKey) { scaleOverlay(true); handled = true; } break;
-    }
-    if (handled) e.preventDefault();
-  });
-  updateCaseAlignmentCounterDisplay();
-  updateControlPanelDisplays();
-  updateMachineParameterDisplays();
-  updateConsoleDisplay();
-  updateStatusBar();
-  applyOverlayTransformsAndFilters();
-});
+/* Hide scrollbars for all panels */
+.panel::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
