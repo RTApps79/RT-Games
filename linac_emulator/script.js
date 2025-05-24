@@ -336,6 +336,87 @@ function updateCaseAlignmentCounterDisplay() {
 /* -----------------------------
    MLC VISUALIZER LOGIC (STUB)
 ------------------------------*/
+/** Create MLC leaves in the visualizer */
+function createMLCLeaves() {
+  const container = document.getElementById('fieldDisplayContainer');
+  if (!container) return;
+  Array.from(container.querySelectorAll('.mlc-leaf-pair')).forEach(e => e.remove());
+  const fieldHeight = container.offsetHeight || 135;
+  const leafHeight = fieldHeight / NUM_LEAF_PAIRS;
+  for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
+    const pairDiv = document.createElement('div');
+    pairDiv.className = 'mlc-leaf-pair';
+    pairDiv.style.position = 'absolute';
+    pairDiv.style.left = '0';
+    pairDiv.style.top = `${i * leafHeight}px`;
+    pairDiv.style.width = '100%';
+    pairDiv.style.height = `${leafHeight}px`;
+    pairDiv.style.pointerEvents = 'none';
+
+    // Left leaf
+    const leftLeaf = document.createElement('div');
+    leftLeaf.className = 'leaf-section inner left';
+    leftLeaf.id = `innerLeftLeaf_${i}`;
+    leftLeaf.style.position = 'absolute';
+    leftLeaf.style.top = '0';
+    leftLeaf.style.left = '0';
+    leftLeaf.style.height = '100%';
+
+    // Right leaf
+    const rightLeaf = document.createElement('div');
+    rightLeaf.className = 'leaf-section inner right';
+    rightLeaf.id = `innerRightLeaf_${i}`;
+    rightLeaf.style.position = 'absolute';
+    rightLeaf.style.top = '0';
+    rightLeaf.style.height = '100%';
+
+    pairDiv.appendChild(leftLeaf);
+    pairDiv.appendChild(rightLeaf);
+    container.appendChild(pairDiv);
+  }
+}
+function updateMLCLeaves() {
+  const container = document.getElementById('fieldDisplayContainer');
+  if (!container) return;
+  const fieldWidth = container.offsetWidth || 205;
+  const centerX = fieldWidth / 2;
+  for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
+    const leftPosCm = Math.min(jawX1, leftLeafPositions[i]);
+    const rightPosCm = Math.min(jawX2, rightLeafPositions[i]);
+    const leftLeafPx = centerX - leftPosCm * scaleFactor;
+    const rightLeafPx = centerX + rightPosCm * scaleFactor;
+    const leftLeaf = document.getElementById(`innerLeftLeaf_${i}`);
+    const rightLeaf = document.getElementById(`innerRightLeaf_${i}`);
+    if (leftLeaf) {
+      leftLeaf.style.left = '0px';
+      leftLeaf.style.width = `${leftLeafPx}px`;
+    }
+    if (rightLeaf) {
+      rightLeaf.style.left = `${rightLeafPx}px`;
+      rightLeaf.style.width = `${fieldWidth - rightLeafPx}px`;
+    }
+  }
+}
+document.addEventListener('DOMContentLoaded', function() {
+  createMLCLeaves();
+  updateMLCLeaves();
+  // ...rest of your DOMContentLoaded logic...
+});
+function updateFieldDisplay() {
+  const rect = document.getElementById('fieldDisplayRect');
+  if (!rect) return;
+  const leftPx = centerPx - (jawX1 * scaleFactor);
+  const rightPx = centerPx + (jawX2 * scaleFactor);
+  const topPx = centerPx - (jawY2 * scaleFactor);
+  const bottomPx = centerPx + (jawY1 * scaleFactor);
+  const widthPx = Math.max(0, rightPx - leftPx);
+  const heightPx = Math.max(0, bottomPx - topPx);
+  rect.style.width = `${widthPx}px`;
+  rect.style.height = `${heightPx}px`;
+  rect.style.left = `${leftPx}px`;
+  rect.style.top = `${topPx}px`;
+  updateMLCLeaves();
+}
 function updateFieldDisplay() {
   const rect = document.getElementById('fieldDisplayRect');
   if (!rect) return;
