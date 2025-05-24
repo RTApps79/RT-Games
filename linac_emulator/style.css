@@ -264,7 +264,21 @@ header {
   margin-top: 2px;
   color: #c3e4b5;
 }
-
+/* Local status bar in controls */
+.status-bar-local {
+  background: #0a2244;
+  color: #f3f6fa;
+  text-align: center;
+  padding: 6px 0 4px 0;
+  font-size: 1em;
+  margin-top: 9px;
+  border-radius: 6px;
+  box-shadow: 0 1px 10px #001a;
+  letter-spacing: 0.5px;
+  border: 1px solid #16406a;
+  width: 100%;
+  min-height: 1.1em;
+}
 /* Motion Controls */
 .motion-controls-row {
   display: flex;
@@ -552,20 +566,6 @@ header {
   color: #d1eaff;
 }
 
-.status-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background-color: #0a2244;
-  color: #f3f6fa;
-  text-align: center;
-  padding: 5px 0 3px 0;
-  font-size: 0.93em;
-  z-index: 50;
-  letter-spacing: 0.5px;
-  box-shadow: 0 -2px 10px #0018;
-}
 .modal {
   display: none;
   position: fixed;
