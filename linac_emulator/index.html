@@ -32,97 +32,70 @@
     </div>
   </div>
   <div class="main-panel">
+    <!-- QA & Interlocks + Status Bar across top -->
+    <div class="qa-status-bar">
+      <div class="qa-interlocks-panel horizontal">
+        <span class="interlock-status ok" id="interlock-door"><span class="interlock-dot" id="dot-door"></span>Door: <span id="doorStatus">Closed</span></span>
+        <span class="interlock-status ok" id="interlock-beam"><span class="interlock-dot" id="dot-beam"></span>Beam: <span id="beamStatus">Off</span></span>
+        <span class="interlock-status ok" id="interlock-override"><span class="interlock-dot" id="dot-override"></span>Override: <span id="overrideStatus">Inactive</span></span>
+        <span class="qa-checklist">
+          <label><input type="checkbox" disabled checked> Imaging</label>
+          <label><input type="checkbox" disabled> Field Verified</label>
+          <label><input type="checkbox" disabled> Rx Matched</label>
+        </span>
+      </div>
+      <div class="status-bar-local" id="local-status-bar">Emulator Ready. Generate a patient case.</div>
+    </div>
     <div class="monitors-row">
-      <!-- Left monitor: Machine Parameters + MLC Visualizer -->
+      <!-- Machine Parameters + MLC Visualizer -->
       <div class="monitor-screen monitor-parameters-mlc">
         <h2>Machine Parameters</h2>
         <div class="machine-param-box-group">
           <div class="machine-param-box"><span class="param-label">Beam</span><span id="mp-energy">6 MV</span></div>
           <div class="machine-param-box"><span class="param-label">Collimator</span><span id="mp-collimator">0°</span></div>
+        </div>
+        <div class="machine-param-box-group field-dims-group">
           <div class="machine-param-box"><span class="param-label">Gantry</span><span id="mp-gantry">0°</span></div>
           <div class="machine-param-box"><span class="param-label">Couch</span><span id="mp-couch">0°</span></div>
         </div>
-        <div class="machine-param-box-group field-dims-group">
+        <div class="machine-param-box-group jaws-group" style="margin-bottom:0.6em;">
           <div class="machine-param-box"><span class="param-label">X1</span><span id="jawX1">5.0</span></div>
           <div class="machine-param-box"><span class="param-label">X2</span><span id="jawX2">5.0</span></div>
           <div class="machine-param-box"><span class="param-label">Y1</span><span id="jawY1">5.0</span></div>
           <div class="machine-param-box"><span class="param-label">Y2</span><span id="jawY2">5.0</span></div>
         </div>
-        <hr class="dashed-hr"/>
-        <h2 style="margin-top:1.2em;">MLC Visualizer</h2>
-        <div id="mlc-section" class="section">
-          <div id="fieldDisplayContainer" style="margin-bottom: .7em;">
+        <div class="mlc-visualizer-block">
+          <h3>MLC Visualizer</h3>
+          <div id="fieldDisplayContainer">
             <div id="fieldDisplayRect"></div>
+            <!-- MLC leaves will be injected by JS -->
             <span class="field-label label-x1">X1</span>
             <span class="field-label label-x2">X2</span>
             <span class="field-label label-y1">Y1</span>
             <span class="field-label label-y2">Y2</span>
           </div>
-          <div class="mlc-controls">
-            <div class="mlc-preset-controls">
-              <button id="presetMatchJaw">Set Match</button>
-              <button id="presetSquare">Set Square</button>
-              <button id="presetOffset">Set Offset</button>
-              <button id="presetBlock">Set Block</button>
-              <button id="presetCshape">Set C-Shape</button>
-              <button id="presetDiagonal">Set Diagonal</button>
-              <button id="presetDiagRev">Set Rev Diag</button>
-              <button id="presetDiagShallow">Set Shallow</button>
-              <button id="animateSquareRandBtn">Animate Square (Rand.)</button>
-              <button id="animateOffsetRandBtn">Animate Offset (Rand.)</button>
-              <button id="animateDiagonalRandBtn">Animate Diagonal (Rand.)</button>
-              <button id="slidingWindowBtn">Sliding Window Demo</button>
-              <button id="imrtDemoBtn">IMRT Demo</button>
-            </div>
-          </div>
         </div>
       </div>
-      <!-- Right monitor: Image Alignment + enhancements + QA/Interlocks -->
+      <!-- Image Alignment -->
       <div class="monitor-screen monitor-alignment">
         <h2>Image Alignment</h2>
-        <div class="overlay-container">
-          <img src="https://via.placeholder.com/400x300.png?text=Base+(Load+Case)" class="base-image" id="baseImage" alt="Base Patient Anatomy">
-          <img src="https://via.placeholder.com/400x300.png?text=Overlay+(Load+Case)" id="overlayImage" class="overlay-image" alt="Overlay Reference Image">
+        <div class="overlay-container focal">
+          <img src="https://via.placeholder.com/400x320.png?text=Base+(Load+Case)" class="base-image" id="baseImage" alt="Base Patient Anatomy">
+          <img src="https://via.placeholder.com/400x320.png?text=Overlay+(Load+Case)" id="overlayImage" class="overlay-image" alt="Overlay Reference Image">
         </div>
-        <div class="image-controls">
-          <div class="control-group">
-            <label>Couch Shift:</label>
-            <button onclick="moveOverlay(0,-1)" title="Move Up (ArrowUp)">↑</button>
-            <button onclick="moveOverlay(-1,0)" title="Move Left (ArrowLeft)">←</button>
-            <button onclick="moveOverlay(1,0)" title="Move Right (ArrowRight)">→</button>
-            <button onclick="moveOverlay(0,1)" title="Move Down (ArrowDown)">↓</button>
-          </div>
-          <div class="control-group">
-            <label>Rotate:</label>
-            <button onclick="rotateOverlay(-ROTATION_STEP)" title="Rotate Left ([)">↺</button>
-            <span id="rotationDisplay">0°</span>
-            <button onclick="rotateOverlay(ROTATION_STEP)" title="Rotate Right (])">↻</button>
-          </div>
-          <div class="control-group">
-            <label>Zoom:</label>
-            <button onclick="scaleOverlay(false)" title="Zoom Out (Ctrl/Cmd -)">-</button>
-            <span id="scaleDisplay">1.00x</span>
-            <button onclick="scaleOverlay(true)" title="Zoom In (Ctrl/Cmd +)">+</button>
-          </div>
-          <div class="control-group">
-            <label for="opacitySlider">Opacity:</label>
-            <input type="range" id="opacitySlider" min="0" max="100" value="50" />
-            <span id="opacityValue">50%</span>
-          </div>
-          <div class="control-group">
-            <label for="brightnessSlider">Level (Sim.):</label>
-            <input type="range" id="brightnessSlider" min="0" max="200" value="100" />
-            <span id="brightnessValue">100</span>
-          </div>
-          <div class="control-group">
-            <label for="contrastSlider">Contrast (Sim.):</label>
-            <input type="range" id="contrastSlider" min="0" max="200" value="100" />
-            <span id="contrastValue">100</span>
-          </div>
-          <div class="control-group" style="margin-top: 15px;">
-            <button onclick="resetOverlayManipulations()">Reset View</button>
-            <button onclick="checkAlignment()" id="checkAlignBtn">Check Alignment</button>
-          </div>
+        <div class="compact-image-controls">
+          <button onclick="moveOverlay(0,-1)" title="Up">↑</button>
+          <button onclick="moveOverlay(-1,0)" title="Left">←</button>
+          <button onclick="moveOverlay(1,0)" title="Right">→</button>
+          <button onclick="moveOverlay(0,1)" title="Down">↓</button>
+          <button onclick="rotateOverlay(-ROTATION_STEP)" title="Rotate Left">↺</button>
+          <span id="rotationDisplay" class="mini-label">0°</span>
+          <button onclick="rotateOverlay(ROTATION_STEP)" title="Rotate Right">↻</button>
+          <button onclick="scaleOverlay(false)" title="Zoom Out">-</button>
+          <span id="scaleDisplay" class="mini-label">1.00x</span>
+          <button onclick="scaleOverlay(true)" title="Zoom In">+</button>
+          <input type="range" id="opacitySlider" min="0" max="100" value="50" style="width:70px;vertical-align:middle;" title="Opacity"/>
+          <span id="opacityValue" class="mini-label">50%</span>
         </div>
         <div class="motion-readout">
           <strong>Couch Shift:</strong>
@@ -136,22 +109,9 @@
         <p id="alignmentMessage" style="text-align: center;"></p>
         <p id="shiftFeedback" style="color: orange; min-height: 1em; text-align: center;"></p>
         <p id="alignmentCounterDisplay" style="text-align: center; font-weight: bold; margin-top: 5px;">Correct Case Alignments: 0</p>
-        <div class="qa-interlocks-panel">
-          <h3>QA &amp; Interlocks</h3>
-          <div>
-            <span class="interlock-status ok" id="interlock-door"><span class="interlock-dot" id="dot-door"></span>Door: <span id="doorStatus">Closed</span></span>
-            <span class="interlock-status ok" id="interlock-beam"><span class="interlock-dot" id="dot-beam"></span>Beam: <span id="beamStatus">Off</span></span>
-            <span class="interlock-status ok" id="interlock-override"><span class="interlock-dot" id="dot-override"></span>Override: <span id="overrideStatus">Inactive</span></span>
-          </div>
-          <div class="qa-checklist">
-            <label><input type="checkbox" disabled checked> Imaging Complete</label>
-            <label><input type="checkbox" disabled> Field Verified</label>
-            <label><input type="checkbox" disabled> Prescription Matched</label>
-          </div>
-        </div>
       </div>
     </div>
-    <!-- Console controls and status bar below -->
+    <!-- Console controls below -->
     <div class="console-panel-group">
       <div class="console-buttons">
         <button id="energyToggleButton" class="console-button">Set Energy</button>
@@ -170,7 +130,6 @@
         <div id="console-status">Status: Idle</div>
         <div id="console-reading">Delivered MU: 000 | Dose Rate: ---</div>
       </div>
-      <div id="local-status-bar" class="status-bar-local">Emulator Ready. Generate a patient case.</div>
     </div>
   </div>
 </div>
