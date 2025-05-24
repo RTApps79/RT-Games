@@ -1,0 +1,413 @@
+/* ============================
+   LINAC Console Emulator Styles
+   ============================ */
+
+/* ---- Layout & Structure ---- */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f2f2f2;
+}
+header {
+  background: #003366;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  font-size: 1.5rem;
+}
+.container {
+  display: flex;
+  height: calc(100vh - 60px); /* Adjusted for status bar */
+}
+.panel {
+  padding: 1rem;
+  overflow-y: auto;
+}
+.emr-panel {
+  width: 25%;
+  background: #e6f0ff;
+  border-right: 1px solid #ccc;
+}
+.control-panel {
+  width: 55%;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #ccc;
+}
+.image-panel {
+  width: 20%;
+  background: #e6f0ff;
+}
+
+/* ---- Sections ---- */
+.section {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+.section h3 {
+  margin-top: 0;
+}
+.section h4 {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  color: #003366;
+}
+label {
+  display: block;
+  margin-top: 0.5rem;
+}
+input, select {
+  width: 100%;
+  padding: 0.3rem;
+  margin-bottom: 0.5rem;
+  box-sizing: border-box;
+}
+
+/* ---- Console Area ---- */
+.console-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 15px;
+}
+.console-button {
+  padding: 10px 5px;
+  font-size: 0.9em;
+  background-color: #6c757d;
+  color: white;
+  border: 1px outset #999;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.2s;
+}
+.console-button:hover {
+  background-color: #5a6268;
+}
+.console-button:active {
+  border-style: inset;
+}
+.console-button.beam-on {
+  background-color: #ffc107;
+  color: #333;
+}
+.console-button.beam-on:hover {
+  background-color: #e0a800;
+}
+.console-button.beam-active {
+  background-color: #dc3545;
+  color: white;
+}
+.console-button.beam-off {
+  background-color: #dc3545;
+}
+.console-button.beam-off:hover {
+  background-color: #c82333;
+}
+.console-button.door-control.open {
+  background-color: #fd7e14;
+}
+.console-button.door-control.open:hover {
+  background-color: #e66a0a;
+}
+.console-button.disabled {
+  background-color: #aaa;
+  color: #eee;
+  cursor: not-allowed;
+  border-style: inset;
+}
+
+/* ---- Console Display ---- */
+#console-display {
+  margin-top: 15px;
+  border: 1px solid #ccc;
+  padding: 5px;
+  background: #eee;
+}
+#console-parameters {
+  font-size: 0.9em;
+  color: #114;
+  margin-bottom: 5px;
+  white-space: pre;
+  font-family: monospace;
+}
+#console-status {
+  font-size: 0.9em;
+  color: #333;
+  font-weight: bold;
+  min-height: 1.2em;
+}
+#console-status.interlock {
+  color: #fff;
+  background-color: #dc3545;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+#console-reading {
+  font-size: 1.1em;
+  text-align: right;
+  white-space: pre;
+  font-family: monospace;
+  margin-top: 5px;
+}
+
+/* ---- Motion Controls ---- */
+.motion-controls-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.gantry-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 5px 0;
+}
+.gantry-display,
+.collimator-display,
+.couch-display,
+.field-size-display {
+  font-weight: bold;
+  min-width: 60px;
+  text-align: center;
+  font-family: monospace;
+}
+
+/* ---- Field Size Controls ---- */
+.field-size-controls {
+  gap: 10px;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+}
+.field-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 15px;
+}
+.field-control-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.field-control-group label {
+  min-width: 30px;
+  font-weight: bold;
+}
+.field-control-group button {
+  padding: 1px 6px;
+  font-size: 1em;
+  line-height: 1;
+}
+
+/* ---- Field Visualizer ---- */
+#fieldDisplayContainer {
+  width: 150px;
+  height: 150px;
+  border: 1px solid #ccc;
+  position: relative;
+  margin: 10px auto;
+  background-color: #e0e0e0;
+  overflow: hidden;
+}
+#fieldDisplayContainer::before,
+#fieldDisplayContainer::after {
+  content: '';
+  position: absolute;
+  background-color: #999;
+}
+#fieldDisplayContainer::before {
+  width: 1px;
+  height: 100%;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+#fieldDisplayContainer::after {
+  width: 100%;
+  height: 1px;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+}
+#fieldDisplayRect {
+  position: absolute;
+  background-color: rgba(255, 255, 0, 0.5);
+  border: 1px solid #cc0;
+}
+
+/* ---- Image Alignment ---- */
+.overlay-container {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  background: black;
+  overflow: hidden;
+  border: 1px solid #555;
+}
+.overlay-container img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: black;
+  left: 0;
+  top: 0;
+}
+#overlayImage {
+  opacity: 0.5;
+}
+.image-controls {
+  margin-top: 5px;
+  text-align: center;
+}
+.image-controls button {
+  padding: 3px 8px;
+  margin: 2px;
+  font-size: 0.8rem;
+}
+
+/* Opacity Slider */
+.opacity-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  gap: 5px;
+}
+.opacity-control label {
+  margin: 0;
+  font-size: 0.8em;
+}
+.opacity-control input[type="range"] {
+  width: 100px;
+  height: 5px;
+  cursor: pointer;
+  margin: 0;
+}
+.opacity-control span {
+  font-size: 0.8em;
+  min-width: 30px;
+  text-align: right;
+}
+
+/* ---- EMR Tabs ---- */
+.emr-tabs .tab-button {
+  padding: 5px;
+  background: #ccc;
+  margin: 2px;
+  border: none;
+  cursor: pointer;
+}
+.emr-tabs .tab-button.active {
+  background: #4CAF50;
+  color: white;
+}
+.tab-content {
+  display: none;
+  padding-top: 10px;
+}
+.tab-content.active {
+  display: block;
+}
+
+/* Treatment Fields */
+.treatment-field {
+  border: 1px solid #ddd;
+  padding: 8px;
+  margin-bottom: 8px;
+  background-color: #f0f8ff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.treatment-field:hover {
+  background-color: #d6eaff;
+}
+.treatment-field h5 {
+  margin: 0 0 5px 0;
+  color: #003366;
+}
+.treatment-field p {
+  margin: 2px 0;
+  font-size: 0.9em;
+}
+
+/* ---- Status Bar ---- */
+.status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #003366;
+  color: white;
+  text-align: center;
+  padding: 5px 0;
+  font-size: 0.9em;
+  z-index: 50;
+}
+
+/* ---- Modal Styling ---- */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 100;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 300px;
+  border-radius: 8px;
+  position: relative;
+  text-align: center;
+}
+.close-button {
+  color: #aaa;
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 28px;
+  font-weight: bold;
+}
+.close-button:hover, .close-button:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+#cone-options-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 15px;
+}
+#cone-options-list li {
+  padding: 8px 12px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  background-color: #f9f9f9;
+  margin-bottom: 5px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+#cone-options-list li:hover {
+  background-color: #e6f0ff;
+}
