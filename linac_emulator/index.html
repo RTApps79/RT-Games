@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>LINAC Console Emulator with Realistic Case & Image Alignment</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <header>LINAC Control Console Emulator</header>
 <div class="container">
-
   <div class="panel emr-panel">
     <h3>Patient EMR</h3>
     <div class="emr-tabs">
@@ -104,74 +106,73 @@
       </div>
     </div>
 
-    <div class="section">
-       <h3>Image Guided Alignment</h3>
+    <!-- DUAL MONITORS: Machine Parameters + Image Alignment -->
+    <div class="monitors-row">
+      <div class="monitor-screen monitor-parameters">
+        <h2>Machine Parameters</h2>
+        <div class="section">
+          <p><strong>Beam Energy:</strong> <span id="mp-energy">6 MV</span></p>
+          <p><strong>Collimator Angle:</strong> <span id="mp-collimator">0°</span></p>
+          <p><strong>Gantry Angle:</strong> <span id="mp-gantry">0°</span></p>
+          <p><strong>Couch Angle:</strong> <span id="mp-couch">0°</span></p>
+        </div>
+        <div class="section">
+          <h4>Field Dimensions</h4>
+          <p>X1: <span id="jawX1">5.0</span> cm | X2: <span id="jawX2">5.0</span> cm</p>
+          <p>Y1: <span id="jawY1">5.0</span> cm | Y2: <span id="jawY2">5.0</span> cm</p>
+        </div>
+        <div class="section" id="mlc-section">
+          <h4>MLC Visualizer</h4>
+          <!-- Interactive MLC Visualizer -->
+          <div id="fieldDisplayContainer" style="margin-bottom: 0.7em;">
+            <div id="fieldDisplayRect"></div>
+            <span class="field-label label-x1">X1</span> <span class="field-label label-x2">X2</span>
+            <span class="field-label label-y1">Y1</span> <span class="field-label label-y2">Y2</span>
+          </div>
+          <div class="mlc-controls">
+            <div class="mlc-preset-controls">
+              <button id="presetMatchJaw">Set Match</button>
+              <button id="presetSquare">Set Square</button>
+              <button id="presetOffset">Set Offset</button>
+              <button id="presetBlock">Set Block</button>
+              <button id="presetCshape">Set C-Shape</button>
+              <button id="presetDiagonal">Set Diagonal</button>
+              <button id="presetDiagRev">Set Rev Diag</button>
+              <button id="presetDiagShallow">Set Shallow</button>
+              <button id="animateSquareRandBtn">Animate Square (Rand.)</button>
+              <button id="animateOffsetRandBtn">Animate Offset (Rand.)</button>
+              <button id="animateDiagonalRandBtn">Animate Diagonal (Rand.)</button>
+              <button id="slidingWindowBtn">Sliding Window Demo</button>
+              <button id="imrtDemoBtn">IMRT Demo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="monitor-screen monitor-alignment">
+        <h2>Image Alignment</h2>
         <div class="overlay-container">
-            <img src="https://via.placeholder.com/400x300.png?text=Base+(Load+Case)" class="base-image" id="baseImage" alt="Base Patient Anatomy">
-            <img src="https://via.placeholder.com/400x300.png?text=Overlay+(Load+Case)" id="overlayImage" class="overlay-image" alt="Overlay Reference Image">
+          <img src="https://via.placeholder.com/400x300.png?text=Base+(Load+Case)" class="base-image" id="baseImage" alt="Base Patient Anatomy">
+          <img src="https://via.placeholder.com/400x300.png?text=Overlay+(Load+Case)" id="overlayImage" class="overlay-image" alt="Overlay Reference Image">
         </div>
-         <div class="opacity-control">
-             <label for="opacitySlider">Overlay Opacity:</label>
-             <input type="range" id="opacitySlider" min="0" max="100" value="50">
-             <span id="opacityValue">50%</span>
-         </div>
+        <div class="opacity-control">
+          <label for="opacitySlider">Overlay Opacity:</label>
+          <input type="range" id="opacitySlider" min="0" max="100" value="50">
+          <span id="opacityValue">50%</span>
+        </div>
         <div class="image-controls">
-            <button onclick="moveOverlay(0,-1)">↑</button>
-            <button onclick="moveOverlay(-1,0)">←</button>
-            <button onclick="moveOverlay(1,0)">→</button>
-            <button onclick="moveOverlay(0,1)">↓</button>
-            <button onclick="checkAlignment()" id="checkAlignBtn">Check Alignment</button>
+          <button onclick="moveOverlay(0,-1)">↑</button>
+          <button onclick="moveOverlay(-1,0)">←</button>
+          <button onclick="moveOverlay(1,0)">→</button>
+          <button onclick="moveOverlay(0,1)">↓</button>
+          <button onclick="checkAlignment()" id="checkAlignBtn">Check Alignment</button>
         </div>
-       <p id="alignmentMessage" style="text-align: center;"></p>
-       <p id="shiftFeedback" style="color: orange; min-height: 1em; text-align: center;"></p>
-       <p id="alignmentCounterDisplay" style="text-align: center; font-weight: bold; margin-top: 5px;">Correct Case Alignments: 0</p>
+        <p id="alignmentMessage" style="text-align: center;"></p>
+        <p id="shiftFeedback" style="color: orange; min-height: 1em; text-align: center;"></p>
+        <p id="alignmentCounterDisplay" style="text-align: center; font-weight: bold; margin-top: 5px;">Correct Case Alignments: 0</p>
+      </div>
     </div>
   </div>
-
-  <div class="panel image-panel">
-    <h3>Machine Parameters</h3>
-    <div class="section">
-      <p><strong>Beam Energy:</strong> <span id="mp-energy">6 MV</span></p>
-      <p><strong>Collimator Angle:</strong> <span id="mp-collimator">0°</span></p>
-      <p><strong>Gantry Angle:</strong> <span id="mp-gantry">0°</span></p>
-      <p><strong>Couch Angle:</strong> <span id="mp-couch">0°</span></p>
-    </div>
-    <div class="section">
-      <h4>Field Dimensions</h4>
-      <p>X1: <span id="jawX1">5.0</span> cm | X2: <span id="jawX2">5.0</span> cm</p>
-      <p>Y1: <span id="jawY1">5.0</span> cm | Y2: <span id="jawY2">5.0</span> cm</p>
-    </div>
-     <div class="section">
-         <h4>Field Visual</h4>
-         <div id="fieldDisplayContainer">
-           <div id="fieldDisplayRect"></div> </div>
-     </div>
-     <div class="section" id="mlc-section">
-       <h4>MLC Leaves</h4>
-       <!-- Interactive MLC Visualizer -->
-  <div id="fieldDisplayContainer" style="margin-bottom: 0.7em;">
-    <div id="fieldDisplayRect"></div>
-    <span class="field-label label-x1">X1</span> <span class="field-label label-x2">X2</span>
-    <span class="field-label label-y1">Y1</span> <span class="field-label label-y2">Y2</span>
-  </div>
-  <div class="mlc-controls">
-    <div class="mlc-preset-controls">
-      <button id="presetMatchJaw">Set Match</button>
-      <button id="presetSquare">Set Square</button>
-      <button id="presetOffset">Set Offset</button>
-      <button id="presetBlock">Set Block</button>
-      <button id="presetCshape">Set C-Shape</button>
-      <button id="presetDiagonal">Set Diagonal</button>
-      <button id="presetDiagRev">Set Rev Diag</button>
-      <button id="presetDiagShallow">Set Shallow</button>
-      <button id="animateSquareRandBtn">Animate Square (Rand.)</button>
-      <button id="animateOffsetRandBtn">Animate Offset (Rand.)</button>
-      <button id="animateDiagonalRandBtn">Animate Diagonal (Rand.)</button>
-      <button id="slidingWindowBtn">Sliding Window Demo</button>
-      <button id="imrtDemoBtn">IMRT Demo</button>
-    </div>
-  </div>
-
+</div>
 <div id="cone-modal" class="modal">
     <div class="modal-content">
         <span class="close-button" onclick="closeConeModal()">&times;</span>
