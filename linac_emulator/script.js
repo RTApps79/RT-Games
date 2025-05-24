@@ -1,7 +1,8 @@
 // ===========================
-// LINAC Console Emulator Logic (with QA, MLC, Realistic Case & Image Alignment)
+// LINAC Console Emulator Logic (Full Functionality)
 // ===========================
 
+/* --- Global Constants and Variables --- */
 const energyOptions = ['6 MV', '10 MV', '15 MV', '18 MV', '6 MeV', '9 MeV', '12 MeV', '15 MeV', '18 MeV'];
 let currentEnergyIndex = 0;
 let selectedEnergy = energyOptions[0];
@@ -11,7 +12,6 @@ let isBeaming = false;
 let isDoorOpen = false;
 let deliveredMU = 0;
 let setMU = 0;
-let beamTimeoutId = null;
 let gantryAngle = 0;
 let collimatorAngle = 0;
 let couchAngle = 0;
@@ -24,7 +24,19 @@ let overlayOffsetX = 0, overlayOffsetY = 0, initialOverlayShiftX = 0, initialOve
 const alignmentTolerance = 2;
 let correctCaseAlignments = 0;
 let hasCurrentCaseAlignmentBeenCounted = false;
+
+let overrideActive = false;
+
 const defaultImageUrl = "https://via.placeholder.com/400x300.png?text=Load+Case";
+
+/* --- MLC Visualizer --- */
+const NUM_LEAF_PAIRS = 5;
+let leftLeafPositions = Array(NUM_LEAF_PAIRS).fill(jawX1);
+let rightLeafPositions = Array(NUM_LEAF_PAIRS).fill(jawX2);
+const fieldDisplayContainerSize = 205;
+const centerPx = fieldDisplayContainerSize / 2.0;
+const maxFieldCoordinate = 20.0;
+const scaleFactor = (fieldDisplayContainerSize / 2.0) / maxFieldCoordinate;
 
 /* --- Overlay Manipulation --- */
 let overlayOpacity = 0.5;
@@ -37,31 +49,6 @@ const SCALE_STEP_MULTIPLIER = 1.1;
 const MIN_SCALE = 0.2;
 const MAX_SCALE = 5.0;
 
-/* --- MLC Visualizer --- */
-const NUM_LEAF_PAIRS = 5;
-let leftLeafPositions = Array(NUM_LEAF_PAIRS).fill(jawX1);
-let rightLeafPositions = Array(NUM_LEAF_PAIRS).fill(jawX2);
-const fieldDisplayContainerSize = 205;
-const centerPx = fieldDisplayContainerSize / 2.0;
-const maxFieldCoordinate = 20.0;
-const scaleFactor = (fieldDisplayContainerSize / 2.0) / maxFieldCoordinate;
-
-/* --- QA / Interlocks --- */
-let overrideActive = false;
-
-/* --- DOM ELEMENTS --- */
-const baseImageElement = document.getElementById('baseImage');
-const overlayImageElement = document.getElementById('overlayImage');
-const opacitySlider = document.getElementById('opacitySlider');
-const opacityValueDisplay = document.getElementById('opacityValue');
-const alignmentMessage = document.getElementById('alignmentMessage');
-const shiftFeedback = document.getElementById('shiftFeedback');
-const alignmentCounterDisplay = document.getElementById('alignmentCounterDisplay');
-const statusBar = document.getElementById('status-bar') || document.getElementById('local-status-bar');
-const treatmentTabContent = document.getElementById('treatment');
-const generateCaseBtn = document.getElementById('generateCaseBtn');
-
-/* --- Data for Case Generation --- */
 const msccImageUrls = [
   "https://dizziness-and-balance.com/disorders/central/images/cervical-MRI.jpg",
   "https://www.wikidoc.org/images/7/7e/CT_spine.gif.gif",
@@ -108,9 +95,7 @@ const svcsData = {
   imageUrls: svcsImageUrls
 };
 
-/* -----------------------------
-   UTILITY FUNCTIONS
-------------------------------*/
+/* ----- Utility Functions ----- */
 function getRandomInt(min, max) {
   min = Math.ceil(min); max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -125,9 +110,7 @@ function getRandomElement(arr) {
   return arr[getRandomInt(0, arr.length - 1)];
 }
 
-/* -----------------------------
-   EMR TAB LOGIC
-------------------------------*/
+/* ----- EMR Tab Logic ----- */
 function showTab(tabId) {
   document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
   document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -137,9 +120,7 @@ function showTab(tabId) {
   if(button) button.classList.add('active');
 }
 
-/* -----------------------------
-   MACHINE PARAMETER & DISPLAY LOGIC
-------------------------------*/
+/* ----- Machine Parameter/Display Logic ----- */
 function updateMachineParameterDisplays() {
   document.getElementById('mp-energy').textContent = selectedEnergy || '---';
   document.getElementById('mp-collimator').textContent = collimatorAngle + '°';
@@ -192,9 +173,7 @@ function updateStatusBar() {
   if (statusBar) statusBar.style.backgroundColor = isDoorOpen ? "#dc3545" : "#003366";
 }
 
-/* -----------------------------
-   QA & INTERLOCK PANEL LOGIC
-------------------------------*/
+/* ----- QA & Interlocks Panel Logic ----- */
 function updateInterlocksPanel() {
   const doorStat = isDoorOpen ? "Open" : "Closed";
   document.getElementById('doorStatus').textContent = doorStat;
@@ -207,9 +186,7 @@ function updateInterlocksPanel() {
   document.getElementById('interlock-override').className = "interlock-status " + (overrideActive ? "danger" : "ok");
 }
 
-/* -----------------------------
-   IMAGE ALIGNMENT LOGIC
-------------------------------*/
+/* ----- Image Alignment Logic ----- */
 function moveOverlay(dx, dy) {
   overlayOffsetX += dx;
   overlayOffsetY += dy;
@@ -296,7 +273,7 @@ function updateCaseAlignmentCounterDisplay() {
   if(alignmentCounterDisplay) alignmentCounterDisplay.textContent = `Correct Case Alignments: ${correctCaseAlignments}`;
 }
 
-/* --- MLC LEAF CREATION AND UPDATE --- */
+/* ----- MLC Visualizer: Leaves ----- */
 function createMLCLeaves() {
   const container = document.getElementById('fieldDisplayContainer');
   if (!container) return;
@@ -373,29 +350,19 @@ function updateFieldDisplay() {
   updateMLCLeaves();
 }
 
-/* -----------------------------
-   PATIENT/PLAN & FIELD LOGIC
-------------------------------*/
+/* ----- Patient/Plan/Field Logic ----- */
 function generateAndDisplayPatientCase() {
-  // Randomly pick case type: MSCC or SVCS
   const isMSCC = Math.random() < 0.5;
   const data = isMSCC ? msccData : svcsData;
-
-  // Generate random demographics
   const names = ["Alex Lee", "Jordan Smith", "Morgan Chen", "Taylor Patel", "Casey Kim"];
   const dob = `${getRandomInt(1950, 2005)}-${getRandomInt(1,12).toString().padStart(2,'0')}-${getRandomInt(1,28).toString().padStart(2,'0')}`;
   const diagnosis = getRandomElement(data.primaries);
   const patientName = getRandomElement(names);
-
-  // Random lab values
   const creat = getRandomFloat(0.6, 2.2, 1);
   const wbc = getRandomFloat(3.2, 13.7, 1);
-
-  // Prescription and plan
   const prescription = getRandomElement(data.prescriptions);
   const imageUrl = getRandomElement(data.imageUrls);
 
-  // Fields (for SVCS: AP & PA; for MSCC: Post Spine)
   let fields = [];
   if (isMSCC) {
     const fs = data.fieldSetups[0];
@@ -424,7 +391,6 @@ function generateAndDisplayPatientCase() {
     });
   }
 
-  // Save plan
   currentLoadedPlan = {
     patientType: data.patientType,
     patientName,
@@ -434,9 +400,8 @@ function generateAndDisplayPatientCase() {
     imageUrl,
     fields
   };
-  loadedFieldIndex = 0; // default to first field
+  loadedFieldIndex = 0;
 
-  // Populate EMR
   document.getElementById('patientName').textContent = patientName;
   document.getElementById('patientDOB').textContent = dob;
   document.getElementById('patientDiagnosis').textContent = diagnosis;
@@ -444,7 +409,6 @@ function generateAndDisplayPatientCase() {
   document.getElementById('labCreat').textContent = creat;
   document.getElementById('labWBC').textContent = wbc;
 
-  // Treatment tab
   let planHtml = `<strong>Diagnosis:</strong> ${diagnosis} <br>
     <strong>Rx:</strong> ${prescription.text} (${prescription.energy}, ${prescription.technique})<br>
     <strong>Fields:</strong> <ul>`;
@@ -454,11 +418,9 @@ function generateAndDisplayPatientCase() {
   planHtml += `</ul>`;
   document.getElementById('treatment').innerHTML = planHtml;
 
-  // Images
   baseImageElement.src = imageUrl;
   overlayImageElement.src = imageUrl;
 
-  // Reset overlay alignment state
   overlayOffsetX = 0; overlayOffsetY = 0; overlayRotationAngle = 0; overlayScale = 1.0;
   initialOverlayShiftX = 0; initialOverlayShiftY = 0;
   hasCurrentCaseAlignmentBeenCounted = false;
@@ -466,10 +428,8 @@ function generateAndDisplayPatientCase() {
   updateShiftFeedback();
   updateCaseAlignmentCounterDisplay();
 
-  // Load first field to console
   loadFieldToConsole(0);
 }
-
 function loadFieldToConsole(index) {
   if (!currentLoadedPlan || !currentLoadedPlan.fields || !currentLoadedPlan.fields[index]) return;
   const f = currentLoadedPlan.fields[index];
@@ -488,9 +448,7 @@ function loadFieldToConsole(index) {
   updateFieldDisplay();
 }
 
-/* -----------------------------
-   CONTROL PANEL BUTTON LOGIC
-------------------------------*/
+/* ----- Control Panel Button Logic ----- */
 function handleSetMU() {
   setMU = getRandomInt(50, 300);
   updateConsoleDisplay();
@@ -538,9 +496,7 @@ function handleReset() {
   resetOverlayManipulations();
 }
 
-/* -----------------------------
-   INIT & EVENT LISTENERS
-------------------------------*/
+/* ----- Initialization ----- */
 document.addEventListener('DOMContentLoaded', function() {
   if (generateCaseBtn) generateCaseBtn.onclick = generateAndDisplayPatientCase;
   let btnSetMu = document.getElementById('btn-set-mu');
