@@ -1,5 +1,5 @@
 // ===========================
-// LINAC Console Emulator Logic (with MLC Visualizer)
+// LINAC Console Emulator Logic (with QA, MLC, Realistic Case & Image Alignment)
 // ===========================
 
 /* -----------------------------
@@ -11,7 +11,7 @@ let selectedEnergy = energyOptions[0];
 
 let isPrepared = false;
 let isBeaming = false;
-let isDoorOpen = true;
+let isDoorOpen = false;
 let deliveredMU = 0;
 let setMU = 0;
 let beamTimeoutId = null;
@@ -23,12 +23,22 @@ let fieldAdjustmentLocked = false;
 let currentLoadedPlan = null;
 let loadedFieldIndex = -1;
 
-/* --- Image alignment --- */
 let overlayOffsetX = 0, overlayOffsetY = 0, initialOverlayShiftX = 0, initialOverlayShiftY = 0;
 const alignmentTolerance = 2;
 let correctCaseAlignments = 0;
 let hasCurrentCaseAlignmentBeenCounted = false;
 const defaultImageUrl = "https://via.placeholder.com/400x300.png?text=Load+Case";
+
+/* --- Overlay Manipulation --- */
+let overlayOpacity = 0.5;
+let overlayRotationAngle = 0;
+let overlayScale = 1.0;
+let overlayBrightness = 100;
+let overlayContrast = 100;
+const ROTATION_STEP = 1;
+const SCALE_STEP_MULTIPLIER = 1.1;
+const MIN_SCALE = 0.2;
+const MAX_SCALE = 5.0;
 
 /* --- MLC Visualizer --- */
 const NUM_LEAF_PAIRS = 5;
@@ -39,6 +49,9 @@ const centerPx = fieldDisplayContainerSize / 2.0;
 const maxFieldCoordinate = 20.0;
 const scaleFactor = (fieldDisplayContainerSize / 2.0) / maxFieldCoordinate;
 
+/* --- QA / Interlocks --- */
+let overrideActive = false;
+
 /* --- DOM ELEMENTS --- */
 const baseImageElement = document.getElementById('baseImage');
 const overlayImageElement = document.getElementById('overlayImage');
@@ -47,7 +60,7 @@ const opacityValueDisplay = document.getElementById('opacityValue');
 const alignmentMessage = document.getElementById('alignmentMessage');
 const shiftFeedback = document.getElementById('shiftFeedback');
 const alignmentCounterDisplay = document.getElementById('alignmentCounterDisplay');
-const statusBar = document.getElementById('status-bar');
+const statusBar = document.getElementById('status-bar') || document.getElementById('local-status-bar');
 const treatmentTabContent = document.getElementById('treatment');
 const generateCaseBtn = document.getElementById('generateCaseBtn');
 
@@ -142,14 +155,22 @@ function updateMachineParameterDisplays() {
   updateFieldDisplay();
 }
 function updateControlPanelDisplays() {
-  document.getElementById('currentEnergyDisplay').textContent = selectedEnergy || '---';
-  document.getElementById('collimatorDisplay').textContent = 'Collimator ' + collimatorAngle + '°';
-  document.getElementById('gantryDisplay').textContent = 'Gantry ' + gantryAngle + '°';
-  document.getElementById('couchDisplay').textContent = 'Couch ' + couchAngle + '°';
-  document.getElementById('control-jawX1').textContent = jawX1.toFixed(1);
-  document.getElementById('control-jawX2').textContent = jawX2.toFixed(1);
-  document.getElementById('control-jawY1').textContent = jawY1.toFixed(1);
-  document.getElementById('control-jawY2').textContent = jawY2.toFixed(1);
+  const ce = document.getElementById('currentEnergyDisplay');
+  if (ce) ce.textContent = selectedEnergy || '---';
+  const cd = document.getElementById('collimatorDisplay');
+  if (cd) cd.textContent = 'Collimator ' + collimatorAngle + '°';
+  const gd = document.getElementById('gantryDisplay');
+  if (gd) gd.textContent = 'Gantry ' + gantryAngle + '°';
+  const cch = document.getElementById('couchDisplay');
+  if (cch) cch.textContent = 'Couch ' + couchAngle + '°';
+  const cx1 = document.getElementById('control-jawX1');
+  if (cx1) cx1.textContent = jawX1.toFixed(1);
+  const cx2 = document.getElementById('control-jawX2');
+  if (cx2) cx2.textContent = jawX2.toFixed(1);
+  const cy1 = document.getElementById('control-jawY1');
+  if (cy1) cy1.textContent = jawY1.toFixed(1);
+  const cy2 = document.getElementById('control-jawY2');
+  if (cy2) cy2.textContent = jawY2.toFixed(1);
 }
 function updateConsoleDisplay() {
   const energyStr = selectedEnergy || "---";
@@ -172,6 +193,7 @@ function updateConsoleDisplay() {
   }
   document.getElementById('console-reading').textContent = `Delivered MU: ${deliveredMuStr} | Dose Rate: ${isBeaming ? "Active" : "---"}`;
   updateStatusBar();
+  updateInterlocksPanel();
 }
 function updateStatusBar() {
   let statusText = "";
@@ -188,302 +210,21 @@ function updateStatusBar() {
 }
 
 /* -----------------------------
-   PATIENT CASE GENERATION
+   QA & INTERLOCK PANEL LOGIC
 ------------------------------*/
-function generateRandomTreatmentPlan() {
-  const caseTypeData = Math.random() < 0.5 ? msccData : svcsData;
-  const randomPrimary = getRandomElement(caseTypeData.primaries);
-  const randomRx = getRandomElement(caseTypeData.prescriptions);
-  const planEnergy = randomRx.energy;
-  const planTechnique = randomRx.technique;
-  const alignmentImgUrl = getRandomElement(caseTypeData.imageUrls);
-
-  let planFields = [];
-  const numFields = randomRx.numFields || 1;
-  const fieldSetupTemplates = caseTypeData.fieldSetups;
-  for (let i = 0; i < numFields; i++) {
-    const setupTemplate = fieldSetupTemplates[i % fieldSetupTemplates.length];
-    const xSize = getRandomFloat(setupTemplate.xSizeRange[0], setupTemplate.xSizeRange[1], 1);
-    const ySize = getRandomFloat(setupTemplate.ySizeRange[0], setupTemplate.ySizeRange[1], 1);
-    const muPerField = Math.round((randomRx.muPerFx / numFields) * getRandomFloat(0.95, 1.05, 2));
-    planFields.push({
-      name: setupTemplate.name || `Field ${i+1}`, mu: muPerField,
-      gantry: setupTemplate.gantry, collimator: setupTemplate.coll, couch: setupTemplate.couch,
-      x1: xSize/2, x2: xSize/2, y1: ySize/2, y2: ySize/2,
-      energy: planEnergy, technique: planTechnique
-    });
-  }
-  const firstNames = ["John", "Jane", "Alex", "Sarah", "Michael", "Emily", "David", "Linda", "Robert", "Maria"];
-  const lastNames = ["Smith", "Doe", "Jones", "Chen", "Williams", "Brown", "Davis", "Miller", "Wilson", "Garcia"];
-  const randomName = getRandomElement(firstNames) + " " + getRandomElement(lastNames);
-  const randomDOB = `${getRandomInt(1, 12)}/${getRandomInt(1, 28)}/${getRandomInt(1940, 1985)}`;
-  const diagnosisText = `${caseTypeData.patientType} - ${randomPrimary}`;
-  const randomCreat = getRandomFloat(0.6, 1.5, 1);
-  const randomWBC = getRandomFloat(3.0, 11.0, 1);
-
-  return {
-    patientName: randomName, patientDOB: randomDOB, patientDiagnosis: diagnosisText,
-    patientType: caseTypeData.patientType, prescriptionText: randomRx.text,
-    technique: planTechnique, energy: planEnergy, fields: planFields,
-    labCreat: randomCreat, labWBC: randomWBC,
-    alignmentImageUrl: alignmentImgUrl
-  };
-}
-function displayTreatmentPlan(plan) {
-  currentLoadedPlan = plan;
-  loadedFieldIndex = -1;
-  document.getElementById('patientName').textContent = plan.patientName;
-  document.getElementById('patientDOB').textContent = plan.patientDOB;
-  document.getElementById('patientDiagnosis').textContent = plan.patientDiagnosis;
-  document.getElementById('patientType').textContent = plan.patientType;
-  document.getElementById('labCreat').textContent = plan.labCreat + " mg/dL";
-  document.getElementById('labWBC').textContent = plan.labWBC + " K/uL";
-  const imageUrl = plan.alignmentImageUrl || defaultImageUrl;
-  if (baseImageElement) baseImageElement.src = imageUrl;
-  if (overlayImageElement) overlayImageElement.src = imageUrl;
-
-  initialOverlayShiftX = getRandomInt(-20, 20);
-  initialOverlayShiftY = getRandomInt(-20, 20);
-  overlayOffsetX = initialOverlayShiftX; overlayOffsetY = initialOverlayShiftY;
-  if (overlayImageElement) overlayImageElement.style.transform = `translate(${overlayOffsetX}px, ${overlayOffsetY}px)`;
-  if (alignmentMessage) alignmentMessage.textContent = "Adjust overlay using arrow keys.";
-  if (shiftFeedback) shiftFeedback.textContent = "";
-  hasCurrentCaseAlignmentBeenCounted = false;
-
-  // Update Treatment Tab
-  let html = `<h4>Plan Details</h4>
-    <p><strong>Prescription:</strong> ${plan.prescriptionText}</p>
-    <p><strong>Technique:</strong> ${plan.technique}</p>
-    <p><strong>Nominal Energy:</strong> ${plan.energy}</p>
-    <h4>Fields (Click to Load)</h4>`;
-  plan.fields.forEach((field, index) => {
-    const fieldSizeDisplay = `${(field.x1 + field.x2).toFixed(1)} x ${(field.y1 + field.y2).toFixed(1)}`;
-    html += `<div class="treatment-field" onclick="loadFieldToConsole(${index})">
-      <h5>${field.name}</h5>
-      <p>Energy: ${field.energy} | MU: ${field.mu}</p>
-      <p>Gantry: ${field.gantry}° | Coll: ${field.collimator}° | Couch: ${field.couch}°</p>
-      <p>Field Size (X x Y): ${fieldSizeDisplay} cm</p>
-    </div>`;
-  });
-  treatmentTabContent.innerHTML = html;
-  showTab('treatment');
-  partialResetConsoleForNewPlan();
-  updateConsoleDisplay();
-  updateStatusBar();
-  updateCaseAlignmentCounterDisplay();
-}
-function partialResetConsoleForNewPlan() {
-  if(beamTimeoutId) clearInterval(beamTimeoutId);
-  beamTimeoutId = null;
-  isPrepared = false; isBeaming = false; deliveredMU = 0; setMU = 0;
-  selectedEnergy = "---"; gantryAngle = 0; collimatorAngle = 0; couchAngle = 0;
-  jawX1 = 0; jawX2 = 0; jawY1 = 0; jawY2 = 0; currentEnergyIndex = -1;
-  fieldAdjustmentLocked = false; loadedFieldIndex = -1;
-  document.getElementById('currentEnergyDisplay').textContent = '---';
-  document.getElementById('mp-energy').textContent = '---';
-  updateControlPanelDisplays();
-  updateMachineParameterDisplays();
-  enableParameterSettingButtons(false);
-  updateConsoleDisplay();
-  updateStatusBar();
-}
-function generateAndDisplayPatientCase() {
-  const plan = generateRandomTreatmentPlan();
-  displayTreatmentPlan(plan);
-}
-function loadFieldToConsole(fieldIndex) {
-  if (!currentLoadedPlan || !currentLoadedPlan.fields[fieldIndex]) return;
-  if (isBeaming) {
-    alert("Cannot load new field while beam is active!");
-    return;
-  }
-  const field = currentLoadedPlan.fields[fieldIndex];
-  loadedFieldIndex = fieldIndex;
-  const energyIndex = energyOptions.findIndex(e => e === field.energy);
-  if (energyIndex !== -1) {
-    currentEnergyIndex = energyIndex; selectedEnergy = field.energy;
-  } else {
-    const fallbackIndex = energyOptions.findIndex(e => e === '6 MV');
-    currentEnergyIndex = fallbackIndex !== -1 ? fallbackIndex : -1;
-    selectedEnergy = fallbackIndex !== -1 ? '6 MV' : "---";
-  }
-  document.getElementById('currentEnergyDisplay').textContent = selectedEnergy;
-  document.getElementById('mp-energy').textContent = selectedEnergy;
-  setMU = field.mu; deliveredMU = 0;
-  gantryAngle = field.gantry; collimatorAngle = field.collimator; couchAngle = field.couch;
-  jawX1 = field.x1; jawX2 = field.x2; jawY1 = field.y1; jawY2 = field.y2;
-  updateControlPanelDisplays(); updateMachineParameterDisplays();
-  isPrepared = false; isBeaming = false;
-  if(beamTimeoutId) clearInterval(beamTimeoutId); beamTimeoutId = null;
-  enableParameterSettingButtons(true); updateConsoleDisplay();
-  document.querySelectorAll('.treatment-field').forEach((el, idx) => {
-    el.style.border = idx === fieldIndex ? '2px solid #003366' : '1px solid #ddd';
-  });
-  updateStatusBar();
-}
-
-/* -----------------------------
-   CONTROL HANDLERS
-------------------------------*/
-function changeGantry(delta) {
-  if (isBeaming) return;
-  gantryAngle = (gantryAngle + delta + 360) % 360;
-  updateControlPanelDisplays();
-  updateMachineParameterDisplays();
-  isPrepared = false;
-  enableParameterSettingButtons(true);
-  updateConsoleDisplay();
-}
-function changeCollimator(delta) {
-  if (isBeaming) return;
-  collimatorAngle = (collimatorAngle + delta + 360) % 360;
-  updateControlPanelDisplays();
-  updateMachineParameterDisplays();
-  isPrepared = false;
-  enableParameterSettingButtons(true);
-  updateConsoleDisplay();
-}
-function changeCouch(delta) {
-  if (isBeaming) return;
-  couchAngle = (couchAngle + delta + 360) % 360;
-  updateControlPanelDisplays();
-  updateMachineParameterDisplays();
-  isPrepared = false;
-  enableParameterSettingButtons(true);
-  updateConsoleDisplay();
-}
-function changeFieldSize(dimension, delta) {
-  if (fieldAdjustmentLocked || isBeaming) return;
-  const maxJawPos = 20.0;
-  switch (dimension) {
-    case 'X1': jawX1 = Math.min(maxJawPos, Math.max(0, +(jawX1 + delta).toFixed(1))); break;
-    case 'X2': jawX2 = Math.min(maxJawPos, Math.max(0, +(jawX2 + delta).toFixed(1))); break;
-    case 'Y1': jawY1 = Math.min(maxJawPos, Math.max(0, +(jawY1 + delta).toFixed(1))); break;
-    case 'Y2': jawY2 = Math.min(maxJawPos, Math.max(0, +(jawY2 + delta).toFixed(1))); break;
-  }
-  for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
-    leftLeafPositions[i] = jawX1;
-    rightLeafPositions[i] = jawX2;
-  }
-  updateControlPanelDisplays();
-  updateMachineParameterDisplays();
-  isPrepared = false;
-  enableParameterSettingButtons(true);
-  updateConsoleDisplay();
-}
-function cycleEnergy() {
-  if (isBeaming) return;
-  if (loadedFieldIndex !== -1) {
-    alert("Cannot cycle energy manually when a field is loaded. Reset or generate a new case.");
-    return;
-  }
-  currentEnergyIndex = (currentEnergyIndex + 1) % energyOptions.length;
-  selectedEnergy = energyOptions[currentEnergyIndex];
-  updateControlPanelDisplays();
-  updateMachineParameterDisplays();
-  isPrepared = false;
-  enableParameterSettingButtons(true);
-  updateConsoleDisplay();
-}
-function enableParameterSettingButtons(enable = true) {
-  document.getElementById('btn-set-mu').classList.toggle('disabled', !enable);
-  document.getElementById('energyToggleButton').classList.toggle('disabled', !enable);
-  document.getElementById('btn-prepare').classList.toggle('disabled', !(enable && loadedFieldIndex !== -1 && !isBeaming && !isPrepared && !isDoorOpen));
-  document.getElementById('btn-beam-on').classList.toggle('disabled', !(enable && isPrepared && !isBeaming && !isDoorOpen));
-  document.getElementById('btn-beam-off').classList.toggle('disabled', !isBeaming);
-  setFieldAdjustmentEnabled(enable && !isBeaming && !selectedEnergy.includes('MeV'));
-}
-function setFieldAdjustmentEnabled(enabled) {
-  document.querySelectorAll('.field-control-group button').forEach(btn => btn.disabled = !enabled);
-  fieldAdjustmentLocked = !enabled;
-}
-
-/* -----------------------------
-   BEAM ON/OFF & PREP
-------------------------------*/
-function handleSetMU() {
-  if (document.getElementById('btn-set-mu').classList.contains('disabled')) return;
-  const muInput = prompt(`Enter MU (1-1000):`, setMU > 0 ? setMU : 100);
-  const muVal = parseInt(muInput);
-  if (!isNaN(muVal) && muVal > 0 && muVal <= 1000) {
-    setMU = muVal;
-    deliveredMU = 0;
-    isPrepared = false;
-    enableParameterSettingButtons(true);
-    updateConsoleDisplay();
-  }
-}
-function handlePrepare() {
-  if(document.getElementById('btn-prepare').classList.contains('disabled')) return;
-  if (loadedFieldIndex === -1 || selectedEnergy === "---" || setMU <= 0 || isDoorOpen) return;
-  isPrepared = true;
-  enableParameterSettingButtons(true);
-  updateConsoleDisplay();
-}
-function handleBeamOn() {
-  if (document.getElementById('btn-beam-on').classList.contains('disabled') || isBeaming) return;
-  if (!isPrepared) return;
-  if (isDoorOpen) return;
-  if (setMU <= 0) return;
-  isBeaming = true; deliveredMU = 0; enableParameterSettingButtons(false);
-  const beamDurationMs = 2000 * (setMU / 100.0);
-  const totalSteps = Math.max(20, setMU / 5);
-  let currentStepTime = 0;
-  const stepInterval = Math.max(50, beamDurationMs / totalSteps);
-  beamTimeoutId = setInterval(() => {
-    currentStepTime++;
-    deliveredMU = Math.min(setMU, Math.round(setMU * (currentStepTime / totalSteps)));
-    updateConsoleDisplay();
-    if (currentStepTime >= totalSteps || deliveredMU >= setMU) handleBeamOff(true);
-  }, stepInterval);
-  updateConsoleDisplay();
-}
-function handleBeamOff(beamCompleted = false) {
-  if(beamTimeoutId) clearInterval(beamTimeoutId); beamTimeoutId = null;
-  const wasBeaming = isBeaming; isBeaming = false;
-  if (wasBeaming) {
-    isPrepared = false;
-    if (beamCompleted) deliveredMU = setMU;
-  }
-  enableParameterSettingButtons(true);
-  updateConsoleDisplay();
-}
-function handleDoorControl() {
-  isDoorOpen = !isDoorOpen;
-  enableParameterSettingButtons(true);
-  updateConsoleDisplay();
-}
-function handleReset() {
-  if(beamTimeoutId) clearInterval(beamTimeoutId); beamTimeoutId = null;
-  isPrepared = false; isBeaming = false; deliveredMU = 0; setMU = 0;
-  gantryAngle = 0; collimatorAngle = 0; couchAngle = 0;
-  jawX1 = 5.0; jawX2 = 5.0; jawY1 = 5.0; jawY2 = 5.0;
-  fieldAdjustmentLocked = false; isDoorOpen = true;
-  currentLoadedPlan = null; loadedFieldIndex = -1;
-  selectedEnergy = energyOptions[0]; currentEnergyIndex = 0;
-  updateControlPanelDisplays(); updateMachineParameterDisplays();
-  treatmentTabContent.innerHTML = '<p>Generate a new patient case to see the treatment plan.</p>';
-  document.getElementById('patientName').textContent = '---';
-  document.getElementById('patientDOB').textContent = '---';
-  document.getElementById('patientDiagnosis').textContent = '---';
-  document.getElementById('patientType').textContent = '---';
-  document.getElementById('labCreat').textContent = "---";
-  document.getElementById('labWBC').textContent = "---";
-  // Reset Images
-  if (baseImageElement) baseImageElement.src = defaultImageUrl;
-  if (overlayImageElement) overlayImageElement.src = defaultImageUrl;
-  overlayOffsetX = 0; overlayOffsetY = 0; initialOverlayShiftX = 0; initialOverlayShiftY = 0;
-  if (overlayImageElement) overlayImageElement.style.transform = `translate(0px, 0px)`;
-  if(opacitySlider) opacitySlider.value = 50;
-  if(opacityValueDisplay) opacityValueDisplay.textContent = "50%";
-  if(overlayImageElement) overlayImageElement.style.opacity = 0.5;
-  if(alignmentMessage) alignmentMessage.textContent = "";
-  if(shiftFeedback) shiftFeedback.textContent = "";
-  correctCaseAlignments = 0; hasCurrentCaseAlignmentBeenCounted = false;
-  updateCaseAlignmentCounterDisplay();
-  enableParameterSettingButtons(true);
-  updateConsoleDisplay();
-  updateStatusBar();
+function updateInterlocksPanel() {
+  // Door
+  const doorStat = isDoorOpen ? "Open" : "Closed";
+  document.getElementById('doorStatus').textContent = doorStat;
+  document.getElementById('interlock-door').className = "interlock-status " + (isDoorOpen ? "danger" : "ok");
+  // Beam
+  const beamStat = isBeaming ? "On" : "Off";
+  document.getElementById('beamStatus').textContent = beamStat;
+  document.getElementById('interlock-beam').className = "interlock-status " + (isBeaming ? "warning" : "ok");
+  // Override
+  const overrideStat = overrideActive ? "Active" : "Inactive";
+  document.getElementById('overrideStatus').textContent = overrideStat;
+  document.getElementById('interlock-override').className = "interlock-status " + (overrideActive ? "danger" : "ok");
 }
 
 /* -----------------------------
@@ -492,19 +233,89 @@ function handleReset() {
 function moveOverlay(dx, dy) {
   overlayOffsetX += dx;
   overlayOffsetY += dy;
-  if(overlayImageElement) overlayImageElement.style.transform = `translate(${overlayOffsetX}px, ${overlayOffsetY}px)`;
+  applyOverlayTransformsAndFilters();
   updateShiftFeedback();
 }
+function rotateOverlay(deltaAngle) {
+  overlayRotationAngle = (overlayRotationAngle + deltaAngle + 360) % 360;
+  applyOverlayTransformsAndFilters();
+  updateShiftFeedback();
+}
+function scaleOverlay(zoomIn) {
+  if (zoomIn) {
+    overlayScale = Math.min(MAX_SCALE, overlayScale * SCALE_STEP_MULTIPLIER);
+  } else {
+    overlayScale = Math.max(MIN_SCALE, overlayScale / SCALE_STEP_MULTIPLIER);
+  }
+  applyOverlayTransformsAndFilters();
+  updateShiftFeedback();
+}
+function handleOpacityChange() {
+  if (overlayImageElement && opacitySlider && opacityValueDisplay) {
+    overlayOpacity = opacitySlider.value / 100;
+    applyOverlayTransformsAndFilters();
+  }
+}
+function handleBrightnessChange() {
+  overlayBrightness = parseInt(document.getElementById('brightnessSlider').value);
+  applyOverlayTransformsAndFilters();
+}
+function handleContrastChange() {
+  overlayContrast = parseInt(document.getElementById('contrastSlider').value);
+  applyOverlayTransformsAndFilters();
+}
+function applyOverlayTransformsAndFilters() {
+  const transformValue =
+    `translate(${overlayOffsetX}px, ${overlayOffsetY}px) ` +
+    `rotate(${overlayRotationAngle}deg) ` +
+    `scale(${overlayScale})`;
+  overlayImageElement.style.transform = transformValue;
+  overlayImageElement.style.opacity = overlayOpacity;
+  overlayImageElement.style.filter = `brightness(${overlayBrightness}%) contrast(${overlayContrast}%)`;
+  // Update display spans
+  document.getElementById('rotationDisplay').textContent = `${overlayRotationAngle}°`;
+  document.getElementById('scaleDisplay').textContent = `${overlayScale.toFixed(2)}x`;
+  document.getElementById('opacityValue').textContent = `${Math.round(overlayOpacity * 100)}%`;
+  document.getElementById('brightnessValue').textContent = `${overlayBrightness}`;
+  document.getElementById('contrastValue').textContent = `${overlayContrast}`;
+  // Also update the motion readout
+  document.getElementById('couchShiftX').textContent = overlayOffsetX;
+  document.getElementById('couchShiftY').textContent = overlayOffsetY;
+  document.getElementById('couchRotation').textContent = `${overlayRotationAngle}°`;
+  document.getElementById('couchZoom').textContent = `${overlayScale.toFixed(2)}x`;
+}
+function resetOverlayManipulations() {
+  overlayRotationAngle = 0;
+  overlayScale = 1.0;
+  overlayOpacity = 0.5;
+  overlayBrightness = 100;
+  overlayContrast = 100;
+  overlayOffsetX = initialOverlayShiftX;
+  overlayOffsetY = initialOverlayShiftY;
+  document.getElementById('opacitySlider').value = 50;
+  document.getElementById('brightnessSlider').value = 100;
+  document.getElementById('contrastSlider').value = 100;
+  applyOverlayTransformsAndFilters();
+  updateShiftFeedback();
+  if (alignmentMessage) alignmentMessage.textContent = "View reset. Adjust overlay to align.";
+  hasCurrentCaseAlignmentBeenCounted = false;
+}
 function updateShiftFeedback() {
-  if(shiftFeedback) shiftFeedback.textContent = `Current Offset: X=${overlayOffsetX}, Y=${overlayOffsetY}`;
+  if(shiftFeedback) {
+    const currentCorrectedX = overlayOffsetX - initialOverlayShiftX;
+    const currentCorrectedY = overlayOffsetY - initialOverlayShiftY;
+    shiftFeedback.textContent = `Corrected Offset: X=${currentCorrectedX}, Y=${currentCorrectedY} | Rotation: ${overlayRotationAngle}°`;
+  }
 }
 function checkAlignment() {
-  if (Math.abs(overlayOffsetX) <= alignmentTolerance && Math.abs(overlayOffsetY) <= alignmentTolerance) {
+  if (Math.abs(overlayOffsetX) <= alignmentTolerance &&
+      Math.abs(overlayOffsetY) <= alignmentTolerance &&
+      Math.abs(overlayRotationAngle) <= alignmentTolerance) {
     if(alignmentMessage) {
       alignmentMessage.textContent = "Alignment OK!";
       alignmentMessage.style.color = "green";
     }
-    if(shiftFeedback) shiftFeedback.textContent = "";
+    if(shiftFeedback) shiftFeedback.textContent = "Perfectly Aligned!";
     if (!hasCurrentCaseAlignmentBeenCounted) {
       correctCaseAlignments++;
       hasCurrentCaseAlignmentBeenCounted = true;
@@ -518,355 +329,12 @@ function checkAlignment() {
     updateShiftFeedback();
   }
 }
-function handleOpacityChange() {
-  if (overlayImageElement && opacitySlider && opacityValueDisplay) {
-    const opacity = opacitySlider.value / 100;
-    overlayImageElement.style.opacity = opacity;
-    opacityValueDisplay.textContent = `${opacitySlider.value}%`;
-  }
-}
 function updateCaseAlignmentCounterDisplay() {
   if(alignmentCounterDisplay) alignmentCounterDisplay.textContent = `Correct Case Alignments: ${correctCaseAlignments}`;
 }
 
 /* -----------------------------
-   MLC VISUALIZER LOGIC
-------------------------------*/
-// Create MLC visualizer leaf DOM elements on load
-document.addEventListener('DOMContentLoaded', () => {
-  // Main MLC visualizer container
-  const fieldDisplayContainer = document.getElementById('fieldDisplayContainer');
-  // Remove any leaves if reloading
-  if (fieldDisplayContainer) {
-    // Clean up on reload
-    Array.from(fieldDisplayContainer.querySelectorAll('.leaf-pair-container')).forEach(el => el.remove());
-    for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
-      leftLeafPositions[i] = 5.0;
-      rightLeafPositions[i] = 5.0;
-      // Create container for this leaf pair
-      const pairContainer = document.createElement('div');
-      pairContainer.className = 'leaf-pair-container';
-      pairContainer.id = `leafPairContainer_${i}`;
-      // Outer left leaf (outside field)
-      const outerLeftLeaf = document.createElement('div');
-      outerLeftLeaf.className = 'leaf-section outer left';
-      outerLeftLeaf.id = `outerLeftLeaf_${i}`;
-      // Inner left leaf (inside field)
-      const innerLeftLeaf = document.createElement('div');
-      innerLeftLeaf.className = 'leaf-section inner left';
-      innerLeftLeaf.id = `innerLeftLeaf_${i}`;
-      // Inner right leaf (inside field)
-      const innerRightLeaf = document.createElement('div');
-      innerRightLeaf.className = 'leaf-section inner right';
-      innerRightLeaf.id = `innerRightLeaf_${i}`;
-      // Outer right leaf (outside field)
-      const outerRightLeaf = document.createElement('div');
-      outerRightLeaf.className = 'leaf-section outer right';
-      outerRightLeaf.id = `outerRightLeaf_${i}`;
-      // Append in order: outer left, inner left, inner right, outer right
-      pairContainer.appendChild(outerLeftLeaf);
-      pairContainer.appendChild(innerLeftLeaf);
-      pairContainer.appendChild(innerRightLeaf);
-      pairContainer.appendChild(outerRightLeaf);
-      fieldDisplayContainer.appendChild(pairContainer);
-    }
-  }
-  updateOuterVisualsAndContainers();
-  updateInnerLeafVisuals(leftLeafPositions, rightLeafPositions, false);
-
-  // Add listeners for all MLC buttons
-  [
-    { id: 'presetMatchJaw', fn: () => setLeafPreset('match') },
-    { id: 'presetSquare', fn: () => setLeafPreset('square') },
-    { id: 'presetOffset', fn: () => setLeafPreset('offset') },
-    { id: 'presetBlock', fn: () => setLeafPreset('block') },
-    { id: 'presetCshape', fn: () => setLeafPreset('cshape') },
-    { id: 'presetDiagonal', fn: () => setLeafPreset('diagonal') },
-    { id: 'presetDiagRev', fn: () => setLeafPreset('diagRev') },
-    { id: 'presetDiagShallow', fn: () => setLeafPreset('diagShallow') },
-    { id: 'animateSquareRandBtn', fn: () => startPresetAnimation('square') },
-    { id: 'animateOffsetRandBtn', fn: () => startPresetAnimation('offset') },
-    { id: 'animateDiagonalRandBtn', fn: () => startPresetAnimation('diagonal') },
-    { id: 'slidingWindowBtn', fn: startSlidingWindowDemo },
-    { id: 'imrtDemoBtn', fn: startImrtDemo }
-  ].forEach(({ id, fn }) => {
-    const btn = document.getElementById(id);
-    if (btn) btn.addEventListener('click', fn);
-  });
-});
-
-// --- Helper Functions (MLC) ---
-function getFieldDimensionsPx() {
-  const leftPx = centerPx - (jawX1 * scaleFactor);
-  const rightPx = centerPx + (jawX2 * scaleFactor);
-  const topPx = centerPx - (jawY2 * scaleFactor);
-  const bottomPx = centerPx + (jawY1 * scaleFactor);
-  const widthPx = Math.max(0, rightPx - leftPx);
-  const heightPx = Math.max(0, bottomPx - topPx);
-  return { leftPx, topPx, widthPx, heightPx };
-}
-function updateOuterVisualsAndContainers() {
-  const fieldRectEl = document.getElementById('fieldDisplayRect');
-  if (!fieldRectEl) return;
-  document.getElementById('control-jawX1').textContent = jawX1.toFixed(1);
-  document.getElementById('control-jawX2').textContent = jawX2.toFixed(1);
-  document.getElementById('control-jawY1').textContent = jawY1.toFixed(1);
-  document.getElementById('control-jawY2').textContent = jawY2.toFixed(1);
-  document.getElementById('jawX1').textContent = jawX1.toFixed(1);
-  document.getElementById('jawX2').textContent = jawX2.toFixed(1);
-  document.getElementById('jawY1').textContent = jawY1.toFixed(1);
-  document.getElementById('jawY2').textContent = jawY2.toFixed(1);
-  const dims = getFieldDimensionsPx();
-  fieldRectEl.style.width = `${dims.widthPx}px`;
-  fieldRectEl.style.height = `${dims.heightPx}px`;
-  fieldRectEl.style.left = `${dims.leftPx}px`;
-  fieldRectEl.style.top = `${dims.topPx}px`;
-  const leafPairHeight = (NUM_LEAF_PAIRS > 0 && dims.heightPx >= 0) ? (dims.heightPx / NUM_LEAF_PAIRS) : 0;
-  for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
-    const outerLeftEl = document.getElementById(`outerLeftLeaf_${i}`);
-    const outerRightEl = document.getElementById(`outerRightLeaf_${i}`);
-    const pairContainerEl = document.getElementById(`leafPairContainer_${i}`);
-    if (!outerLeftEl || !outerRightEl || !pairContainerEl) continue;
-    const pairTop = dims.topPx + (i * leafPairHeight);
-    pairContainerEl.style.top = `${pairTop}px`;
-    pairContainerEl.style.height = `${leafPairHeight}px`;
-    outerLeftEl.style.left = '0px';
-    outerLeftEl.style.width = `${Math.max(0, dims.leftPx)}px`;
-    const fieldRightEdgePx = dims.leftPx + dims.widthPx;
-    outerRightEl.style.left = `${fieldRightEdgePx}px`;
-    outerRightEl.style.width = `${Math.max(0, fieldDisplayContainerSize - fieldRightEdgePx)}px`;
-  }
-}
-function updateInnerLeafVisuals(currentLeft, currentRight, disableTransitions = false) {
-  const dims = getFieldDimensionsPx();
-  if (scaleFactor <= 0 || fieldDisplayContainerSize <= 0 || dims.widthPx < 0 || dims.heightPx < 0) return;
-  const leafPairHeight = (NUM_LEAF_PAIRS > 0 && dims.heightPx >= 0) ? (dims.heightPx / NUM_LEAF_PAIRS) : 0;
-  for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
-    const innerLeftEl = document.getElementById(`innerLeftLeaf_${i}`);
-    const innerRightEl = document.getElementById(`innerRightLeaf_${i}`);
-    const pairContainerEl = document.getElementById(`leafPairContainer_${i}`);
-    if (!innerLeftEl || !innerRightEl || !pairContainerEl) continue;
-    const pairTop = dims.topPx + (i * leafPairHeight);
-    pairContainerEl.style.top = `${pairTop}px`;
-    pairContainerEl.style.height = `${leafPairHeight}px`;
-    let clampedLeft = Math.min(jawX1, currentLeft[i] ?? jawX1);
-    let clampedRight = Math.min(jawX2, currentRight[i] ?? jawX2);
-    if (!isAnimating && !disableTransitions) {
-      leftLeafPositions[i] = clampedLeft; rightLeafPositions[i] = clampedRight;
-    }
-    const leftTipPx = centerPx - (clampedLeft * scaleFactor);
-    const rightTipPx = centerPx + (clampedRight * scaleFactor);
-    const fieldRightEdgePx = dims.leftPx + dims.widthPx;
-    innerLeftEl.style.left = `${dims.leftPx}px`;
-    innerLeftEl.style.width = `${Math.max(0, leftTipPx - dims.leftPx)}px`;
-    innerRightEl.style.left = `${rightTipPx}px`;
-    innerRightEl.style.width = `${Math.max(0, fieldRightEdgePx - rightTipPx)}px`;
-    if (disableTransitions) {
-      innerLeftEl.classList.remove('inner'); innerRightEl.classList.remove('inner');
-    } else {
-      innerLeftEl.classList.add('inner'); innerRightEl.classList.add('inner');
-    }
-  }
-}
-
-// --- Preset Calculation & Setting ---
-function calculatePresetPositions(presetType) {
-  const targetLeft = []; const targetRight = [];
-  const squareSizeCm = 4; const offsetPosCm = 2; const blockPosCm = 1;
-  const cShapeInner = 3, cShapeOuter = 8;
-  const diagStep = (jawX1 + jawX2 > 0) ? (jawX1 + jawX2) / Math.max(1, NUM_LEAF_PAIRS - 1) : 1;
-  const minGap = 0.5;
-  for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
-    let left, right;
-    switch (presetType) {
-      case 'match': left = jawX1; right = jawX2; break;
-      case 'square': left = squareSizeCm; right = squareSizeCm; break;
-      case 'offset': left = jawX1; right = offsetPosCm; break;
-      case 'block': left = blockPosCm; right = blockPosCm; break;
-      case 'cshape':
-        if (i === 0 || i === NUM_LEAF_PAIRS - 1) { left = cShapeOuter; right = cShapeOuter; }
-        else { left = cShapeInner; right = cShapeOuter; }
-        break;
-      case 'diagonal': {
-        let l = jawX1 - (i * diagStep * 0.5);
-        let r = jawX2 - ((NUM_LEAF_PAIRS - 1 - i) * diagStep * 0.5);
-        if (l + r < minGap) { const adj = (minGap - (l + r)) / 2; l -= adj; r -= adj; }
-        left = l; right = r;
-        break;
-      }
-      case 'diagRev': {
-        let l = jawX1 - ((NUM_LEAF_PAIRS - 1 - i) * diagStep * 0.5);
-        let r = jawX2 - (i * diagStep * 0.5);
-        if (l + r < minGap) { const adj = (minGap - (l + r)) / 2; l -= adj; r -= adj; }
-        left = l; right = r;
-        break;
-      }
-      case 'diagShallow': {
-        let m = 0.25;
-        let l = jawX1 - (i * diagStep * m);
-        let r = jawX2 - ((NUM_LEAF_PAIRS - 1 - i) * diagStep * m);
-        if (l + r < minGap) { const adj = (minGap - (l + r)) / 2; l -= adj; r -= adj; }
-        left = l; right = r;
-        break;
-      }
-      default: left = jawX1; right = jawX2;
-    }
-    targetLeft[i] = Math.min(jawX1, Math.max(0, left ?? jawX1));
-    targetRight[i] = Math.min(jawX2, Math.max(0, right ?? jawX2));
-  }
-  return { targetLeft, targetRight };
-}
-function setLeafPreset(presetType) {
-  stopAllAnimations();
-  const { targetLeft, targetRight } = calculatePresetPositions(presetType);
-  leftLeafPositions = targetLeft;
-  rightLeafPositions = targetRight;
-  updateOuterVisualsAndContainers();
-  updateInnerLeafVisuals(leftLeafPositions, rightLeafPositions, false);
-}
-
-// --- Animation Control ---
-let isAnimating = false;
-let currentAnimationFrameId = null;
-let animStartTime = 0;
-let animType = 'NONE';
-let animStartLeft = [], animStartRight = [], animTargetLeft = [], animTargetRight = [], animDurations = [];
-let currentAnimatingButton = null;
-function stopAllAnimations() {
-  if (isAnimating) {
-    cancelAnimationFrame(currentAnimationFrameId); currentAnimationFrameId = null; isAnimating = false; animType = 'NONE';
-    if(currentAnimatingButton) { currentAnimatingButton.classList.remove('animating'); }
-    ['slidingWindowBtn','animateSquareRandBtn','animateOffsetRandBtn','animateDiagonalRandBtn','imrtDemoBtn'].forEach(id => {
-      const btn = document.getElementById(id); if(btn) btn.textContent = btn.getAttribute('data-label') || btn.textContent.replace(/Stop.*/,'Demo');
-      if(btn) btn.classList.remove('animating');
-    });
-    currentAnimatingButton = null;
-    updateOuterVisualsAndContainers();
-    updateInnerLeafVisuals(leftLeafPositions, rightLeafPositions, false);
-  }
-}
-function lerp(start, end, t) { return start * (1 - t) + end * t; }
-function startSlidingWindowDemo() {
-  if (isAnimating) { stopAllAnimations(); return; }
-  isAnimating = true; animType = 'SLIDING'; currentAnimatingButton = document.getElementById('slidingWindowBtn');
-  currentAnimatingButton.classList.add('animating');
-  currentAnimatingButton.textContent = "Stop Demo";
-  const windowGapCm = 2.0; const duration = 8000;
-  const jawFieldStartX = centerPx - (jawX1 * scaleFactor);
-  const jawFieldEndX = centerPx + (jawX2 * scaleFactor);
-  const windowGapPx = windowGapCm * scaleFactor;
-  const targetLeftEndPx = jawFieldEndX;
-  const targetRightStartPx = jawFieldStartX + windowGapPx;
-  const targetRightEndPx = targetLeftEndPx + windowGapPx;
-  animStartTime = performance.now();
-  function animationStep(timestamp) {
-    if (!isAnimating || animType !== 'SLIDING') return;
-    const elapsedTime = timestamp - animStartTime;
-    let progress = Math.min(1, elapsedTime / duration);
-    let currentLeftTipPx = lerp(jawFieldStartX, targetLeftEndPx, progress);
-    let currentRightTipPx = lerp(targetRightStartPx, targetRightEndPx, progress);
-    let animLeftPos = Math.max(0, -(currentLeftTipPx - centerPx) / scaleFactor);
-    let animRightPos = Math.max(0, (currentRightTipPx - centerPx) / scaleFactor);
-    const currentLeft = new Array(NUM_LEAF_PAIRS).fill(animLeftPos);
-    const currentRight = new Array(NUM_LEAF_PAIRS).fill(animRightPos);
-    updateInnerLeafVisuals(currentLeft, currentRight, true);
-    if (progress < 1) {
-      currentAnimationFrameId = requestAnimationFrame(animationStep);
-    } else {
-      stopAllAnimations();
-    }
-  }
-  currentAnimationFrameId = requestAnimationFrame(animationStep);
-}
-function startPresetAnimation(presetType) {
-  if (isAnimating) { stopAllAnimations(); return; }
-  isAnimating = true; animType = 'PRESET';
-  currentAnimatingButton = document.getElementById(
-    presetType === 'square' ? 'animateSquareRandBtn' :
-    presetType === 'offset' ? 'animateOffsetRandBtn' :
-    presetType === 'diagonal' ? 'animateDiagonalRandBtn' : null
-  );
-  if(currentAnimatingButton) {
-    currentAnimatingButton.classList.add('animating');
-    currentAnimatingButton.textContent = "Stop Animation";
-  }
-  const { targetLeft, targetRight } = calculatePresetPositions(presetType);
-  animTargetLeft = targetLeft; animTargetRight = targetRight;
-  animStartLeft = [...leftLeafPositions]; animStartRight = [...rightLeafPositions];
-  animDurations = [];
-  const baseDuration = 2000; const durationVariation = 1000;
-  let maxDuration = 0;
-  for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
-    const duration = baseDuration + (Math.random() * durationVariation);
-    animDurations[i] = duration;
-    if (duration > maxDuration) maxDuration = duration;
-  }
-  animStartTime = performance.now();
-  function presetAnimationStep(timestamp) {
-    if (!isAnimating || animType !== 'PRESET') return;
-    const elapsedTime = timestamp - animStartTime;
-    let allDone = true;
-    const currentLeft = []; const currentRight = [];
-    for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
-      const pairDuration = animDurations[i];
-      const progress = Math.min(1, elapsedTime / pairDuration);
-      currentLeft[i] = lerp(animStartLeft[i], animTargetLeft[i], progress);
-      currentRight[i] = lerp(animStartRight[i], animTargetRight[i], progress);
-      if (progress < 1) allDone = false;
-    }
-    updateInnerLeafVisuals(currentLeft, currentRight, true);
-    if (!allDone) {
-      currentAnimationFrameId = requestAnimationFrame(presetAnimationStep);
-    } else {
-      leftLeafPositions = [...animTargetLeft]; rightLeafPositions = [...animTargetRight];
-      stopAllAnimations();
-    }
-  }
-  currentAnimationFrameId = requestAnimationFrame(presetAnimationStep);
-}
-
-// --- NEW: IMRT Demo Animation Logic ---
-const imrtSequence = ['square', 'offset', 'diagonal', 'cshape', 'block', 'match'];
-let currentImrtStep = 0;
-let imrtStepDuration = 2500;
-function startImrtDemo() {
-  if (isAnimating) { stopAllAnimations(); return; }
-  isAnimating = true; animType = 'IMRT'; currentImrtStep = 0;
-  currentAnimatingButton = document.getElementById('imrtDemoBtn');
-  currentAnimatingButton.classList.add('animating');
-  currentAnimatingButton.textContent = "Stop IMRT";
-  prepareAndRunImrtStep();
-}
-function prepareAndRunImrtStep() {
-  if (currentImrtStep >= imrtSequence.length) { stopAllAnimations(); return; }
-  const currentPresetType = imrtSequence[currentImrtStep];
-  const { targetLeft, targetRight } = calculatePresetPositions(currentPresetType);
-  animTargetLeft = targetLeft; animTargetRight = targetRight;
-  animStartLeft = [...leftLeafPositions]; animStartRight = [...rightLeafPositions];
-  animStartTime = performance.now();
-  currentAnimationFrameId = requestAnimationFrame(imrtAnimationStep);
-}
-function imrtAnimationStep(timestamp) {
-  if (!isAnimating || animType !== 'IMRT') return;
-  const elapsedTime = timestamp - animStartTime;
-  const progress = Math.min(1, elapsedTime / imrtStepDuration);
-  const currentLeft = [];
-  const currentRight = [];
-  for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
-    currentLeft[i] = lerp(animStartLeft[i], animTargetLeft[i], progress);
-    currentRight[i] = lerp(animStartRight[i], animTargetRight[i], progress);
-  }
-  updateInnerLeafVisuals(currentLeft, currentRight, true);
-  if (progress >= 1) {
-    leftLeafPositions = [...animTargetLeft]; rightLeafPositions = [...animTargetRight];
-    currentImrtStep++; prepareAndRunImrtStep();
-  } else currentAnimationFrameId = requestAnimationFrame(imrtAnimationStep);
-}
-
-// --- END MLC VISUALIZER LOGIC ---
-
-/* -----------------------------
-   FIELD VISUALIZER LOGIC
+   MLC VISUALIZER LOGIC (STUB)
 ------------------------------*/
 function updateFieldDisplay() {
   const rect = document.getElementById('fieldDisplayRect');
@@ -882,23 +350,157 @@ function updateFieldDisplay() {
   rect.style.left = `${leftPx}px`;
   rect.style.top = `${topPx}px`;
 }
+// Add additional MLC visualizer logic as required for your demo.
+
+/* -----------------------------
+   PATIENT/PLAN & FIELD LOGIC (STUB)
+------------------------------*/
+function generateAndDisplayPatientCase() {
+  // Stub: Randomly generate a case and update the EMR and plan display.
+  // In your actual implementation, populate the DOM with patient info, image, and field plan.
+  alert("Stub: Patient case generation not implemented in this snippet.");
+}
+function loadFieldToConsole(index) {
+  // Stub: Load the field setup into parameters and update displays.
+  alert("Stub: Field loading not implemented in this snippet.");
+}
+
+/* -----------------------------
+   CONTROL PANEL BUTTON LOGIC (STUB)
+------------------------------*/
+function handleSetMU() {
+  // Stub: Prompt for MU and update setMU variable.
+  setMU = getRandomInt(50, 300); // Example: random MU for stub
+  updateConsoleDisplay();
+}
+function cycleEnergy() {
+  currentEnergyIndex = (currentEnergyIndex + 1) % energyOptions.length;
+  selectedEnergy = energyOptions[currentEnergyIndex];
+  updateMachineParameterDisplays();
+  updateControlPanelDisplays();
+  updateConsoleDisplay();
+}
+function handlePrepare() {
+  isPrepared = true;
+  updateConsoleDisplay();
+}
+function handleBeamOn() {
+  isBeaming = true;
+  updateConsoleDisplay();
+}
+function handleBeamOff() {
+  isBeaming = false;
+  updateConsoleDisplay();
+}
+function handleDoorControl() {
+  isDoorOpen = !isDoorOpen;
+  updateConsoleDisplay();
+}
+function handleReset() {
+  isPrepared = false;
+  isBeaming = false;
+  isDoorOpen = false;
+  deliveredMU = 0;
+  setMU = 0;
+  gantryAngle = 0;
+  collimatorAngle = 0;
+  couchAngle = 0;
+  jawX1 = 5.0; jawX2 = 5.0; jawY1 = 5.0; jawY2 = 5.0;
+  fieldAdjustmentLocked = false;
+  correctCaseAlignments = 0;
+  hasCurrentCaseAlignmentBeenCounted = false;
+  updateMachineParameterDisplays();
+  updateControlPanelDisplays();
+  updateConsoleDisplay();
+  updateCaseAlignmentCounterDisplay();
+  resetOverlayManipulations();
+}
+
+/* -----------------------------
+   FIELD SIZE & MOTION BUTTONS (STUB)
+------------------------------*/
+function changeFieldSize(jaw, delta) {
+  const step = 0.5;
+  delta = Math.sign(delta) * step;
+  switch(jaw) {
+    case 'X1': jawX1 = Math.max(0.1, jawX1 + delta); break;
+    case 'X2': jawX2 = Math.max(0.1, jawX2 + delta); break;
+    case 'Y1': jawY1 = Math.max(0.1, jawY1 + delta); break;
+    case 'Y2': jawY2 = Math.max(0.1, jawY2 + delta); break;
+  }
+  updateMachineParameterDisplays();
+  updateControlPanelDisplays();
+  updateConsoleDisplay();
+}
+function changeCollimator(delta) {
+  collimatorAngle = (collimatorAngle + delta + 360) % 360;
+  updateMachineParameterDisplays();
+  updateControlPanelDisplays();
+  updateConsoleDisplay();
+}
+function changeGantry(delta) {
+  gantryAngle = (gantryAngle + delta + 360) % 360;
+  updateMachineParameterDisplays();
+  updateControlPanelDisplays();
+  updateConsoleDisplay();
+}
+function changeCouch(delta) {
+  couchAngle = (couchAngle + delta + 360) % 360;
+  updateMachineParameterDisplays();
+  updateControlPanelDisplays();
+  updateConsoleDisplay();
+}
+
+/* -----------------------------
+   ENABLE/DISABLE PARAM BUTTONS (STUB)
+------------------------------*/
+function enableParameterSettingButtons(enable) {
+  // Stub: Enable/disable parameter setting buttons in your UI.
+}
+function setFieldAdjustmentEnabled(enabled) {
+  // Stub: Enable/disable field size controls.
+}
+
+/* -----------------------------
+   MODAL/CONES (STUB)
+------------------------------*/
+function openConeModal() {
+  // Stub: Open modal for cone selection.
+}
+function closeConeModal() {
+  // Stub: Close modal for cone selection.
+}
+function selectConeSize() {
+  // Stub: Handle cone size selection from modal.
+}
 
 /* -----------------------------
    INIT & EVENT LISTENERS
 ------------------------------*/
 document.addEventListener('DOMContentLoaded', function() {
-  // MLC Visualizer DOM setup is handled above!
-  // Case generation button hookup
   if (generateCaseBtn) generateCaseBtn.onclick = generateAndDisplayPatientCase;
   // Control panel
-  document.getElementById('btn-set-mu').onclick = handleSetMU;
-  document.getElementById('energyToggleButton').onclick = cycleEnergy;
-  document.getElementById('btn-prepare').onclick = handlePrepare;
-  document.getElementById('btn-beam-on').onclick = handleBeamOn;
-  document.getElementById('btn-beam-off').onclick = handleBeamOff;
-  document.getElementById('btn-reset').onclick = handleReset;
-  document.getElementById('btn-door-control').onclick = handleDoorControl;
+  let btnSetMu = document.getElementById('btn-set-mu');
+  let btnEnergy = document.getElementById('energyToggleButton');
+  let btnPrepare = document.getElementById('btn-prepare');
+  let btnBeamOn = document.getElementById('btn-beam-on');
+  let btnBeamOff = document.getElementById('btn-beam-off');
+  let btnReset = document.getElementById('btn-reset');
+  let btnDoor = document.getElementById('btn-door-control');
+  if (btnSetMu) btnSetMu.onclick = handleSetMU;
+  if (btnEnergy) btnEnergy.onclick = cycleEnergy;
+  if (btnPrepare) btnPrepare.onclick = handlePrepare;
+  if (btnBeamOn) btnBeamOn.onclick = handleBeamOn;
+  if (btnBeamOff) btnBeamOff.onclick = handleBeamOff;
+  if (btnReset) btnReset.onclick = handleReset;
+  if (btnDoor) btnDoor.onclick = handleDoorControl;
   if (opacitySlider) opacitySlider.addEventListener('input', handleOpacityChange);
+  document.getElementById('brightnessSlider').addEventListener('input', handleBrightnessChange);
+  document.getElementById('contrastSlider').addEventListener('input', handleContrastChange);
+
+  // Example: field/motion controls
+  // (You should wire up your field/jaw/gantry/collimator/couch buttons here.)
+
   document.addEventListener('keydown', function(e) {
     if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
     if (!currentLoadedPlan) return;
@@ -908,6 +510,11 @@ document.addEventListener('DOMContentLoaded', function() {
       case 'ArrowDown': moveOverlay(0, step); handled = true; break;
       case 'ArrowLeft': moveOverlay(-step, 0); handled = true; break;
       case 'ArrowRight': moveOverlay(step, 0); handled = true; break;
+      case '[': rotateOverlay(-ROTATION_STEP); handled = true; break;
+      case ']': rotateOverlay(ROTATION_STEP); handled = true; break;
+      case '-': if(e.ctrlKey || e.metaKey) { scaleOverlay(false); handled = true; } break;
+      case '=': if(e.ctrlKey || e.metaKey) { scaleOverlay(true); handled = true; } break;
+      case '+': if(e.ctrlKey || e.metaKey) { scaleOverlay(true); handled = true; } break;
     }
     if (handled) e.preventDefault();
   });
@@ -916,4 +523,5 @@ document.addEventListener('DOMContentLoaded', function() {
   updateMachineParameterDisplays();
   updateConsoleDisplay();
   updateStatusBar();
+  applyOverlayTransformsAndFilters();
 });
