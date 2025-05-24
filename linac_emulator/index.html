@@ -1,149 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>LINAC Console Emulator with Realistic Case & Image Alignment</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>LINAC Console Emulator - Enhanced with DRR & MLC Controls</title>
+    <style>
+        body {
+            background: #212837;
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
+        }
+        header {
+            background: #003366;
+            color: white;
+            padding: 0.5rem 0 0.5rem 0;
+            text-align: center;
+            font-size: 1.3rem;
+            letter-spacing: 1px;
+            margin-bottom: 0.5em;
+            box-shadow: 0 2px 6px #0007;
+            border-bottom: 3px solid #2676c9;
+        }
+        .main-layout-container {
+            display: flex;
+            flex-direction: row;
+            gap: 30px;
+            align-items: flex-start;
+            background: #fff;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            width: 97vw;
+            max-width: 1280px;
+            margin: 0 auto 36px auto;
+        }
+        .visualizer-section { display: flex; flex-direction: column; align-items: center; flex-grow: 3; padding: 10px; }
+        .controls-section { display: flex; flex-direction: column; flex-grow: 1; flex-basis: 260px; gap: 15px; border-left: 1px solid #eee; padding-left: 10px; }
+        h3 { margin-top: 0; color: #003366; text-align: center; width: 100%; margin-bottom: 20px; }
+        h4 { margin-top: 0; color: #333; text-align: center; font-size: 0.95em; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
+        button { padding: 4px 8px; font-size: 0.88em; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background-color: #f8f8f8; }
+        button:hover { background-color: #e8e8e8; }
+        button:active { background-color: #d8d8d8; }
+        select { font-size: 0.9em; padding: 3px; margin-top: 4px; }
+        .control-group { border: 1px solid #eee; padding: 10px 15px; border-radius: 4px; background-color: #fafafa; }
+        .control-row { display: flex; justify-content: space-between; align-items: center; gap: 5px; margin-bottom: 8px; }
+        .control-row:last-child { margin-bottom: 0; }
+        .control-item { display: flex; align-items: center; gap: 4px; }
+        .control-item label { min-width: 25px; font-weight: normal; font-size: 0.89em; margin: 0; text-align: right; }
+        .control-item button { padding: 1px 5px; font-size: 0.95em; line-height: 1.1; border: 1px outset #bbb; }
+        .control-item button:active { border-style: inset; }
+        .control-display { font-weight: normal; min-width: 35px; text-align: center; font-family: monospace; background: #f0f0f0; padding: 1px 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 0.98em; }
+        .field-size-controls .control-row { justify-content: space-around; }
+        .collimator-controls .control-row { justify-content: center; }
+        .edw-controls .control-row { justify-content: space-around; }
+        .image-controls label { font-weight: normal; margin-right: 5px; }
+        .image-controls select { width: 100%; }
+        .summary-text { text-align: center; font-family: monospace; font-size: 1rem; color: #666; margin-top: 5px; }
+        #fieldDisplayContainer {
+            width: 400px; height: 400px; border: 1.5px solid #bbb;
+            margin: 0 auto 20px auto; background-color: #111; overflow: hidden;
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            position: relative;
+        }
+        #rotatingElementsContainer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            transform-origin: center center;
+            transition: transform 0.22s cubic-bezier(0.5,0.7,0.75,1.1), left 0.12s, top 0.12s;
+            z-index: 5;
+            cursor: grab;
+        }
+        #rotatingElementsContainer.dragging { cursor: grabbing; }
+        #fieldDisplayContainer::before, #fieldDisplayContainer::after {
+            content: ''; position: absolute; background-color: rgba(200, 200, 200, 0.6); z-index: 9; pointer-events: none;
+        }
+        #fieldDisplayContainer::before { width: 1px; height: 100%; top: 0; left: 50%; transform: translateX(-50%); }
+        #fieldDisplayContainer::after { width: 100%; height: 1px; top: 50%; left: 0; transform: translateY(-50%); }
+        #fieldDisplayRect {
+            position: absolute; background-color: rgba(255, 255, 150, 0.24); z-index: 2; pointer-events: none; box-sizing: border-box;
+            border: 1.5px solid #ffd900; border-radius: 2.5px;
+        }
+        .leaf-pair-container {
+            position: absolute; width: 100%; left: 0; box-sizing: border-box; z-index: 4;
+        }
+        .leaf-section { position: absolute; height: 100%; box-sizing: border-box; background-color: rgba(150, 155, 170, 0.7); border: 1px solid rgba(100, 105, 120, 0.8); z-index: 2; }
+        .leaf-section.outer { background-color: rgba(190, 195, 200, 0.6); border-color: rgba(150, 155, 160, 0.7); z-index: 1; transition: width 0.1s linear, left 0.1s linear, right 0.1s linear; }
+        .leaf-section.inner { transition: width 1s ease-in-out, left 1s ease-in-out; border-left:none; border-right:none; }
+        .leaf-section.left { left: 0; border-left:none; border-right:none;}
+        .leaf-section.right { right: 0; left: auto; border-right:none; border-left:none;}
+        .mlc-controls { gap: 10px; }
+        .mlc-preset-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .mlc-preset-controls button { width: 100%; }
+        #animateSquareRandBtn, #animateOffsetRandBtn, #animateDiagonalRandBtn, #slidingWindowBtn, #imrtDemoBtn { grid-column: 1 /-1; }
+        #slidingWindowBtn { background-color: #d1e7dd; border-color: #a3cfbb; font-weight: bold; } #slidingWindowBtn:hover { background-color: #bce0c0; }
+        #animateSquareRandBtn { background-color: #cfe2ff; border-color: #b6d4fe; } #animateSquareRandBtn:hover { background-color: #b6d4fe; }
+        #animateOffsetRandBtn { background-color: #fff3cd; border-color: #ffe69c; } #animateOffsetRandBtn:hover { background-color: #ffe69c; }
+        #animateDiagonalRandBtn { background-color: #e2d9f3; border-color: #d0c4e4; } #animateDiagonalRandBtn:hover { background-color: #d0c4e4; }
+        #imrtDemoBtn { background-color: #ffdac1; border-color: #ffc9a7; font-weight: bold; } #imrtDemoBtn:hover { background-color: #ffc9a7; }
+        .animating { background-color: #f8d7da !important; border-color: #f5c2c7 !important; color: #842029 !important; }
+    </style>
 </head>
 <body>
-<header>LINAC Control Console Emulator</header>
-<div class="container">
-  <!-- EMR Panel -->
-  <div class="panel emr-panel">
-    <h3>Patient EMR</h3>
-    <div class="emr-tabs">
-        <button class="tab-button active" onclick="showTab('demographics')">Demographics</button>
-        <button class="tab-button" onclick="showTab('treatment')">Treatment</button>
-        <button class="tab-button" onclick="showTab('labs')">Labs</button>
-    </div>
-    <div class="tab-content active" id="demographics">
-        <p><strong>Name:</strong> <span id="patientName">---</span></p>
-        <p><strong>DOB:</strong> <span id="patientDOB">---</span></p>
-        <p><strong>Diagnosis:</strong> <span id="patientDiagnosis">---</span></p>
-        <p><strong>Patient Type:</strong> <span id="patientType">---</span></p>
-        <button id="generateCaseBtn" style="margin-top: 15px; padding: 8px;">Generate New Patient Case</button>
-    </div>
-    <div class="tab-content" id="treatment">
-        <p>Generate a new patient case to see the treatment plan.</p>
-    </div>
-    <div class="tab-content" id="labs">
-        <p><strong>Creatinine:</strong> <span id="labCreat">---</span></p>
-        <p><strong>WBC:</strong> <span id="labWBC">---</span></p>
-    </div>
-  </div>
-  <div class="main-panel">
-    <!-- QA & Interlocks + Status Bar across top -->
-    <div class="qa-status-bar">
-      <div class="qa-interlocks-panel horizontal">
-        <span class="interlock-status ok" id="interlock-door"><span class="interlock-dot" id="dot-door"></span>Door: <span id="doorStatus">Closed</span></span>
-        <span class="interlock-status ok" id="interlock-beam"><span class="interlock-dot" id="dot-beam"></span>Beam: <span id="beamStatus">Off</span></span>
-        <span class="interlock-status ok" id="interlock-override"><span class="interlock-dot" id="dot-override"></span>Override: <span id="overrideStatus">Inactive</span></span>
-        <span class="qa-checklist">
-          <label><input type="checkbox" disabled checked> Imaging</label>
-          <label><input type="checkbox" disabled> Field Verified</label>
-          <label><input type="checkbox" disabled> Rx Matched</label>
-        </span>
-      </div>
-      <div class="status-bar-local" id="local-status-bar">Emulator Ready. Generate a patient case.</div>
-    </div>
-    <div class="monitors-row">
-      <!-- Machine Parameters + MLC Visualizer -->
-      <div class="monitor-screen monitor-parameters-mlc">
-        <h2>Machine Parameters</h2>
-        <div class="machine-param-box-group">
-          <div class="machine-param-box"><span class="param-label">Beam</span><span id="mp-energy">6 MV</span></div>
-          <div class="machine-param-box"><span class="param-label">Collimator</span><span id="mp-collimator">0°</span></div>
+<header>LINAC Console Emulator &mdash; Enhanced IMRT Field Visualizer &amp; DRR Demo</header>
+<div class="main-layout-container">
+    <div class="visualizer-section">
+        <h3>Field Visualizer (with DRR)</h3>
+        <div id="fieldDisplayContainer">
+            <div id="rotatingElementsContainer">
+                <div id="fieldDisplayRect"></div>
+            </div>
         </div>
-        <div class="machine-param-box-group field-dims-group">
-          <div class="machine-param-box"><span class="param-label">Gantry</span><span id="mp-gantry">0°</span></div>
-          <div class="machine-param-box"><span class="param-label">Couch</span><span id="mp-couch">0°</span></div>
-        </div>
-        <div class="machine-param-box-group jaws-group" style="margin-bottom:0.6em;">
-          <div class="machine-param-box"><span class="param-label">X1</span><span id="jawX1">5.0</span></div>
-          <div class="machine-param-box"><span class="param-label">X2</span><span id="jawX2">5.0</span></div>
-          <div class="machine-param-box"><span class="param-label">Y1</span><span id="jawY1">5.0</span></div>
-          <div class="machine-param-box"><span class="param-label">Y2</span><span id="jawY2">5.0</span></div>
-        </div>
-        <div class="mlc-visualizer-block">
-          <h3>MLC Visualizer</h3>
-          <div id="fieldDisplayContainer">
-            <div id="fieldDisplayRect"></div>
-            <!-- MLC leaves will be injected by JS -->
-            <span class="field-label label-x1">X1</span>
-            <span class="field-label label-x2">X2</span>
-            <span class="field-label label-y1">Y1</span>
-            <span class="field-label label-y2">Y2</span>
-          </div>
-        </div>
-      </div>
-      <!-- Image Alignment -->
-      <div class="monitor-screen monitor-alignment">
-        <h2>Image Alignment</h2>
-        <div class="overlay-container focal">
-          <img src="https://via.placeholder.com/400x320.png?text=Base+(Load+Case)" class="base-image" id="baseImage" alt="Base Patient Anatomy">
-          <img src="https://via.placeholder.com/400x320.png?text=Overlay+(Load+Case)" id="overlayImage" class="overlay-image" alt="Overlay Reference Image">
-        </div>
-        <div class="compact-image-controls">
-          <button onclick="moveOverlay(0,-1)" title="Up">↑</button>
-          <button onclick="moveOverlay(-1,0)" title="Left">←</button>
-          <button onclick="moveOverlay(1,0)" title="Right">→</button>
-          <button onclick="moveOverlay(0,1)" title="Down">↓</button>
-          <button onclick="rotateOverlay(-ROTATION_STEP)" title="Rotate Left">↺</button>
-          <span id="rotationDisplay" class="mini-label">0°</span>
-          <button onclick="rotateOverlay(ROTATION_STEP)" title="Rotate Right">↻</button>
-          <button onclick="scaleOverlay(false)" title="Zoom Out">-</button>
-          <span id="scaleDisplay" class="mini-label">1.00x</span>
-          <button onclick="scaleOverlay(true)" title="Zoom In">+</button>
-          <input type="range" id="opacitySlider" min="0" max="100" value="50" style="width:70px;vertical-align:middle;" title="Opacity"/>
-          <span id="opacityValue" class="mini-label">50%</span>
-        </div>
-        <div class="motion-readout">
-          <strong>Couch Shift:</strong>
-          X: <span id="couchShiftX">0</span> px,
-          Y: <span id="couchShiftY">0</span> px,
-          <strong>Rotation:</strong>
-          <span id="couchRotation">0°</span>,
-          <strong>Zoom:</strong>
-          <span id="couchZoom">1.00x</span>
-        </div>
-        <p id="alignmentMessage" style="text-align: center;"></p>
-        <p id="shiftFeedback" style="color: orange; min-height: 1em; text-align: center;"></p>
-        <p id="alignmentCounterDisplay" style="text-align: center; font-weight: bold; margin-top: 5px;">Correct Case Alignments: 0</p>
-      </div>
     </div>
-    <!-- Console controls below -->
-    <div class="console-panel-group">
-      <div class="console-buttons">
-        <button id="energyToggleButton" class="console-button">Set Energy</button>
-        <span class="field-size-display" id="currentEnergyDisplay" style="min-width: 80px; text-align: center;">6 MV</span>
-        <button class="console-button" id="btn-set-mu">Set MU</button>
-        <button id="btn-conesize" class="console-button disabled">Electron Cone</button>
-        <button class="console-button disabled" id="btn-prepare">Prepare</button>
-        <button class="console-button beam-on disabled" id="btn-beam-on">Beam On</button>
-        <button class="console-button beam-off disabled" id="btn-beam-off">Beam Off</button>
-        <button class="console-button" id="btn-reset">Reset State</button>
-        <button class="console-button door-control" id="btn-door-control">Open Door</button>
-        <button class="console-button disabled" id="btn-override">Override</button>
-      </div>
-      <div id="console-display">
-        <div id="console-parameters">Energy: 6 MV | MU: 000 | Field: ---x--- </div>
-        <div id="console-status">Status: Idle</div>
-        <div id="console-reading">Delivered MU: 000 | Dose Rate: ---</div>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- Modal for cone selection -->
-<div id="cone-modal" class="modal">
-    <div class="modal-content">
-        <span class="close-button" onclick="closeConeModal()">&times;</span>
-        <h4>Select Electron Cone Size</h4>
-        <ul id="cone-options-list">
-            <li data-cone-size="6">6x6 cm</li>
-            <li data-cone-size="10">10x10 cm</li>
-            <li data-cone-size="15">15x15 cm</li>
-            <li data-cone-size="20">20x20 cm</li>
-        </ul>
+    <div class="controls-section">
+        <div class="control-group image-controls">
+            <h4>DRR Image</h4>
+            <select id="drrImageSelect">
+                <option value="">-- None --</option>
+                <option value="https://prod-images-static.radiopaedia.org/images/2089213/f12063879a29e672f675977fabdc89_gallery.jpeg">Chest AP</option>
+                <option value="https://prod-images-static.radiopaedia.org/images/13205453/221b52a9fd6ca1675dccde4728534d_big_gallery.jpg">Brain Lat</option>
+                <option value="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRcK9oD-R3O3Nt7FQeUZ_jAjfws1z48JyKQcA&s">Pelvis AP</option>
+                <option value="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6AdTnLxJ_MVHgTFu27PNRV-P62fjSKoFvBQ&s">Spine AP</option>
+            </select>
+        </div>
+        <div class="control-group field-size-controls">
+            <h4>Jaw Distances (cm)</h4>
+            <div class="control-row">
+                <div class="control-item"><label>X1:</label><button onclick="changeFieldSize('X1', -0.5)">–</button><span class="control-display" id="control-jawX1">5.0</span><button onclick="changeFieldSize('X1', 0.5)">+</button></div>
+                <div class="control-item"><label>X2:</label><button onclick="changeFieldSize('X2', -0.5)">–</button><span class="control-display" id="control-jawX2">5.0</span><button onclick="changeFieldSize('X2', 0.5)">+</button></div>
+            </div>
+            <div class="control-row">
+                <div class="control-item"><label>Y1:</label><button onclick="changeFieldSize('Y1', -0.5)">–</button><span class="control-display" id="control-jawY1">5.0</span><button onclick="changeFieldSize('Y1', 0.5)">+</button></div>
+                <div class="control-item"><label>Y2:</label><button onclick="changeFieldSize('Y2', -0.5)">–</button><span class="control-display" id="control-jawY2">5.0</span><button onclick="changeFieldSize('Y2', 0.5)">+</button></div>
+            </div>
+            <div class="summary-text">Total Field: <span id="totalFieldX">10.0</span> x <span id="totalFieldY">10.0</span> cm</div>
+        </div>
+        <div class="control-group collimator-controls">
+            <h4>Collimator Angle</h4>
+            <div class="control-row">
+                <div class="control-item"><button id="collRotateNegBtn">– 5°</button><span class="control-display" id="collimatorDisplay">0°</span><button id="collRotatePosBtn">+ 5°</button></div>
+            </div>
+        </div>
+        <div class="control-group mlc-controls">
+            <h4>MLC Presets &amp; Animations</h4>
+            <div class="mlc-preset-controls">
+                <button id="presetMatchJaw">Match Jaws</button>
+                <button id="presetMultiBlock">Multi-Block</button>
+                <button id="presetSquare">Square</button>
+                <button id="presetOffset">Offset</button>
+                <button id="presetBlock">Block</button>
+                <button id="presetCshape">C-Shape</button>
+                <button id="presetDiagonal">Diagonal</button>
+                <button id="presetDiagRev">Rev Diag</button>
+                <button id="presetDiagShallow">Shallow</button>
+                <button id="animateSquareRandBtn">Animate Square</button>
+                <button id="animateOffsetRandBtn">Animate Offset</button>
+                <button id="animateDiagonalRandBtn">Animate Diagonal</button>
+                <button id="slidingWindowBtn">Sliding Window</button>
+                <button id="imrtDemoBtn">IMRT Demo</button>
+            </div>
+        </div>
     </div>
 </div>
 <script src="script.js"></script>
