@@ -99,30 +99,9 @@
       </div>
     </div>
 
-    <!-- Controls Section -->
+     <!-- Controls Section -->
     <div class="control-panel">
-      <div class="section">
-        <h3>Beam Control</h3>
-        <div class="console-buttons">
-            <button id="energyToggleButton" class="console-button">Set Energy</button>
-            <span class="field-size-display" id="currentEnergyDisplay" style="min-width: 80px; text-align: center;">6 MV</span>
-            <button class="console-button" id="btn-set-mu">Set MU</button>
-            <button id="btn-conesize" class="console-button disabled">Electron Cone</button>
-            <button class="console-button disabled" id="btn-prepare">Prepare</button>
-            <button class="console-button beam-on disabled" id="btn-beam-on">Beam On</button>
-            <button class="console-button beam-off disabled" id="btn-beam-off">Beam Off</button>
-            <button class="console-button" id="btn-reset">Reset State</button>
-            <button class="console-button door-control" id="btn-door-control">Open Door</button>
-            <button class="console-button disabled" id="btn-override">Override</button>
-        </div>
-        <div id="console-display">
-            <div id="console-parameters">Energy: 6 MV | MU: 000 | Field: ---x--- </div>
-            <div id="console-status">Status: Idle</div>
-            <div id="console-reading">Delivered MU: 000 | Dose Rate: ---</div>
-        </div>
-      </div>
-
-      <div class="section">
+      <div class="section linac-controls-section">
         <h3>LINAC Controls</h3>
         <div class="motion-controls-row">
             <div class="gantry-controls">
@@ -141,7 +120,6 @@
               <button onclick="changeCouch(1)">+</button>
             </div>
         </div>
-
         <div class="field-size-controls">
             <h4>Field Size (cm)</h4>
             <div class="field-row">
@@ -173,6 +151,30 @@
                 </div>
             </div>
         </div>
+
+        <!-- --- Moved Buttons and Console Display here --- -->
+        <div class="console-panel-group">
+          <div class="console-buttons">
+              <button id="energyToggleButton" class="console-button">Set Energy</button>
+              <span class="field-size-display" id="currentEnergyDisplay" style="min-width: 80px; text-align: center;">6 MV</span>
+              <button class="console-button" id="btn-set-mu">Set MU</button>
+              <button id="btn-conesize" class="console-button disabled">Electron Cone</button>
+              <button class="console-button disabled" id="btn-prepare">Prepare</button>
+              <button class="console-button beam-on disabled" id="btn-beam-on">Beam On</button>
+              <button class="console-button beam-off disabled" id="btn-beam-off">Beam Off</button>
+              <button class="console-button" id="btn-reset">Reset State</button>
+              <button class="console-button door-control" id="btn-door-control">Open Door</button>
+              <button class="console-button disabled" id="btn-override">Override</button>
+          </div>
+          <div id="console-display">
+              <div id="console-parameters">Energy: 6 MV | MU: 000 | Field: ---x--- </div>
+              <div id="console-status">Status: Idle</div>
+              <div id="console-reading">Delivered MU: 000 | Dose Rate: ---</div>
+          </div>
+          <div id="local-status-bar" class="status-bar-local">Emulator Ready. Generate a patient case.</div>
+        </div>
+            </div>
+        </div>
       </div>
     </div>
   </div>
@@ -189,7 +191,7 @@
         </ul>
     </div>
 </div>
-<div class="status-bar" id="status-bar">Emulator Ready. Generate a patient case.</div>
+
 <script src="script.js"></script>
 </body>
 </html>
