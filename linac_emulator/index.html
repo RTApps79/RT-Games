@@ -33,7 +33,6 @@
   </div>
   <!-- Center: Machine Parameters & Status -->
   <div class="main-panel three-screen-panel">
-    <!-- QA & Interlocks + Status Bar -->
     <div class="qa-status-bar">
       <div class="qa-interlocks-panel horizontal">
         <span class="interlock-status ok" id="interlock-door"><span class="interlock-dot" id="dot-door"></span>Door: <span id="doorStatus">Closed</span></span>
@@ -96,9 +95,8 @@
         </div>
       </div>
     </div>
-    <!-- Console panel rows below monitors -->
     <div class="console-panel-group">
-      <!-- Row 1: Console Buttons -->
+      <div class="section-label">Console Buttons</div>
       <div class="console-buttons">
         <button id="energyToggleButton" class="console-button">Set Energy</button>
         <span class="field-size-display" id="currentEnergyDisplay" style="min-width: 80px; text-align: center;">6 MV</span>
@@ -111,7 +109,7 @@
         <button class="console-button door-control" id="btn-door-control">Open Door</button>
         <button class="console-button disabled" id="btn-override">Override</button>
       </div>
-      <!-- Row 2: Image Alignment Controls -->
+      <div class="section-label">Image Alignment</div>
       <div class="console-buttons image-alignment-controls">
         <button onclick="moveOverlay(0,-1)" title="Up">↑</button>
         <button onclick="moveOverlay(-1,0)" title="Left">←</button>
@@ -132,8 +130,9 @@
         <span id="couchRotation">0°</span>,
         <strong>Zoom:</strong>
         <span id="couchZoom">1.00x</span>
+        <button id="btn-check-alignment" class="console-button" style="margin-left:18px;">Check Alignment</button>
       </div>
-      <!-- Row 3: Machine/MLC/DRR Controls -->
+      <div class="section-label">Machine &amp; Field Controls</div>
       <div class="console-buttons machine-controls">
         <label for="drrImageSelect" style="font-weight:bold;">DRR Image:</label>
         <select id="drrImageSelect" style="width: 120px;">
