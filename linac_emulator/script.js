@@ -26,7 +26,7 @@ let loadedFieldIndex = -1;
 let overrideActive = false;
 
 /* --- MLC/Field Visualizer --- */
-const NUM_LEAF_PAIRS = 20;
+const NUM_LEAF_PAIRS = 60;
 const fieldDisplayContainerSize = 320;
 const maxJawDistance = 20.0;
 const centerPx = fieldDisplayContainerSize / 2.0;
