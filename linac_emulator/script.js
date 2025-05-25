@@ -694,16 +694,24 @@ function startImrtDemo() {
 /* -----------------------------
    IMAGE ALIGNMENT CONTROLS
 ------------------------------*/
+function resetAlignmentVerification() {
+  isAlignmentVerified = false;
+  btnBeamOn.classList.add('disabled');
+  if (alignmentMessage) alignmentMessage.textContent = "Alignment must be re-checked after any adjustment.";
+}
+
 function moveOverlay(dx, dy) {
   overlayOffsetX += dx;
   overlayOffsetY += dy;
   applyOverlayTransformsAndFilters();
   updateShiftFeedback();
+  resetAlignmentVerification();
 }
 function rotateOverlay(deltaAngle) {
   overlayRotationAngle = (overlayRotationAngle + deltaAngle + 360) % 360;
   applyOverlayTransformsAndFilters();
   updateShiftFeedback();
+  resetAlignmentVerification();
 }
 function scaleOverlay(zoomIn) {
   const SCALE_STEP_MULTIPLIER = 1.1, MIN_SCALE = 0.2, MAX_SCALE = 5.0;
@@ -711,6 +719,7 @@ function scaleOverlay(zoomIn) {
   else overlayScale = Math.max(MIN_SCALE, overlayScale / SCALE_STEP_MULTIPLIER);
   applyOverlayTransformsAndFilters();
   updateShiftFeedback();
+  resetAlignmentVerification();
 }
 function handleOpacityChange() {
   if (overlayImageElement && opacitySlider) {
