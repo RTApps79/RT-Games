@@ -938,7 +938,46 @@ function partialResetConsoleForNewPlan() {
   isAlignmentVerified = false;
   btnBeamOn.classList.add('disabled');
 }
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
 
+let mlcAnimFrame = null;
+function animateMLCToPreset(targetLeft, targetRight, duration = 1000) {
+  const startLeft = [...leftLeafPositions];
+  const startRight = [...rightLeafPositions];
+  const startTime = performance.now();
+
+  function step(now) {
+    let t = Math.min(1, (now - startTime) / duration);
+    for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
+      leftLeafPositions[i] = lerp(startLeft[i], targetLeft[i], t);
+      rightLeafPositions[i] = lerp(startRight[i], targetRight[i], t);
+    }
+    updateInnerLeafVisuals(leftLeafPositions, rightLeafPositions, false);
+    if (t < 1) {
+      mlcAnimFrame = requestAnimationFrame(step);
+    } else {
+      mlcAnimFrame = null;
+    }
+  }
+  if (mlcAnimFrame) cancelAnimationFrame(mlcAnimFrame);
+  mlcAnimFrame = requestAnimationFrame(step);
+}
+
+// Example for IMRT Demo sequencing:
+function startImrtDemo() {
+  const sequence = ['block', 'offset', 'square', 'diagonal', 'multiBlock'];
+  let idx = 0;
+  function next() {
+    if (idx >= sequence.length) return;
+    const { targetLeft, targetRight } = calculatePresetPositions(sequence[idx]);
+    animateMLCToPreset(targetLeft, targetRight, 1000);
+    idx++;
+    setTimeout(next, 1200);
+  }
+  next();
+}
 // ... [rest of script remains unchanged] ...
 
 document.addEventListener('DOMContentLoaded', () => {
