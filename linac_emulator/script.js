@@ -24,7 +24,7 @@ let fieldAdjustmentLocked = false;
 let currentLoadedPlan = null;
 let loadedFieldIndex = -1;
 let overrideActive = false;
-
+let audioBeam, audioMLC;
 /* --- MLC/Field Visualizer --- */
 const NUM_LEAF_PAIRS = 60; // More realistic
 const fieldDisplayContainerSize = 320;
@@ -175,6 +175,9 @@ function wireDomReferences() {
   couchShiftY = document.getElementById('couchShiftY');
   couchRotation = document.getElementById('couchRotation');
   couchZoom = document.getElementById('couchZoom');
+   
+  audioBeam = document.getElementById('audio-beam');
+  audioMLC = document.getElementById('audio-mlc');
 }
 
 /* -----------------------------
@@ -638,7 +641,11 @@ function animateMLCToPreset(targetLeft, targetRight, duration = 1000, cb) {
 }
 
 function startImrtBeamAutoAnimation() {
-  cancelMLCAnimation();
+  if (audioMLC) {
+  audioMLC.currentTime = 0;
+  audioMLC.play();
+}
+   cancelMLCAnimation();
   mlcAutoMode = "IMRT";
   const sequence = ['block', 'offset', 'square', 'diagonal', 'multiBlock'];
   let idx = 0;
@@ -650,7 +657,11 @@ function startImrtBeamAutoAnimation() {
       mlcSeqTimeout = setTimeout(next, 200);
     });
   }
-  next();
+if (audioMLC) {
+  audioMLC.pause();
+  audioMLC.currentTime = 0;
+} 
+   next();
 }
 
 function setMLC3DCRTPreset() {
@@ -780,7 +791,10 @@ function beamOnClicked() {
   } else {
     setMLC3DCRTPreset();
   }
-
+  if (audioBeam) {
+  audioBeam.currentTime = 0;
+  audioBeam.play();
+}
   let doseRate = 300; // MU/minute, ~5 MU/sec
   let intervalMs = 200; // 0.2s increments
   let muPerTick = doseRate / 60 * (intervalMs / 1000);
@@ -822,6 +836,10 @@ function resetClicked() {
   updateOuterVisualsAndContainers(); updateInnerLeafVisuals(leftLeafPositions, rightLeafPositions, false);
   updateConsoleDisplay(); updateStatusBar();
   showTab('demographics');
+  if (audioBeam) {
+  audioBeam.pause();
+  audioBeam.currentTime = 0;
+}
 }
 
 function partialResetConsoleForNewPlan() {
