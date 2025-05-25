@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RadUnits Challenge</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --correct-color: #28a745;
+            --incorrect-color: #dc3545;
+            --background-color: #f8f9fa;
+            --text-color: #343a40;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+        .game-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 80%;
+            max-width: 600px;
+        }
+        .question-container {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .progress {
+            font-size: 1em;
+            margin-bottom: 5px;
+            color: #6c757d;
+            text-align: right;
+        }
+        .question {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+        }
+        .option {
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            padding: 10px 15px;
+            margin: 5px 0;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+            user-select: none;
+        }
+        .option:hover, .option:focus {
+            background-color: #dee2e6;
+            outline: none;
+        }
+        .option.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+        }
+        .option.incorrect {
+            background-color: var(--incorrect-color);
+            color: white;
+            border-color: var(--incorrect-color);
+        }
+        .feedback {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 15px;
+            min-height: 1.5em;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .next-button, .restart-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .next-button:disabled {
+            background-color: #adb5bd;
+            cursor: not-allowed;
+        }
+        .score {
+            font-size: 1em;
+        }
+        .restart-button {
+            background-color: var(--correct-color);
+            margin-left: auto;
+        }
+        @media(max-width: 500px){
+            .game-container { width: 97%; padding: 8px; }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="question-container">
+        <div class="progress"></div>
+        <div class="question"></div>
+        <div class="options-container"></div>
+    </div>
+    <div class="feedback"></div>
+    <div class="controls">
+        <button class="next-button" disabled>Next Question</button>
+        <button class="restart-button" style="display:none;">Restart</button>
+        <div class="score">Score: <span class="score-value">0</span></div>
+    </div>
+</div>
+<script>
+const questionsBank = [
+    {
+        question: "Which unit is used to measure absorbed dose?",
+        options: ["Sievert", "Gray", "Becquerel", "Roentgen"],
+        correctAnswer: "Gray"
+    },
+    {
+        question: "The unit of Sievert (Sv) is used to measure the __________ effect of radiation.",
+        options: ["Absorbed dose", "Biological effectiveness", "Radioactive decay", "Air ionization"],
+        correctAnswer: "Biological effectiveness"
+    },
+    {
+        question: "What does Becquerel (Bq) measure?",
+        options: ["Absorbed dose", "Biological effectiveness", "Radioactive decays/sec", "Air ionization"],
+        correctAnswer: "Radioactive decays/sec"
+    },
+    {
+        question: "Which unit measures Air ionization?",
+        options: ["Sievert", "Gray", "Becquerel", "Roentgen"],
+        correctAnswer: "Roentgen"
+    },
+    {
+        question: "1 Gray is equal to:",
+        options: ["1 J/kg", "1 decay/sec", "1 Sievert", "1 Roentgen"],
+        correctAnswer: "1 J/kg"
+    }
+];
+
+let questions = [];
+let currentQuestionIndex = 0;
+let score = 0;
+
+const questionElement = document.querySelector('.question');
+const optionsContainer = document.querySelector('.options-container');
+const feedbackElement = document.querySelector('.feedback');
+const nextButton = document.querySelector('.next-button');
+const restartButton = document.querySelector('.restart-button');
+const scoreElement = document.querySelector('.score-value');
+const progressElement = document.querySelector('.progress');
+
+function shuffleArray(array) {
+    // Durstenfeld shuffle
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function setupGame() {
+    questions = questionsBank.map(q => ({
+        ...q,
+        options: [...q.options]
+    }));
+    shuffleArray(questions);
+    currentQuestionIndex = 0;
+    score = 0;
+    scoreElement.textContent = score;
+    restartButton.style.display = "none";
+    nextButton.style.display = "";
+    loadQuestion();
+}
+
+function loadQuestion() {
+    const currentQuestion = questions[currentQuestionIndex];
+    // Shuffle options for each question
+    shuffleArray(currentQuestion.options);
+
+    questionElement.textContent = currentQuestion.question;
+    optionsContainer.innerHTML = "";
+    feedbackElement.textContent = "";
+    progressElement.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+
+    currentQuestion.options.forEach((option, idx) => {
+        const optionElement = document.createElement('div');
+        optionElement.classList.add('option');
+        optionElement.textContent = option;
+        optionElement.setAttribute('tabindex', 0);
+        optionElement.dataset.idx = idx;
+        optionElement.addEventListener('click', () => checkAnswer(option));
+        optionsContainer.appendChild(optionElement);
+    });
+
+    nextButton.disabled = true;
+    // Keyboard accessibility: support 1-4/A-D
+    document.onkeydown = function(e) {
+        if (nextButton.disabled) {
+            const key = e.key.toLowerCase();
+            let idx = -1;
+            if (key >= '1' && key <= String(currentQuestion.options.length)) {
+                idx = parseInt(key) - 1;
+            } else if (key >= 'a' && key <= 'd') {
+                idx = key.charCodeAt(0) - 'a'.charCodeAt(0);
+            }
+            if (idx >= 0 && idx < currentQuestion.options.length) {
+                checkAnswer(currentQuestion.options[idx]);
+            }
+        }
+    };
+}
+
+function checkAnswer(selectedOption) {
+    const currentQuestion = questions[currentQuestionIndex];
+    const options = document.querySelectorAll('.option');
+
+    options.forEach(option => {
+        option.classList.remove('correct', 'incorrect');
+        option.style.pointerEvents = 'none'; // Disable further clicks
+    });
+
+    if (selectedOption === currentQuestion.correctAnswer) {
+        options.forEach(option => {
+            if (option.textContent === selectedOption) {
+                option.classList.add('correct');
+            }
+        });
+        feedbackElement.textContent = "✓ Correct!";
+        score++;
+        scoreElement.textContent = score;
+    } else {
+        options.forEach(option => {
+            if (option.textContent === selectedOption) {
+                option.classList.add('incorrect');
+            }
+            if (option.textContent === currentQuestion.correctAnswer) {
+                option.classList.add('correct');
+            }
+        });
+        feedbackElement.textContent = "✗ Incorrect. The correct answer is " + currentQuestion.correctAnswer;
+    }
+
+    nextButton.disabled = false;
+    document.onkeydown = null;
+}
+
+function loadNextQuestion() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < questions.length) {
+        loadQuestion();
+    } else {
+        questionElement.textContent = "Quiz Completed!";
+        optionsContainer.innerHTML = "";
+        feedbackElement.textContent = `Your final score is ${score} out of ${questions.length}`;
+        progressElement.textContent = "";
+        nextButton.style.display = "none";
+        restartButton.style.display = "";
+        document.onkeydown = null;
+    }
+}
+
+nextButton.addEventListener('click', loadNextQuestion);
+restartButton.addEventListener('click', setupGame);
+
+// Initial load
+setupGame();
+</script>
+</body>
+</html>
