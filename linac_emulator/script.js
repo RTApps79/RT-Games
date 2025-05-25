@@ -719,12 +719,19 @@ function handleOpacityChange() {
   }
 }
 function applyOverlayTransformsAndFilters() {
-  if (!overlayImageElement) return;
-  const transformValue =
+  if (!overlayImageElement || !baseImageElement) return;
+
+  // Set scale for both images
+  baseImageElement.style.transform = `scale(${overlayScale})`;
+
+  // Overlay: scale (same as base), plus user shifts/rotation
+  const overlayTransform =
+    `scale(${overlayScale}) ` +
     `translate(${overlayOffsetX}px, ${overlayOffsetY}px) ` +
-    `rotate(${overlayRotationAngle}deg) ` +
-    `scale(${overlayScale})`;
-  overlayImageElement.style.transform = transformValue;
+    `rotate(${overlayRotationAngle}deg)`;
+  overlayImageElement.style.transform = overlayTransform;
+
+  // Opacity and UI updates as before
   overlayImageElement.style.opacity = overlayOpacity;
   rotationDisplay.textContent = `${overlayRotationAngle}°`;
   scaleDisplay.textContent = `${overlayScale.toFixed(2)}x`;
