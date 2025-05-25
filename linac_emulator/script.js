@@ -677,18 +677,45 @@ function setLeafPreset(presetType) {
 /* -----------------------------
    MLC Animation (stubs, expand if needed)
 ------------------------------*/
-function startPresetAnimation(presetType) {
-  // Example: animate from current to preset shape, then back
-  setLeafPreset(presetType);
+let mlcAnimFrame = null;
+
+function animateMLCToPreset(targetLeft, targetRight, duration = 1000) {
+  const startLeft = [...leftLeafPositions];
+  const startRight = [...rightLeafPositions];
+  const startTime = performance.now();
+
+  function step(now) {
+    let t = Math.min(1, (now - startTime) / duration);
+    for (let i = 0; i < NUM_LEAF_PAIRS; i++) {
+      leftLeafPositions[i] = lerp(startLeft[i], targetLeft[i], t);
+      rightLeafPositions[i] = lerp(startRight[i], targetRight[i], t);
+    }
+    updateInnerLeafVisuals(leftLeafPositions, rightLeafPositions, false);
+    if (t < 1) {
+      mlcAnimFrame = requestAnimationFrame(step);
+    } else {
+      mlcAnimFrame = null;
+    }
+  }
+  if (mlcAnimFrame) cancelAnimationFrame(mlcAnimFrame);
+  mlcAnimFrame = requestAnimationFrame(step);
 }
-function startSlidingWindowDemo() {
-  // Example: animate leafs for sliding window
-  // Not implemented: just preset for now
-  setLeafPreset('block');
-}
+
+// Example usage for IMRT Demo:
 function startImrtDemo() {
-  // Example: animate leafs for IMRT demo
-  setLeafPreset('multiBlock');
+  // Sequence of preset shapes
+  const sequence = [
+    'block', 'offset', 'square', 'diagonal', 'multiBlock'
+  ];
+  let idx = 0;
+  function next() {
+    if (idx >= sequence.length) return;
+    const { targetLeft, targetRight } = calculatePresetPositions(sequence[idx]);
+    animateMLCToPreset(targetLeft, targetRight, 1000);
+    idx++;
+    setTimeout(next, 1200); // allow animation to finish
+  }
+  next();
 }
 
 /* -----------------------------
