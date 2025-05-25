@@ -856,3 +856,81 @@ document.addEventListener('DOMContentLoaded', () => {
   updateStatusBar();
   enableParameterSettingButtons(true);
 });
+let isAlignmentVerified = false;
+
+// Check Alignment Button Handler
+function checkAlignmentClicked() {
+  if (
+    Math.abs(overlayOffsetX) <= alignmentTolerance &&
+    Math.abs(overlayOffsetY) <= alignmentTolerance &&
+    (overlayRotationAngle % 360 === 0 || Math.abs(overlayRotationAngle % 360) <= 2) &&
+    Math.abs(overlayScale - 1) <= 0.05
+  ) {
+    isAlignmentVerified = true;
+    btnBeamOn.classList.remove('disabled');
+    if (alignmentMessage) alignmentMessage.textContent = "Alignment Verified! You may now Beam On.";
+    correctCaseAlignments++;
+    updateCaseAlignmentCounterDisplay?.();
+  } else {
+    isAlignmentVerified = false;
+    btnBeamOn.classList.add('disabled');
+    if (alignmentMessage) alignmentMessage.textContent =
+      "Alignment not within tolerance. Adjust overlay (shift/rotate/zoom) and try again.";
+  }
+}
+
+// Patch in lockouts for Prepare and Beam On
+function prepareClicked() {
+  if (isBeaming || isPrepared || isDoorOpen) return;
+  isPrepared = true;
+  isAlignmentVerified = false;
+  btnBeamOn.classList.add('disabled');
+  updateConsoleDisplay();
+}
+function beamOnClicked() {
+  if (isBeaming || !isPrepared || isDoorOpen || !isAlignmentVerified) return;
+  isBeaming = true;
+  btnBeamOn.classList.add('disabled');
+  btnBeamOff.classList.remove('disabled');
+  let doseRate = 300; // MU/minute, ~5 MU/sec
+  let intervalMs = 200; // 0.2s increments
+  let muPerTick = doseRate / 60 * (intervalMs / 1000);
+  beamTimeoutId = setInterval(() => {
+    deliveredMU += muPerTick;
+    if (deliveredMU >= setMU) {
+      deliveredMU = setMU;
+      beamOffClicked();
+    }
+    updateConsoleDisplay();
+  }, intervalMs);
+  updateConsoleDisplay();
+}
+function partialResetConsoleForNewPlan() {
+  if(beamTimeoutId) clearInterval(beamTimeoutId);
+  beamTimeoutId = null;
+  isPrepared = false; isBeaming = false; deliveredMU = 0; setMU = 0;
+  selectedEnergy = "---"; gantryAngle = 0; collimatorAngle = 0; couchAngle = 0;
+  jawX1 = 0; jawX2 = 0; jawY1 = 0; jawY2 = 0; currentEnergyIndex = -1;
+  fieldAdjustmentLocked = false; loadedFieldIndex = -1;
+  document.getElementById('currentEnergyDisplay').textContent = '---';
+  document.getElementById('mp-energy').textContent = '---';
+  updateControlPanelDisplays();
+  updateMachineParameterDisplays();
+  enableParameterSettingButtons(false);
+  updateConsoleDisplay();
+  updateStatusBar();
+  isAlignmentVerified = false;
+  btnBeamOn.classList.add('disabled');
+}
+
+// ... [rest of script remains unchanged] ...
+
+document.addEventListener('DOMContentLoaded', () => {
+  // ... [existing DOMContentLoaded code] ...
+
+  // Wire Check Alignment button
+  const btnCheckAlignment = document.getElementById('btn-check-alignment');
+  btnCheckAlignment?.addEventListener('click', checkAlignmentClicked);
+
+  // ... [rest of DOMContentLoaded code] ...
+});
