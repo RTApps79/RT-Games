@@ -2,35 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sectional Anatomy Quiz Menu</title>
+    <title>Sectional Anatomy Quiz</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="menu-container">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/8/8b/Body_planes-en.svg" alt="Body Planes" class="menu-logo"/>
-        <div class="menu-title">Sectional Anatomy Quiz</div>
-        <div class="menu-instructions">
-            Welcome! Test your knowledge of imaging planes and medical terminology.<br>
-            <strong>Instructions:</strong>
-            <ul style="text-align:left;max-width:90%;margin:12px auto 0 auto;">
-                <li>Select a topic below or choose a comprehensive review.</li>
-                <li>For each question, pick the best answer. Some imaging questions will show a diagram.</li>
-                <li>Try to score high and earn a badge!</li>
-            </ul>
+    <div class="game-container">
+        <div class="progress"></div>
+        <div class="timer" style="display:none;"></div>
+        <div class="score" style="float:right;">Score: <span class="score-value">0</span></div>
+        <div class="question-container">
+            <!-- The image, if any, will be inserted above .question via JS -->
+            <div class="question"></div>
         </div>
-        <div class="menu-section">
-            <button class="menu-btn" onclick="startQuiz('planes')">🧭 Imaging Planes Only</button>
-            <button class="menu-btn" onclick="startQuiz('terminology')">🩺 Medical Terminology Only</button>
-            <button class="menu-btn" onclick="startQuiz('comprehensive')">🌟 Comprehensive Review</button>
+        <div class="options-container"></div>
+        <div class="feedback"></div>
+        <div class="controls" style="margin-top:18px;">
+            <button class="next-button" disabled>Next</button>
+            <button class="restart-button" style="display:none;">Restart</button>
+            <button id="mic-btn" title="Speak your answer" style="margin-left:auto; background:#FFF; color:#007bff; border:1.5px solid #007bff;">
+                <span id="mic-icon">🎤</span>
+            </button>
         </div>
-        <div class="menu-footer">
-            Powered by RTApps79 &middot; v1.0
-        </div>
+        <div class="badge-container"></div>
     </div>
-    <script>
-        function startQuiz(mode) {
-            window.location.href = `quiz.html?mode=${mode}`;
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
