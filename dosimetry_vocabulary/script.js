@@ -159,8 +159,29 @@ function nextQuestion() {
 
 // --- Matching Pairs Mode (Visual/Kinesthetic Learning) ---
 function loadMatchingPairs() {
-    const termsData = shuffleArray(vocabulary.map(v => ({ id: crypto.randomUUID(), text: v.term, type: 'term', matched: false })));
-    const definitionsData = shuffleArray(vocabulary.map(v => ({ id: crypto.randomUUID(), text: v.definition, type: 'definition', matched: false, correctTermId: termsData.find(t => t.text === vocabulary.find(orig => orig.definition === v.text).term).id })));
+    // Build base pairs (keep reference to term and definition for each pair)
+    const pairs = vocabulary.map(v => ({
+        term: v.term,
+        definition: v.definition,
+        termId: crypto.randomUUID(),
+        matched: false
+    }));
+
+    // Create shuffled lists for terms and definitions
+    const termsData = shuffleArray(pairs.map(p => ({
+        id: p.termId,
+        text: p.term,
+        type: 'term',
+        matched: false
+    })));
+
+    const definitionsData = shuffleArray(pairs.map(p => ({
+        id: crypto.randomUUID(),
+        text: p.definition,
+        type: 'definition',
+        matched: false,
+        correctTermId: p.termId
+    })));
 
     matchingPairs = { terms: termsData, definitions: definitionsData };
 
@@ -192,6 +213,7 @@ function loadMatchingPairs() {
         div.addEventListener('drop', dropMatching);
         definitionsContainer.appendChild(div);
     });
+}
 }
 
 function dragStartMatching(event) {
