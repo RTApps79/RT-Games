@@ -1,6 +1,106 @@
 // ------------ Data: RadUnits Challenge Questions --------------
 const questionsBank = [
     // ... (same as your provided questions)
+    {
+        question: "Which SI unit is used to measure absorbed dose?",
+        options: ["Sievert", "Gray", "Becquerel", "Coulomb/kg"],
+        correctAnswer: "Gray"
+    },
+    {
+        question: "The Sievert (Sv) is the SI unit for:",
+        options: ["Absorbed dose", "Equivalent dose", "Radioactivity", "Exposure"],
+        correctAnswer: "Equivalent dose"
+    },
+    {
+        question: "The SI unit for radioactivity is:",
+        options: ["Becquerel", "Sievert", "Gray", "Coulomb/kg"],
+        correctAnswer: "Becquerel"
+    },
+    {
+        question: "What does 1 Becquerel represent?",
+        options: ["1 J/kg", "1 decay/second", "1 C/kg", "1 Sievert"],
+        correctAnswer: "1 decay/second"
+    },
+    {
+        question: "The SI unit for exposure (air ionization) is:",
+        options: ["Coulomb/kg", "Gray", "Sievert", "Becquerel"],
+        correctAnswer: "Coulomb/kg"
+    },
+    {
+        question: "How many Joules per kilogram are in 1 Gray?",
+        options: ["1", "10", "100", "1000"],
+        correctAnswer: "1"
+    },
+    {
+        question: "Which quantity does the Gray (Gy) measure?",
+        options: ["Absorbed dose", "Equivalent dose", "Radioactivity", "Exposure"],
+        correctAnswer: "Absorbed dose"
+    },
+    {
+        question: "Which SI unit is used to express the biological effect of radiation?",
+        options: ["Sievert", "Gray", "Becquerel", "Coulomb/kg"],
+        correctAnswer: "Sievert"
+    },
+    {
+        question: "A dose of 2 Gy is equal to how many Joules absorbed per kg?",
+        options: ["2 J/kg", "20 J/kg", "0.2 J/kg", "200 J/kg"],
+        correctAnswer: "2 J/kg"
+    },
+    {
+        question: "What does a reading of 1000 Bq mean?",
+        options: ["1000 decays per minute", "1000 decays per second", "1000 J/kg", "1000 C/kg"],
+        correctAnswer: "1000 decays per second"
+    },
+    {
+        question: "What is the SI unit symbol for exposure?",
+        options: ["C/kg", "Gy", "Sv", "Bq"],
+        correctAnswer: "C/kg"
+    },
+    {
+        question: "Which unit is used for activity concentration in SI?",
+        options: ["Bq/kg", "Sv/kg", "Gy/kg", "C/kg"],
+        correctAnswer: "Bq/kg"
+    },
+    {
+        question: "Which of the following is a derived SI unit?",
+        options: ["Gray", "Sievert", "Becquerel", "All of the above"],
+        correctAnswer: "All of the above"
+    },
+    {
+        question: "Which SI unit is equivalent to 1 J/kg?",
+        options: ["1 Gray", "1 Sievert", "1 Becquerel", "1 C/kg"],
+        correctAnswer: "1 Gray"
+    },
+    {
+        question: "Which SI unit is used for effective dose?",
+        options: ["Sievert", "Gray", "Becquerel", "Coulomb/kg"],
+        correctAnswer: "Sievert"
+    },
+    {
+        question: "The SI unit for measuring the rate of nuclear decay is:",
+        options: ["Becquerel", "Gray", "Sievert", "Coulomb/kg"],
+        correctAnswer: "Becquerel"
+    },
+    {
+        question: "Which of the following is NOT an SI unit?",
+        options: ["Gray", "Sievert", "Becquerel", "Rem"],
+        correctAnswer: "Rem"
+    },
+    {
+        question: "Which SI unit replaced the traditional unit 'rad'?",
+        options: ["Gray", "Sievert", "Becquerel", "Coulomb/kg"],
+        correctAnswer: "Gray"
+    },
+    {
+        question: "Which SI unit replaced the traditional unit 'rem'?",
+        options: ["Sievert", "Gray", "Becquerel", "Coulomb/kg"],
+        correctAnswer: "Sievert"
+    },
+    {
+        question: "Which SI unit replaced the traditional unit 'Curie'?",
+        options: ["Becquerel", "Sievert", "Gray", "Coulomb/kg"],
+        correctAnswer: "Becquerel"
+    }
 ];
 
 // For matching and flashcards, re-use the same data structure
@@ -276,25 +376,27 @@ function setupMatching() {
     shuffleArray(shuffledVocabulary);
 
     const pairs = shuffledVocabulary.map(v => ({
-        term: v.term,
-        definition: v.definition,
-        termId: crypto.randomUUID(),
-        matched: false
-    }));
-    const termsData = shuffleArray([...pairs.map(p => ({
-        id: p.termId,
-        text: p.term,
-        type: 'term',
-        matched: false
-    }))]);
-    const definitionsData = shuffleArray([...pairs.map(p => ({
-        id: crypto.randomUUID(),
-        text: p.definition,
-        type: 'definition',
-        matched: false,
-        correctTermId: p.termId
-    }))]);
-    matchingPairs = { terms: termsData, definitions: definitionsData };
+    term: v.term,
+    definition: v.definition,
+    termId: crypto.randomUUID(),
+    matched: false
+}));
+const termsData = pairs.map(p => ({
+    id: p.termId,
+    text: p.term,
+    type: 'term',
+    matched: false
+}));
+const definitionsData = pairs.map(p => ({
+    id: crypto.randomUUID(),
+    text: p.definition,
+    type: 'definition',
+    matched: false,
+    correctTermId: p.termId
+}));
+shuffleArray(termsData);
+shuffleArray(definitionsData);
+matchingPairs = { terms: termsData, definitions: definitionsData };
     matchingScore.textContent = `Score: 0 / ${pairs.length}`;
 
     matchingTerms.innerHTML = '';
