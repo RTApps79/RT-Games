@@ -4,7 +4,7 @@ const imagingPlaneImages = {
     sagittal: "https://www.humanbiomedia.org/illustrations/body-introduction/anatomical-planes/sagittal-plane.png",
     coronal: "https://www.humanbiomedia.org/illustrations/body-introduction/anatomical-planes/frontal-plane.png",
     axial: "https://www.humanbiomedia.org/illustrations/body-introduction/anatomical-planes/transverse-plane.png",
-    oblique: "https://upload.wikimedia.org/wikipedia/commons/7/7e/Oblique_plane_anatomy.png"
+    oblique: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT6IF265roHOKuUmouXRg36s5PZDCWRl7F4PA&s"
 };
 
 const anatomyQuestions = {
