@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sectional Anatomy Quiz Menu</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Quick menu-specific styles, supplement style.css */
+        .menu-container {
+            max-width: 500px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+            padding: 32px 28px 28px 28px;
+            text-align: center;
+        }
+        .menu-logo {
+            width: 80px;
+            margin-bottom: 15px;
+        }
+        .menu-title {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #007bff;
+        }
+        .menu-instructions {
+            font-size: 1.1em;
+            margin-bottom: 25px;
+            color: #333;
+        }
+        .menu-section {
+            margin: 18px 0;
+        }
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 14px 0;
+            margin: 10px 0;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.18s;
+        }
+        .menu-btn:hover, .menu-btn:focus {
+            background-color: #0056b3;
+        }
+        .menu-footer {
+            margin-top: 30px;
+            color: #888;
+            font-size: 0.93em;
+        }
+    </style>
+</head>
+<body>
+    <div class="menu-container">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/8/8b/Body_planes-en.svg" alt="Body Planes" class="menu-logo"/>
+        <div class="menu-title">Sectional Anatomy Quiz</div>
+        <div class="menu-instructions">
+            Welcome! Test your knowledge of imaging planes and medical terminology.<br>
+            <strong>Instructions:</strong>
+            <ul style="text-align:left;max-width:90%;margin:12px auto 0 auto;">
+                <li>Select a topic below or choose a comprehensive review.</li>
+                <li>For each question, pick the best answer. Some imaging questions will show a diagram.</li>
+                <li>Try to score high and earn a badge!</li>
+            </ul>
+        </div>
+        <div class="menu-section">
+            <button class="menu-btn" onclick="startQuiz('planes')">🧭 Imaging Planes Only</button>
+            <button class="menu-btn" onclick="startQuiz('terminology')">🩺 Medical Terminology Only</button>
+            <button class="menu-btn" onclick="startQuiz('comprehensive')">🌟 Comprehensive Review</button>
+        </div>
+        <div class="menu-footer">
+            Powered by RTApps79 &middot; v1.0
+        </div>
+    </div>
+</body>
+</html>
