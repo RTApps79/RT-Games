@@ -338,7 +338,4 @@ function showResults() {
 
 nextButton.addEventListener('click', loadNextQuestion);
 restartButton.addEventListener('click', setupGame);
- function startQuiz(mode) {
-            window.location.href = `quiz.html?mode=${mode}`;
-        }
 setupGame();
