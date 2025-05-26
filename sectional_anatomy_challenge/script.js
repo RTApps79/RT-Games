@@ -253,9 +253,8 @@ function checkAnswer(selectedOption) {
     nextButton.disabled = false;
     document.onkeydown = null;
 }
-// Add this to your HTML: <button id="mic-btn" title="Speak your answer"><span id="mic-icon">🎤</span></button>
-// Place it near your options or controls.
 
+// --- Speech Recognition Option ---
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 let isListening = false;
@@ -282,14 +281,17 @@ if (SpeechRecognition) {
     };
 }
 
-document.getElementById('mic-btn').onclick = () => {
-    if (!recognition) return alert('Speech recognition not supported in this browser.');
-    if (isListening) {
-        recognition.stop();
-    } else {
-        recognition.start();
-    }
-};
+const micBtn = document.getElementById('mic-btn');
+if (micBtn) {
+    micBtn.onclick = () => {
+        if (!recognition) return alert('Speech recognition not supported in this browser.');
+        if (isListening) {
+            recognition.stop();
+        } else {
+            recognition.start();
+        }
+    };
+}
 
 function matchSpokenOption(transcript) {
     // Match the spoken answer to option text or option number/letter
@@ -316,6 +318,7 @@ function matchSpokenOption(transcript) {
         else alert('Could not match your answer. Please try again.');
     }
 }
+
 function loadNextQuestion() {
     currentQuestionIndex++;
     if (currentQuestionIndex < shuffledQuestions.length) {
