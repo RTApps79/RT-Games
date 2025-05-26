@@ -159,7 +159,7 @@ function nextQuestion() {
 
 // --- Matching Pairs Mode (Visual/Kinesthetic Learning) ---
 function loadMatchingPairs() {
-    // Build base pairs (keep reference to term and definition for each pair)
+    // Build base pairs (each with a unique id for the term)
     const pairs = vocabulary.map(v => ({
         term: v.term,
         definition: v.definition,
@@ -167,7 +167,7 @@ function loadMatchingPairs() {
         matched: false
     }));
 
-    // Create shuffled lists for terms and definitions
+    // Shuffle terms and definitions independently
     const termsData = shuffleArray(pairs.map(p => ({
         id: p.termId,
         text: p.term,
@@ -213,7 +213,6 @@ function loadMatchingPairs() {
         div.addEventListener('drop', dropMatching);
         definitionsContainer.appendChild(div);
     });
-}
 }
 
 function dragStartMatching(event) {
