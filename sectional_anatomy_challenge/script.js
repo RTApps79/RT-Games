@@ -150,6 +150,7 @@ const restartButton = document.querySelector('.restart-button');
 const scoreElement = document.querySelector('.score-value');
 const progressElement = document.querySelector('.progress');
 const imageContainerClass = 'image-plane-container';
+const menuButton = document.querySelector('.menu-button');
 
 // Shuffle function
 function shuffleArray(array) {
@@ -168,26 +169,33 @@ function setupGame() {
     scoreElement.textContent = score;
     nextButton.style.display = "";
     restartButton.style.display = "none";
+    if (menuButton) menuButton.style.display = "none";
     feedbackElement.textContent = "";
     loadQuestion();
 }
 
+
 // Display current question, including an image if provided
-function loadQuestion() {
-    const currentQuestion = shuffledQuestions[currentQuestionIndex];
-    // Remove any previous image
-    const prevImage = document.querySelector('.' + imageContainerClass);
-    if (prevImage) prevImage.remove();
-
-    questionElement.textContent = currentQuestion.question;
-    // Insert image if available
-    if (currentQuestion.imageUrl) {
-        const imgDiv = document.createElement('div');
-        imgDiv.className = imageContainerClass;
-        imgDiv.innerHTML = `<img src="${currentQuestion.imageUrl}" alt="Imaging plane" style="max-width:250px;max-height:180px;display:block;margin:0 auto 12px;"/>`;
-        questionElement.parentNode.insertBefore(imgDiv, questionElement);
+function loadNextQuestion() {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < shuffledQuestions.length) {
+        loadQuestion();
+    } else {
+        showResults();
+        questionElement.textContent = "Quiz Completed!";
+        optionsContainer.innerHTML = "";
+        progressElement.textContent = "";
+        nextButton.style.display = "none";
+        restartButton.style.display = "";
+        if (menuButton) menuButton.style.display = "";
+        document.onkeydown = null;
     }
-
+}
+    if (menuButton) {
+        menuButton.addEventListener('click', () => {
+          window.location.href = "menu.html";
+    });
+}
     optionsContainer.innerHTML = "";
     feedbackElement.textContent = "";
     progressElement.textContent = `Question ${currentQuestionIndex + 1} of ${shuffledQuestions.length}`;
