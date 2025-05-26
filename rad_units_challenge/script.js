@@ -136,6 +136,7 @@ const mcNextBtn = document.getElementById('mc-next');
 const mcRestartBtn = document.getElementById('mc-restart');
 const mcScore = document.getElementById('mc-score');
 const difficultySelect = document.getElementById('difficulty');
+const mcProgress = mcGame.querySelector('.progress');
 
 // Matching
 const matchingGame = document.getElementById('matching-game');
@@ -254,7 +255,7 @@ function loadMCQuestion() {
     mcQuestion.textContent = currentQuestion.question;
     mcOptions.innerHTML = "";
     mcFeedback.textContent = "";
-    document.querySelector('.progress').textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
+    mcProgress.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
 
     currentQuestion.options.forEach((option, idx) => {
         const optionElement = document.createElement('div');
@@ -265,7 +266,7 @@ function loadMCQuestion() {
         optionElement.addEventListener('click', () => checkMCAnswer(option));
         mcOptions.appendChild(optionElement);
     });
-
+    mcProgress.textContent = `Question ${currentQuestionIndex + 1} of ${questions.length}`;
     mcNextBtn.disabled = true;
     timerElement.style.display = allowTime ? "" : "none";
     if (allowTime) startMCTimer();
