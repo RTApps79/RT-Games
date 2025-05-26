@@ -36,6 +36,36 @@ input[type="number"], input[type="text"] {
 .check-button {
     background: #0984e3;
     color: #fff;
+     #badge-container {
+            text-align: center;
+            margin: 12px 0 20px 0;
+        }
+        .badge {
+            display: inline-block;
+            padding: 8px 18px;
+            background: gold;
+            color: #333;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 0 5px;
+            font-size: 18px;
+            border: 2px solid #f3c623;
+            box-shadow: 0 0 6px #f7d774;
+        }
+        #timer {
+            text-align: center; 
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        .instructions-box {
+            background: #e7f1ff;
+            border-left: 4px solid #007bff;
+            padding: 12px 18px;
+            margin: 0 auto 22px auto;
+            max-width: 700px;
+            color: #333;
+        }
     border: none;
     border-radius: 4px;
     padding: 5px 12px;
