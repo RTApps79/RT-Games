@@ -344,7 +344,7 @@ function showResults() {
 
 if (menuButton) {
     menuButton.addEventListener('click', () => {
-        window.location.href = "menu.html";
+        window.location.href = "index.html";
     });
 }
 
