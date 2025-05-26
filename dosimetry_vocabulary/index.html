@@ -103,10 +103,52 @@
             font-size: 16px;
             margin-bottom: 10px;
         }
+          #badge-container {
+            text-align: center;
+            margin: 12px 0 20px 0;
+        }
+        .badge {
+            display: inline-block;
+            padding: 8px 18px;
+            background: gold;
+            color: #333;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 0 5px;
+            font-size: 18px;
+            border: 2px solid #f3c623;
+            box-shadow: 0 0 6px #f7d774;
+        }
+        #timer {
+            text-align: center; 
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        .instructions-box {
+            background: #e7f1ff;
+            border-left: 4px solid #007bff;
+            padding: 12px 18px;
+            margin: 0 auto 22px auto;
+            max-width: 700px;
+            color: #333;
+        }
     </style>
 </head>
 <body>
     <h1>Dosimetry Vocabulary Game</h1>
+
+    <div class="instructions-box">
+        <strong>Instructions:</strong>
+        <ul>
+            <li>Select a game mode to practice dosimetry vocabulary with different learning styles.</li>
+            <li><b>Multiple Choice:</b> Pick the correct definition for each term.</li>
+            <li><b>Matching Pairs:</b> Drag and drop terms to their correct definitions.</li>
+            <li><b>Flashcards:</b> Reveal and study the definition for each term.</li>
+            <li><b>Audio Quiz:</b> Listen to the definition and type or say the term.</li>
+            <li>Earn badges as you progress and try to answer quickly for a higher score!</li>
+        </ul>
+    </div>
 
     <div class="game-mode-selector">
         <button class="game-mode-button" onclick="startGame('multiple-choice')">Multiple Choice</button>
@@ -114,7 +156,13 @@
         <button class="game-mode-button" onclick="startGame('flashcards')">Flashcards</button>
         <button class="game-mode-button" onclick="startGame('audio-quiz')">Audio Quiz</button>
     </div>
+    <!-- Badge Display -->
+    <div id="badge-container"></div>
 
+    <!-- Timer Display -->
+    <div id="timer"></div>
+
+     <!-- Game Containers -->
     <div id="multiple-choice-game" class="game-container">
         <h2>Multiple Choice</h2>
         <div class="question" id="mc-question"></div>
