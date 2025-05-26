@@ -253,7 +253,69 @@ function checkAnswer(selectedOption) {
     nextButton.disabled = false;
     document.onkeydown = null;
 }
+// Add this to your HTML: <button id="mic-btn" title="Speak your answer"><span id="mic-icon">🎤</span></button>
+// Place it near your options or controls.
 
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition;
+let isListening = false;
+
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+        isListening = true;
+        document.getElementById('mic-icon').textContent = '🎙️';
+    };
+    recognition.onend = () => {
+        isListening = false;
+        document.getElementById('mic-icon').textContent = '🎤';
+    };
+    recognition.onerror = (event) => {
+        alert('Speech recognition error: ' + event.error);
+    };
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.trim().toLowerCase();
+        matchSpokenOption(transcript);
+    };
+}
+
+document.getElementById('mic-btn').onclick = () => {
+    if (!recognition) return alert('Speech recognition not supported in this browser.');
+    if (isListening) {
+        recognition.stop();
+    } else {
+        recognition.start();
+    }
+};
+
+function matchSpokenOption(transcript) {
+    // Match the spoken answer to option text or option number/letter
+    const options = Array.from(document.querySelectorAll('.option'));
+    let found = false;
+    options.forEach((option, idx) => {
+        const optText = option.textContent.trim().toLowerCase();
+        // Accept "first/second/third/fourth" or "one/two/three/four" or "a/b/c/d"
+        const spokenNumber = ['first', 'second', 'third', 'fourth', 'one', 'two', 'three', 'four', 'a', 'b', 'c', 'd'];
+        if (
+            transcript === optText ||
+            transcript === (idx + 1).toString() ||
+            transcript === String.fromCharCode(97 + idx) || // 'a' = 97
+            transcript === spokenNumber[idx] // Accept word numbers
+        ) {
+            option.click();
+            found = true;
+        }
+    });
+    if (!found) {
+        // Try partial match
+        const match = options.find(option => transcript.includes(option.textContent.trim().toLowerCase()));
+        if (match) match.click();
+        else alert('Could not match your answer. Please try again.');
+    }
+}
 function loadNextQuestion() {
     currentQuestionIndex++;
     if (currentQuestionIndex < shuffledQuestions.length) {
