@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SSD Practice - Advanced</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: system-ui, sans-serif; background: #e9ecef; color: #223; margin:0;}
+    .container { max-width: 540px; margin: 36px auto 0 auto; background: #fff; border-radius: 13px; box-shadow: 0 2px 18px #0001; padding: 28px 22px 32px 22px;}
+    h1 { text-align:center; color: #1976d2; margin-bottom: 16px;}
+    .instructions { background: #e3f2fd; border-radius: 10px; padding: 13px 16px; margin-bottom: 18px; color: #135;}
+    .problem-settings { margin-bottom: 18px; }
+    .problem-settings label { font-weight: 500; }
+    .desc { color: #1976d2; font-size: 1.01em; margin: 10px 0 8px 0;}
+    .btn { background: #1976d2; color: #fff; border: none; border-radius: 4px; padding: 7px 20px; margin: 8px 6px 0 0; font-size:1.07em;}
+    .btn.secondary { background: #bcdffb; color: #136;}
+    .result, .feedback { margin: 14px 0 0 0; font-size: 1.11em;}
+    .pass { color: #18a900; font-weight: bold;}
+    .fail { color: #c40000; font-weight: bold;}
+    .tick { font-size:1.2em; }
+    .solution { background: #e3f2fd; border-radius: 8px; padding: 10px 14px; margin-top: 15px; font-size:0.98em;}
+    .section-label { font-weight:bold; color:#1976d2; margin: 8px 0 2px 0; display:block;}
+    .summary { background: #d5f5e3; border-radius: 10px; padding: 16px 20px; margin: 20px 0 0 0; color: #1976d2; text-align: center;}
+    .badge { display: inline-block; margin: 0 8px; font-size: 1.1em; font-weight: bold; padding: 5px 16px; border-radius: 18px;}
+    .badge.gold { background: #ffd700; color: #664d00; border: 2px solid #e5c300;}
+    .badge.silver { background: #f2f2f2; color: #444; border: 2px solid #bbb;}
+    .badge.bronze { background: #ffe0b3; color: #795548; border: 2px solid #c97;}
+    .badge.try { background: #ffbdbd; color:#a00; border:2px solid #f88;}
+    .top-spacer { margin-top: 10px; }
+    .ssd-bev-label { font-size:1.07em; color:#a15c00; font-weight:bold; margin-bottom: 6px;}
+    .ssd-cax-arrow { stroke:#c60000; stroke-width:2.4; marker-end:url(#arrowhead);}
+    @media (max-width: 600px){ .container{padding: 8px 2vw 18px 2vw;} }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>SSD Practice (Advanced)</h1>
+  <div class="instructions" id="instructions">
+    <b>Instructions:</b>
+    <ul>
+      <li>You will see two types of problems:
+        <ul>
+          <li><b>Visual (BEV) SSD:</b> Read the SSD value at the CAX from a simulated field/ruler and enter it.</li>
+          <li><b>Manual Calculation:</b> Use the given patient and beam geometry to calculate the SSD or related value.</li>
+        </ul>
+      </li>
+      <li>All answers must be rounded to the nearest tenth (e.g., 88.6).</li>
+      <li>Choose how many problems to practice below. Get your summary and badge at the end!</li>
+    </ul>
+  </div>
+  <div class="problem-settings" id="problem-settings">
+    <label for="num-problems">Number of Problems:</label>
+    <input type="number" id="num-problems" min="3" max="20" value="6" style="width:48px;">
+    <button class="btn secondary" onclick="startSSDPractice();return false;">Start Practice</button>
+  </div>
+  <div id="ssd-practice-area" style="display:none;">
+    <div style="margin-bottom: 5px; color:#1976d2; font-weight:bold;" id="ssd-prob-status"></div>
+    <div id="ssd-prob-type" style="font-weight:bold; margin-bottom:7px; color:#007096;"></div>
+    <div class="desc" id="ssd-desc"></div>
+    <div id="ssd-bev-area" style="display:none;">
+      <div class="ssd-bev-label">BEV: Read the SSD at the CAX from the ruler below</div>
+      <canvas id="ssd-bev-canvas" width="320" height="120"></canvas>
+    </div>
+    <form class="inputs" id="ssd-inputs-form" autocomplete="off" onsubmit="event.preventDefault();">
+      <span id="ssd-entry-label"></span>
+      <input type="number" step="0.1" id="ssd-entry" style="width:80px;">
+    </form>
+    <button class="btn" onclick="checkSSDProb()">Check</button>
+    <button class="btn secondary" onclick="showSSDSolution()">Show Solution</button>
+    <button class="btn secondary" onclick="nextSSDProb();return false;" id="ssd-next-btn" style="display:none;">Next Problem</button>
+    <div class="result" id="ssd-feedback"></div>
+    <div class="solution" id="ssd-solution" style="display:none;"></div>
+  </div>
+  <div id="ssd-completion-summary" class="summary" style="display:none;"></div>
+</div>
+<script>
+let ssdTotal = 6;
+let ssdCurrent = 0;
+let ssdResults = [];
+let ssdProblems = [];
+function startSSDPractice() {
+  ssdTotal = Math.max(3, Math.min(20, Math.round(+document.getElementById('num-problems').value || 6)));
+  ssdCurrent = 0;
+  ssdResults = [];
+  ssdProblems = [];
+  document.getElementById('ssd-practice-area').style.display = '';
+  document.getElementById('problem-settings').style.display = 'none';
+  document.getElementById('ssd-completion-summary').style.display = 'none';
+  // Mix problem types (0: BEV-visual, 1: manual calculation)
+  for (let i=0;i<ssdTotal;++i) {
+    let t = Math.random() < 0.5 ? 0 : 1;
+    if (i<2) t = i; // Ensure both types at least once
+    ssdProblems.push(t);
+  }
+  randomizeSSDProb();
+  updateSSDStatus();
+}
+function updateSSDStatus() {
+  document.getElementById('ssd-prob-status').textContent = `Problem ${ssdCurrent+1} of ${ssdTotal}`;
+}
+let ssdProbParams = {};
+function randomizeSSDProb() {
+  document.getElementById('ssd-feedback').textContent = '';
+  document.getElementById('ssd-solution').style.display = 'none';
+  document.getElementById('ssd-next-btn').style.display = 'none';
+  document.getElementById('ssd-bev-area').style.display = 'none';
+  document.getElementById('ssd-inputs-form').reset();
+  let type = ssdProblems[ssdCurrent];
+  ssdProbParams = { type };
+  if (type === 0) {
+    // BEV SSD visual read
+    let ssdMin = 80, ssdMax = 110;
+    let trueSSD = +(Math.round((ssdMin+Math.random()*(ssdMax-ssdMin))*10)/10).toFixed(1);
+    ssdProbParams.ssd = trueSSD;
+    ssdProbParams.field = Math.random()<0.5 ? "rect" : "square";
+    ssdProbParams.width = +(8+Math.random()*12).toFixed(1);
+    ssdProbParams.height = +(8+Math.random()*12).toFixed(1);
+    document.getElementById('ssd-prob-type').textContent = "Type: Visual (BEV) SSD";
+    document.getElementById('ssd-desc').textContent = "Read the SSD at the central axis (CAX) from the projected ruler. Enter the value (cm), rounded to the nearest tenth.";
+    document.getElementById('ssd-bev-area').style.display = '';
+    drawSSDBEV();
+    document.getElementById('ssd-entry-label').textContent = "SSD at CAX (cm):";
+  } else {
+    // Calculation scenario
+    // Randomize scenario type: isocentric, fixed SSD, midplane, etc.
+    let scenario = Math.random();
+    let SAD = [100, 105, 110][Math.floor(Math.random()*3)];
+    let ptThick = +(Math.round((16+Math.random()*14)*10)/10); // 16-30cm
+    let depth = +(Math.round((3+Math.random()*(ptThick-4))*10)/10);
+    if (scenario < 0.4) {
+      // Isocentric: SAD and depth given, find SSD
+      ssdProbParams.scenario = "iso";
+      ssdProbParams.SAD = SAD;
+      ssdProbParams.depth = depth;
+      ssdProbParams.answer = +(Math.round((SAD - depth)*10)/10).toFixed(1);
+      document.getElementById('ssd-prob-type').textContent = "Type: Manual Calculation";
+      document.getElementById('ssd-desc').textContent = `An isocentric setup uses SAD = <b>${SAD} cm</b>. The tumor is at a depth of <b>${depth} cm</b> from the skin surface. What is the SSD at the skin?`;
+      document.getElementById('ssd-entry-label').textContent = "SSD (cm):";
+    } else if (scenario < 0.7) {
+      // Given SSD and depth, find SAD
+      let SSD = +(Math.round((95+Math.random()*10)*10)/10);
+      ssdProbParams.scenario = "findSAD";
+      ssdProbParams.SSD = SSD;
+      ssdProbParams.depth = depth;
+      ssdProbParams.answer = +(Math.round((SSD + depth)*10)/10).toFixed(1);
+      document.getElementById('ssd-prob-type').textContent = "Type: Manual Calculation";
+      document.getElementById('ssd-desc').textContent = `A fixed SSD setup uses SSD = <b>${SSD} cm</b>. The tumor is at a depth of <b>${depth} cm</b>. What is the SAD (source to axis distance)?`;
+      document.getElementById('ssd-entry-label').textContent = "SAD (cm):";
+    } else {
+      // Midplane: given SAD and pt thickness, what is SSD at entrance surface?
+      ssdProbParams.scenario = "midplane";
+      ssdProbParams.SAD = SAD;
+      ssdProbParams.ptThick = ptThick;
+      ssdProbParams.answer = +(Math.round((SAD - ptThick/2)*10)/10).toFixed(1);
+      document.getElementById('ssd-prob-type').textContent = "Type: Manual Calculation";
+      document.getElementById('ssd-desc').textContent = `For a midplane technique, SAD = <b>${SAD} cm</b> and patient thickness is <b>${ptThick} cm</b>. Calculate the SSD at the entrance surface.`;
+      document.getElementById('ssd-entry-label').textContent = "SSD (cm):";
+    }
+  }
+}
+function drawSSDBEV() {
+  let c = document.getElementById('ssd-bev-canvas');
+  let ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.save();
+  // "Skin" surface
+  ctx.fillStyle = "#d7e9f7";
+  ctx.fillRect(0, 80, c.width, 30);
+  // Draw field: project field as rectangle
+  let fieldW = ssdProbParams.width*8, fieldH = 26;
+  let cx = c.width/2;
+  ctx.save();
+  ctx.globalAlpha = 0.6;
+  ctx.strokeStyle="#1976d2";
+  ctx.lineWidth=2.2;
+  ctx.setLineDash([11,6]);
+  ctx.strokeRect(cx-fieldW/2, 82, fieldW, fieldH);
+  ctx.restore();
+  // SSD ruler (ticks every 1cm, labels every 5cm)
+  let ssd0 = 80, pxPerCm = 2.2;
+  let minSSD = 80, maxSSD = 110;
+  for (let i = minSSD; i <= maxSSD; i += 1) {
+    let x = 22 + (i-minSSD)*pxPerCm;
+    ctx.beginPath();
+    ctx.strokeStyle = i%5==0 ? "#1976d2" : "#888";
+    ctx.lineWidth = i%5==0 ? 2.2 : 1;
+    ctx.moveTo(x, 104); ctx.lineTo(x, 118);
+    ctx.stroke();
+    if (i%5===0) {
+      ctx.font = "10px monospace";
+      ctx.fillStyle = "#1976d2";
+      ctx.fillText(i, x-8, 101);
+    }
+  }
+  // Draw CAX arrow
+  let ssdAtCAX = ssdProbParams.ssd;
+  let xCAX = 22 + (ssdAtCAX-minSSD)*pxPerCm;
+  ctx.save();
+  ctx.strokeStyle="#c60000";
+  ctx.lineWidth=2.5;
+  ctx.beginPath();
+  ctx.moveTo(xCAX, 75); ctx.lineTo(xCAX, 104);
+  ctx.stroke();
+  // Arrowhead
+  ctx.beginPath();
+  ctx.moveTo(xCAX, 75); ctx.lineTo(xCAX-5, 82); ctx.lineTo(xCAX+5, 82); ctx.closePath();
+  ctx.fillStyle="#c60000";
+  ctx.fill();
+  ctx.restore();
+  // CAX label
+  ctx.font = "bold 12px sans-serif";
+  ctx.fillStyle="#c60000";
+  ctx.fillText("CAX", xCAX-16, 71);
+  // SSD label at CAX
+  ctx.font = "bold 13px sans-serif";
+  ctx.fillStyle="#c60000";
+  ctx.fillText(`${ssdAtCAX} cm`, xCAX-17, 96);
+  ctx.restore();
+}
+function checkSSDProb() {
+  let userVal = Math.round(+document.getElementById('ssd-entry').value*10)/10;
+  let type = ssdProbParams.type;
+  let correct = false;
+  let answer = null;
+  let tol = 0.2; // Accept ±0.2 cm
+  if (type === 0) {
+    answer = ssdProbParams.ssd;
+    correct = Math.abs(userVal-answer)<=tol;
+  } else {
+    answer = +ssdProbParams.answer;
+    correct = Math.abs(userVal-answer)<=tol;
+  }
+  let fb = correct
+    ? `<span class="pass">&#10003; Correct!</span>`
+    : `<span class="fail">&#10008; Incorrect.</span> Correct value: <b>${answer} cm</b>`;
+  ssdResults[ssdCurrent] = { correct, fb };
+  document.getElementById('ssd-feedback').innerHTML = fb;
+  document.getElementById('ssd-next-btn').style.display = '';
+  if (ssdCurrent === ssdTotal-1) {
+    document.getElementById('ssd-next-btn').textContent = "Finish & View Summary";
+  } else {
+    document.getElementById('ssd-next-btn').textContent = "Next Problem";
+  }
+}
+function showSSDSolution() {
+  let type = ssdProbParams.type;
+  let sol = '';
+  if (type === 0) {
+    sol = `SSD at CAX is simply the value shown at the center axis on the projected ruler: <b>${ssdProbParams.ssd} cm</b>.`;
+  } else if (ssdProbParams.scenario==="iso") {
+    sol = `SSD = SAD – depth = ${ssdProbParams.SAD} – ${ssdProbParams.depth} = <b>${ssdProbParams.answer} cm</b>`;
+  } else if (ssdProbParams.scenario==="findSAD") {
+    sol = `SAD = SSD + depth = ${ssdProbParams.SSD} + ${ssdProbParams.depth} = <b>${ssdProbParams.answer} cm</b>`;
+  } else if (ssdProbParams.scenario==="midplane") {
+    sol = `SSD = SAD – (patient thickness / 2) = ${ssdProbParams.SAD} – (${ssdProbParams.ptThick}/2) = <b>${ssdProbParams.answer} cm</b>`;
+  }
+  document.getElementById('ssd-solution').style.display = '';
+  document.getElementById('ssd-solution').innerHTML = sol;
+}
+function nextSSDProb() {
+  if (ssdCurrent < ssdTotal-1) {
+    ssdCurrent++;
+    randomizeSSDProb();
+    updateSSDStatus();
+  } else {
+    finishSSDPractice();
+  }
+}
+function finishSSDPractice() {
+  document.getElementById('ssd-practice-area').style.display = 'none';
+  let nCorrect = ssdResults.filter(r => r && r.correct).length;
+  let percent = Math.round((nCorrect/ssdTotal)*100);
+  let badge = "";
+  let badgeText = "";
+  if (percent === 100)      { badge = "gold"; badgeText = "Perfect!"; }
+  else if (percent >= 90)   { badge = "gold"; badgeText = "Excellent!"; }
+  else if (percent >= 75)   { badge = "silver"; badgeText = "Great job!"; }
+  else if (percent >= 60)   { badge = "bronze"; badgeText = "Keep practicing!"; }
+  else                      { badge = "try"; badgeText = "Try again!"; }
+  let summary = `<div style="font-size:1.2em;">Practice Complete!</div>
+  <div style="margin:10px 0 18px 0;">You answered <b>${nCorrect} of ${ssdTotal}</b> correctly (${percent}%).</div>
+  <span class="badge ${badge}">${badgeText}</span>
+  <div style="margin:18px 0 0 0; font-size:1em;">Review:</div>
+  <ol style="text-align:left; margin: 8px 0 0 2em; color:#333;">
+    ${ssdResults.map((r,i)=>`<li>${r && r.correct ? '<span class="pass">&#10003;</span>' : '<span class="fail">&#10008;</span>'} ${r ? r.fb : ''}</li>`).join("")}
+  </ol>
+  <button class="btn" onclick="restartSSDPractice();">Practice Again</button>
+  `;
+  document.getElementById('ssd-completion-summary').innerHTML = summary;
+  document.getElementById('ssd-completion-summary').style.display = '';
+}
+function restartSSDPractice() {
+  document.getElementById('ssd-practice-area').style.display = 'none';
+  document.getElementById('problem-settings').style.display = '';
+  document.getElementById('ssd-completion-summary').style.display = 'none';
+  document.getElementById('ssd-feedback').textContent = '';
+  document.getElementById('ssd-solution').style.display = 'none';
+}
+</script>
+</body>
+</html>
