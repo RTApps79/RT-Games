@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>SSD Practice - BEV (Enhanced Realism)</title>
+  <title>SSD Practice - BEV (Expanded Problem Types)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: system-ui, sans-serif; background: #e9ecef; color: #223; margin:0;}
@@ -36,12 +36,17 @@
 <div class="container">
   <h1>SSD Practice (BEV, CAX Marker on Value)</h1>
   <div class="instructions" id="instructions">
-    <b>Principles:</b>
+    <b>Principles &amp; Problem Types:</b>
     <ul>
-      <li><b>SAD is always 100 cm.</b></li>
-      <li>For isocentric setups: SSD = 100 cm - depth (depth = tumor distance from skin).</li>
+      <li><b>SAD is usually 100 cm (sometimes 80 cm for variety).</b></li>
+      <li>For isocentric setups: SSD = SAD - depth (depth = tumor distance from skin).</li>
       <li>For non-isocentric setups: field is set with SSD = 100 cm at the skin surface.</li>
       <li>In BEV problems, the entire canvas is the skin surface. The field is shown as a rectangle centered on the canvas. The <b>CAX marker</b> (<span style="color:#c60000;">bold +</span>) is exactly on the SSD value, with the CAX label to the side. The vertical SSD scale always runs through the CAX. Read the SSD value at the marker.</li>
+      <li>Other problem types:<ul>
+          <li><b>Depth Calculation</b>: Find the depth from SAD and SSD.</li>
+          <li><b>Field Size at Isocenter</b>: Given field size on skin, SSD, and SAD, calculate field at isocenter.</li>
+          <li><b>Field Size on Skin</b>: Given field at isocenter, SSD, and SAD, calculate field size on skin.</li>
+      </ul></li>
       <li>All answers must be rounded to the nearest tenth (e.g., 97.4).</li>
       <li>Choose your practice quantity. Get a summary and badge at the end!</li>
     </ul>
@@ -61,7 +66,7 @@
     </div>
     <form class="inputs" id="ssd-inputs-form" autocomplete="off" onsubmit="event.preventDefault();">
       <span id="ssd-entry-label"></span>
-      <input type="number" step="0.1" id="ssd-entry" style="width:80px;">
+      <input type="number" step="0.1" id="ssd-entry" style="width:100px;">
     </form>
     <button class="btn" onclick="checkSSDProb()">Check</button>
     <button class="btn secondary" onclick="showSSDSolution()">Show Solution</button>
@@ -72,12 +77,148 @@
   <div id="ssd-completion-summary" class="summary" style="display:none;"></div>
 </div>
 <script>
-// Set CAX marker style
+// CAX marker style
 const caxStyle = "plus";
 let ssdTotal = 6;
 let ssdCurrent = 0;
 let ssdResults = [];
 let ssdProblems = [];
+
+// Utility function
+function randFloat(min, max) {
+  return +(Math.random() * (max - min) + min).toFixed(1);
+}
+
+// ---- Problem Generators ---- //
+function makeBEVProblem() {
+  // Simulate BEV SSD readout (with field jaws)
+  let c = document.getElementById('ssd-bev-canvas');
+  let canvas_cx = c.width / 2;
+  let canvas_cy = c.height / 2;
+  let fieldPxPerCmVisual = 12;
+  let fieldH_px = randFloat(10, 20) * fieldPxPerCmVisual;
+  let fieldW_px = randFloat(10, 20) * fieldPxPerCmVisual;
+  let fieldTop_px = canvas_cy - fieldH_px / 2;
+  let fieldBot_px = canvas_cy + fieldH_px / 2;
+  let scale_ssdMin_val = 80, scale_ssdMax_val = 110;
+  let scale_top_canvas_px = 60;
+  let scale_bottom_canvas_px = c.height - 40;
+  let scale_pxPerCm = (scale_bottom_canvas_px - scale_top_canvas_px) / (scale_ssdMax_val - scale_ssdMin_val);
+
+  let ssd_at_fieldTop = scale_ssdMin_val + (fieldTop_px - scale_top_canvas_px) / scale_pxPerCm;
+  let ssd_at_fieldBot = scale_ssdMin_val + (fieldBot_px - scale_top_canvas_px) / scale_pxPerCm;
+  let constrained_ssd_min_gen = Math.max(scale_ssdMin_val, ssd_at_fieldTop);
+  let constrained_ssd_max_gen = Math.min(scale_ssdMax_val, ssd_at_fieldBot);
+  let ssd;
+  if (constrained_ssd_min_gen >= constrained_ssd_max_gen) {
+    let field_center_ssd_val = scale_ssdMin_val + (canvas_cy - scale_top_canvas_px) / scale_pxPerCm;
+    ssd = Math.max(scale_ssdMin_val, Math.min(scale_ssdMax_val, field_center_ssd_val));
+  } else {
+    ssd = constrained_ssd_min_gen + Math.random() * (constrained_ssd_max_gen - constrained_ssd_min_gen);
+  }
+  ssd = +(Math.round(ssd * 10) / 10).toFixed(1);
+
+  // Random jaws
+  let x1 = randFloat(5, 15), x2 = randFloat(5, 15), y1 = randFloat(5, 15), y2 = randFloat(5, 15);
+
+  return {
+    type: "bev",
+    x1, x2, y1, y2,
+    ssd,
+    answer: ssd,
+    inputLabel: "SSD at CAX (cm):",
+    desc: "Read the SSD at the CAX marker (red) from the vertical scale. The value is not labeled—you must estimate visually."
+  };
+}
+
+function makeDepthProblem() {
+  const SAD = Math.random() < 0.8 ? 100 : 80;
+  const depth = randFloat(2, 20);
+  const SSD = +(SAD - depth).toFixed(1);
+  return {
+    type: "depth-calc",
+    SAD,
+    SSD,
+    answer: depth,
+    inputLabel: "Depth (cm):",
+    desc: `A patient is treated isocentrically. The Source-Axis Distance (SAD) is ${SAD} cm, and the measured Source-Skin Distance (SSD) is ${SSD} cm. What is the depth of the isocenter from the skin surface?`
+  };
+}
+
+function makeFieldIsoProblem() {
+  const SAD = Math.random() < 0.8 ? 100 : 80;
+  const SSD = randFloat(80, SAD-1);
+  const fieldSkin = randFloat(6, 20);
+  const fieldIso = +(fieldSkin * (SAD/SSD)).toFixed(1);
+  return {
+    type: "field-at-iso",
+    SAD,
+    SSD,
+    fieldSkin,
+    answer: fieldIso,
+    inputLabel: "Field width at isocenter (cm):",
+    desc: `A treatment field measures ${fieldSkin} cm wide on the patient's skin at an SSD of ${SSD} cm. If the treatment is delivered to an isocenter at SAD = ${SAD} cm, what is the field width at the isocenter?`
+  };
+}
+
+function makeFieldSkinProblem() {
+  const SAD = Math.random() < 0.8 ? 100 : 80;
+  const SSD = randFloat(80, SAD-1);
+  const fieldIso = randFloat(6, 20);
+  const fieldSkin = +(fieldIso * (SSD/SAD)).toFixed(1);
+  return {
+    type: "field-at-skin",
+    SAD,
+    SSD,
+    fieldIso,
+    answer: fieldSkin,
+    inputLabel: "Field width on skin (cm):",
+    desc: `An isocentric treatment plan specifies a field width of ${fieldIso} cm at the isocenter (SAD = ${SAD} cm). If the patient's SSD for this field is ${SSD} cm, what will the field width be on the patient's skin?`
+  };
+}
+
+function makeManualSSDProblem() {
+  // Isocentric or non-isocentric: SSD = SAD - depth for iso, or SSD = 100 for non-iso
+  let iso = Math.random() < 0.5;
+  let SAD = 100;
+  let desc, answer, depth, SSD;
+  if (iso) {
+    depth = randFloat(3, 20);
+    answer = +(SAD - depth).toFixed(1);
+    desc = `A patient is treated isocentrically (SAD = 100 cm). Tumor depth: ${depth} cm. What is the SSD at the skin?`;
+    return {
+      type: "manual-ssd",
+      SAD,
+      depth,
+      answer,
+      inputLabel: "SSD (cm):",
+      desc
+    };
+  } else {
+    answer = 100.0;
+    desc = "A patient is treated with an SSD setup (non-isocentric). What is the SSD at the skin surface?";
+    return {
+      type: "manual-ssd",
+      SAD,
+      answer,
+      inputLabel: "SSD (cm):",
+      desc
+    };
+  }
+}
+
+// Update the pool of available random problem generators here:
+const problemTypes = [
+  makeBEVProblem,
+  makeManualSSDProblem,
+  makeDepthProblem,
+  makeFieldIsoProblem,
+  makeFieldSkinProblem
+];
+
+// ---- END Problem Generators ---- //
+
+let ssdProbParams = {};
 
 function startSSDPractice() {
   ssdTotal = Math.max(3, Math.min(20, Math.round(+document.getElementById('num-problems').value || 6)));
@@ -87,13 +228,19 @@ function startSSDPractice() {
   document.getElementById('ssd-practice-area').style.display = '';
   document.getElementById('problem-settings').style.display = 'none';
   document.getElementById('ssd-completion-summary').style.display = 'none';
+  // Always include at least one BEV and one calculation
+  let usedTypes = new Set();
   for (let i=0;i<ssdTotal;++i) {
-    let t = Math.random() < 0.5 ? 0 : 1;
-    if (i<2 && i < ssdProblems.length) t = i; 
-    else if (i<2) t = i % 2; 
-    ssdProblems.push(t);
+    let f = problemTypes[Math.floor(Math.random()*problemTypes.length)];
+    let p = f();
+    // Guarantee at least one BEV and one calc in first two
+    if (i < 2) {
+      if (i===0) { p = makeBEVProblem(); }
+      if (i===1) { p = problemTypes[Math.floor(Math.random()*(problemTypes.length-1))+1](); }
+    }
+    usedTypes.add(p.type);
+    ssdProblems.push(p);
   }
-  ssdProblems.sort(() => Math.random() - 0.5); 
   randomizeSSDProb();
   updateSSDStatus();
 }
@@ -102,81 +249,42 @@ function updateSSDStatus() {
   document.getElementById('ssd-prob-status').textContent = `Problem ${ssdCurrent+1} of ${ssdTotal}`;
 }
 
-let ssdProbParams = {};
-
 function randomizeSSDProb() {
   document.getElementById('ssd-feedback').textContent = '';
   document.getElementById('ssd-solution').style.display = 'none';
   document.getElementById('ssd-next-btn').style.display = 'none';
   document.getElementById('ssd-bev-area').style.display = 'none';
   document.getElementById('ssd-inputs-form').reset();
-
-  let type = ssdProblems[ssdCurrent];
-  ssdProbParams = { type };
-
-  if (type === 0) {
-    document.getElementById('ssd-prob-type').textContent = "Type: BEV SSD (CAX Marker on Value)";
-    document.getElementById('ssd-desc').textContent = "Read the SSD at the CAX marker (red) from the vertical scale. The value is not labeled—you must estimate visually.";
-    document.getElementById('ssd-bev-area').style.display = '';
-    document.getElementById('ssd-entry-label').textContent = "SSD at CAX (cm):";
-
-    ssdProbParams.x1 = +(5 + Math.random() * 10).toFixed(1);
-    ssdProbParams.x2 = +(5 + Math.random() * 10).toFixed(1);
-    ssdProbParams.y1 = +(5 + Math.random() * 10).toFixed(1);
-    ssdProbParams.y2 = +(5 + Math.random() * 10).toFixed(1);
-
-    let c = document.getElementById('ssd-bev-canvas');
-    let canvas_cx = c.width / 2;
-    let canvas_cy = c.height / 2;
-
-    let fieldPxPerCmVisual = 12;
-    let fieldH_px = (ssdProbParams.y1 + ssdProbParams.y2) * fieldPxPerCmVisual;
-    let fieldTop_px = canvas_cy - fieldH_px / 2;
-    let fieldBot_px = canvas_cy + fieldH_px / 2;
-
-    let scale_ssdMin_val = 80, scale_ssdMax_val = 110;
-    let scale_top_canvas_px = 60;
-    let scale_bottom_canvas_px = c.height - 40;
-    let scale_pxPerCm = (scale_bottom_canvas_px - scale_top_canvas_px) / (scale_ssdMax_val - scale_ssdMin_val);
-
-    if (scale_pxPerCm <= 0) { 
-        ssdProbParams.ssd = scale_ssdMin_val;
-    } else {
-        let ssd_at_fieldTop = scale_ssdMin_val + (fieldTop_px - scale_top_canvas_px) / scale_pxPerCm;
-        let ssd_at_fieldBot = scale_ssdMin_val + (fieldBot_px - scale_top_canvas_px) / scale_pxPerCm;
-        let constrained_ssd_min_gen = Math.max(scale_ssdMin_val, ssd_at_fieldTop);
-        let constrained_ssd_max_gen = Math.min(scale_ssdMax_val, ssd_at_fieldBot);
-        let randomSSDInConstrainedRange;
-        if (constrained_ssd_min_gen >= constrained_ssd_max_gen) {
-            let field_center_ssd_val = scale_ssdMin_val + (canvas_cy - scale_top_canvas_px) / scale_pxPerCm;
-            randomSSDInConstrainedRange = Math.max(scale_ssdMin_val, Math.min(scale_ssdMax_val, field_center_ssd_val));
-        } else {
-            randomSSDInConstrainedRange = constrained_ssd_min_gen + Math.random() * (constrained_ssd_max_gen - constrained_ssd_min_gen);
-        }
-        ssdProbParams.ssd = randomSSDInConstrainedRange;
-    }
-    ssdProbParams.ssd = +(Math.round(ssdProbParams.ssd * 10) / 10).toFixed(1);
-    drawSSDBEV();
-  } else { 
-    let scenario = Math.random();
-    let depth = +(Math.round((3+Math.random()*17)*10)/10).toFixed(1);
-    depth = parseFloat(depth);
-
-    if (scenario < 0.5) {
-      ssdProbParams.scenario = "iso";
-      ssdProbParams.SAD = 100;
-      ssdProbParams.depth = depth;
-      ssdProbParams.answer = +(100 - depth).toFixed(1);
-      document.getElementById('ssd-prob-type').textContent = "Type: Isocentric Calculation";
-      document.getElementById('ssd-desc').textContent = `A patient is treated isocentrically (SAD = 100 cm). Tumor depth: ${depth.toFixed(1)} cm. What is the SSD at the skin?`;
-      document.getElementById('ssd-entry-label').textContent = "Calculated SSD (cm):";
-    } else { 
-      ssdProbParams.scenario = "noniso";
-      ssdProbParams.answer = 100.0;
-      document.getElementById('ssd-prob-type').textContent = "Type: Non-Isocentric (SSD Setup)";
-      document.getElementById('ssd-desc').textContent = `A patient is treated with an SSD setup (non-isocentric). What is the SSD at the skin surface?`;
-      document.getElementById('ssd-entry-label').textContent = "SSD (cm):";
-    }
+  ssdProbParams = ssdProblems[ssdCurrent];
+  // Render
+  switch (ssdProbParams.type) {
+    case "bev":
+      document.getElementById('ssd-prob-type').textContent = "Type: BEV SSD (CAX Marker on Value)";
+      document.getElementById('ssd-desc').textContent = ssdProbParams.desc;
+      document.getElementById('ssd-bev-area').style.display = '';
+      document.getElementById('ssd-entry-label').textContent = ssdProbParams.inputLabel;
+      drawSSDBEV();
+      break;
+    case "depth-calc":
+      document.getElementById('ssd-prob-type').textContent = "Type: Depth Calculation";
+      document.getElementById('ssd-desc').textContent = ssdProbParams.desc;
+      document.getElementById('ssd-entry-label').textContent = ssdProbParams.inputLabel;
+      break;
+    case "field-at-iso":
+      document.getElementById('ssd-prob-type').textContent = "Type: Field Size at Isocenter (Magnification)";
+      document.getElementById('ssd-desc').textContent = ssdProbParams.desc;
+      document.getElementById('ssd-entry-label').textContent = ssdProbParams.inputLabel;
+      break;
+    case "field-at-skin":
+      document.getElementById('ssd-prob-type').textContent = "Type: Field Size on Skin (Reverse Magnification)";
+      document.getElementById('ssd-desc').textContent = ssdProbParams.desc;
+      document.getElementById('ssd-entry-label').textContent = ssdProbParams.inputLabel;
+      break;
+    case "manual-ssd":
+      document.getElementById('ssd-prob-type').textContent = "Type: SSD Calculation";
+      document.getElementById('ssd-desc').textContent = ssdProbParams.desc;
+      document.getElementById('ssd-entry-label').textContent = ssdProbParams.inputLabel;
+      break;
   }
 }
 
@@ -185,7 +293,7 @@ function drawSSDBEV() {
   let ctx = c.getContext('2d');
   ctx.clearRect(0,0,c.width,c.height);
 
-  // 1. Draw Skin Tone Background
+  // 1. Skin Tone Background
   ctx.fillStyle = '#F5D7B9';
   ctx.fillRect(0, 0, c.width, c.height);
 
@@ -195,17 +303,19 @@ function drawSSDBEV() {
   let fieldH = (ssdProbParams.y1 + ssdProbParams.y2) * fieldPxPerCmVisual;
   let fieldLeft = cx - fieldW/2;
   let fieldTop = cy - fieldH/2;
+  let fieldRight = cx + fieldW/2;
+  let fieldBot = cy + fieldH/2;
 
-  // 2. Draw semi-translucent yellow light field
+  // 2. Semi-translucent yellow light field
   ctx.fillStyle = 'rgba(255,255,110,0.37)';
   ctx.fillRect(fieldLeft, fieldTop, fieldW, fieldH);
 
-  // 3. Draw Collimator Jaw Lines
+  // 3. Collimator Jaw Lines
   ctx.strokeStyle = '#4A4A4A';
   ctx.lineWidth = 3.5;
-  ctx.strokeRect(fieldLeft, fieldTop, fieldW, fieldH);
+  ctx.strokeRect(fieldLeft, fieldTop, fieldRight-fieldLeft, fieldBot-fieldTop);
 
-  // 4. Draw vertical SSD scale
+  // 4. Vertical SSD scale
   let ssdMin = 80, ssdMax = 110; 
   let scaleTopY = 60, scaleBottomY = c.height-40; 
   let pxPerCmOnScale = (scaleBottomY-scaleTopY)/(ssdMax-ssdMin);
@@ -241,7 +351,7 @@ function drawSSDBEV() {
   // 5. CAX marker (bold +, semi-transparent)
   let markerY = scaleTopY + (parseFloat(ssdProbParams.ssd) - ssdMin) * pxPerCmOnScale;
   ctx.save();
-  // Add faint white "glow" behind the plus for contrast
+  // Faint white "glow" behind plus for contrast
   ctx.strokeStyle = "rgba(255,255,255,0.35)";
   ctx.lineWidth = 8.0;
   ctx.lineCap = "round";
@@ -286,13 +396,8 @@ function checkSSDProb() {
   userVal = Math.round(userVal * 10) / 10; 
   let type = ssdProbParams.type;
   let correct = false;
-  let answer = null;
-  let tol = (type === 0) ? 0.2 : 0.05; 
-  if (type === 0) { 
-    answer = parseFloat(ssdProbParams.ssd);
-  } else {
-    answer = parseFloat(ssdProbParams.answer);
-  }
+  let answer = parseFloat(ssdProbParams.answer);
+  let tol = (type === "bev") ? 0.2 : 0.1; // BEV: allow more visual leeway, others: tighter
   correct = Math.abs(userVal - answer) <= tol;
   let fb = correct
     ? `<span class="pass">&#10003; Correct!</span>`
@@ -310,12 +415,20 @@ function checkSSDProb() {
 function showSSDSolution() {
   let type = ssdProbParams.type;
   let sol = '';
-  if (type === 0) { 
+  if (type === "bev") { 
     sol = `The CAX marker (red) is positioned on the vertical scale at <b>${parseFloat(ssdProbParams.ssd).toFixed(1)} cm</b>. You need to read this value from the scale markings.`;
-  } else if (ssdProbParams.scenario==="iso") {
-    sol = `For an isocentric setup (SAD = 100 cm): <br>SSD = SAD – depth <br>SSD = 100 cm – ${parseFloat(ssdProbParams.depth).toFixed(1)} cm = <b>${parseFloat(ssdProbParams.answer).toFixed(1)} cm</b>`;
-  } else if (ssdProbParams.scenario==="noniso") {
-    sol = `For a non-isocentric (SSD) setup, the SSD is set directly on the skin surface, typically to <b>${parseFloat(ssdProbParams.answer).toFixed(1)} cm</b> by convention unless otherwise specified.`;
+  } else if (type === "manual-ssd") {
+    if (ssdProbParams.depth !== undefined) {
+      sol = `SSD = SAD – depth = 100 – ${ssdProbParams.depth} = <b>${ssdProbParams.answer.toFixed(1)} cm</b>`;
+    } else {
+      sol = `For a non-isocentric (SSD) setup, the SSD is set directly on the skin surface, typically to <b>100.0 cm</b> by convention.`;
+    }
+  } else if (type === "depth-calc") {
+    sol = `Depth = SAD – SSD = ${ssdProbParams.SAD} – ${ssdProbParams.SSD} = <b>${ssdProbParams.answer.toFixed(1)} cm</b>`;
+  } else if (type === "field-at-iso") {
+    sol = `Field size at isocenter = Field size on skin × (SAD / SSD) = ${ssdProbParams.fieldSkin} × (${ssdProbParams.SAD} / ${ssdProbParams.SSD}) = <b>${ssdProbParams.answer.toFixed(1)} cm</b>`;
+  } else if (type === "field-at-skin") {
+    sol = `Field size on skin = Field size at isocenter × (SSD / SAD) = ${ssdProbParams.fieldIso} × (${ssdProbParams.SSD} / ${ssdProbParams.SAD}) = <b>${ssdProbParams.answer.toFixed(1)} cm</b>`;
   }
   document.getElementById('ssd-solution').style.display = '';
   document.getElementById('ssd-solution').innerHTML = sol;
