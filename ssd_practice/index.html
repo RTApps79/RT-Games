@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>SSD Practice - Field BEV</title>
+  <title>SSD Practice - Field BEV (Standard Geometry)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: system-ui, sans-serif; background: #e9ecef; color: #223; margin:0;}
@@ -33,18 +33,16 @@
 </head>
 <body>
 <div class="container">
-  <h1>SSD Practice (Field BEV)</h1>
+  <h1>SSD Practice (Field BEV, SAD=100cm)</h1>
   <div class="instructions" id="instructions">
-    <b>Instructions:</b>
+    <b>Principles:</b>
     <ul>
-      <li>You will see two types of problems:
-        <ul>
-          <li><b>BEV SSD:</b> Read the SSD value at the center of the treatment field (CAX) from the vertical scale. <b>The CAX is marked, but the value is not labeled—you must read it visually.</b></li>
-          <li><b>Manual Calculation:</b> Use the given patient and beam geometry to calculate the SSD or related value.</li>
-        </ul>
-      </li>
-      <li>All answers must be rounded to the nearest tenth (e.g., 88.6).</li>
-      <li>Choose how many problems to practice below. Get your summary and badge at the end!</li>
+      <li><b>SAD is always 100 cm.</b></li>
+      <li>For <b>isocentric setups</b>: <b>SSD = 100 cm - depth</b> (depth = tumor distance from skin).</li>
+      <li>For <b>non-isocentric setups</b>: the field is set with <b>SSD = 100 cm</b> at the skin surface.</li>
+      <li><b>In BEV problems</b>, the CAX is marked off-center. Read the SSD value at the CAX from the vertical scale (the value is not labeled—you must estimate visually!).</li>
+      <li>All answers must be rounded to the nearest tenth (e.g., 97.4).</li>
+      <li>Choose your practice quantity. Get a summary and badge at the end!</li>
     </ul>
   </div>
   <div class="problem-settings" id="problem-settings">
@@ -57,7 +55,7 @@
     <div id="ssd-prob-type" style="font-weight:bold; margin-bottom:7px; color:#007096;"></div>
     <div class="desc" id="ssd-desc"></div>
     <div id="ssd-bev-area" style="display:none;">
-      <div class="ssd-bev-label">BEV: Read the SSD value at the <span style="color:#c60000;">CAX</span> (center of the treatment field) from the vertical scale.</div>
+      <div class="ssd-bev-label">BEV: Read the SSD value at the <span style="color:#c60000;">CAX</span> (off-center in the field) from the vertical scale.</div>
       <canvas id="ssd-bev-canvas" width="500" height="440"></canvas>
     </div>
     <form class="inputs" id="ssd-inputs-form" autocomplete="off" onsubmit="event.preventDefault();">
@@ -107,53 +105,46 @@ function randomizeSSDProb() {
   let type = ssdProblems[ssdCurrent];
   ssdProbParams = { type };
   if (type === 0) {
-    // BEV SSD visual read (full field perimeter, vertical SSD scale, CAX at field center)
+    // BEV SSD visual read (vertical SSD scale, CAX off-center)
     let ssdMin = 80, ssdMax = 110;
     let trueSSD = +(Math.round((ssdMin+Math.random()*(ssdMax-ssdMin))*10)/10).toFixed(1);
     ssdProbParams.ssd = trueSSD;
+
+    // Field
     ssdProbParams.x1 = +(5+Math.random()*10).toFixed(1);
     ssdProbParams.x2 = +(5+Math.random()*10).toFixed(1);
     ssdProbParams.y1 = +(5+Math.random()*10).toFixed(1);
     ssdProbParams.y2 = +(5+Math.random()*10).toFixed(1);
-    // Central axis is at center of field
-    document.getElementById('ssd-prob-type').textContent = "Type: BEV SSD (Field Perimeter)";
-    document.getElementById('ssd-desc').textContent = "Read the SSD at the <b>center of the treatment field</b> (CAX) from the vertical scale. The value is not labeled—you must read it visually.";
+
+    // CAX: random offset from field center (-0.6 to +0.6 of field width)
+    let frac = (Math.random()-0.5)*1.2; // -0.6 to +0.6
+    ssdProbParams.caxFrac = frac;
+    // The value at the CAX is "trueSSD" (which the student must read visually)
+
+    document.getElementById('ssd-prob-type').textContent = "Type: BEV SSD (Field Perimeter, Off-Center CAX)";
+    document.getElementById('ssd-desc').textContent = "Read the SSD at the <b>off-centered CAX</b> (red) from the vertical scale. The value is not labeled—you must estimate visually.";
     document.getElementById('ssd-bev-area').style.display = '';
     drawSSDBEV();
     document.getElementById('ssd-entry-label').textContent = "SSD at CAX (cm):";
   } else {
-    // Calculation scenario (same as before)
+    // Calculation scenario (SAD always 100)
     let scenario = Math.random();
-    let SAD = [100, 105, 110][Math.floor(Math.random()*3)];
-    let ptThick = +(Math.round((16+Math.random()*14)*10)/10); // 16-30cm
-    let depth = +(Math.round((3+Math.random()*(ptThick-4))*10)/10);
-    if (scenario < 0.4) {
-      // Isocentric: SAD and depth given, find SSD
+    let depth = +(Math.round((3+Math.random()*17)*10)/10); // depth: 3-20cm
+    if (scenario < 0.5) {
+      // Isocentric: SSD = SAD - depth, SAD=100
       ssdProbParams.scenario = "iso";
-      ssdProbParams.SAD = SAD;
+      ssdProbParams.SAD = 100;
       ssdProbParams.depth = depth;
-      ssdProbParams.answer = +(Math.round((SAD - depth)*10)/10).toFixed(1);
-      document.getElementById('ssd-prob-type').textContent = "Type: Manual Calculation";
-      document.getElementById('ssd-desc').textContent = `An isocentric setup uses SAD = <b>${SAD} cm</b>. The tumor is at a depth of <b>${depth} cm</b> from the skin surface. What is the SSD at the skin?`;
+      ssdProbParams.answer = +(Math.round((100 - depth)*10)/10).toFixed(1);
+      document.getElementById('ssd-prob-type').textContent = "Type: Isocentric Calculation";
+      document.getElementById('ssd-desc').textContent = `A patient is treated isocentrically (SAD = <b>100 cm</b>). Tumor depth: <b>${depth} cm</b>. What is the SSD at the skin?`;
       document.getElementById('ssd-entry-label').textContent = "SSD (cm):";
-    } else if (scenario < 0.7) {
-      // Given SSD and depth, find SAD
-      let SSD = +(Math.round((95+Math.random()*10)*10)/10);
-      ssdProbParams.scenario = "findSAD";
-      ssdProbParams.SSD = SSD;
-      ssdProbParams.depth = depth;
-      ssdProbParams.answer = +(Math.round((SSD + depth)*10)/10).toFixed(1);
-      document.getElementById('ssd-prob-type').textContent = "Type: Manual Calculation";
-      document.getElementById('ssd-desc').textContent = `A fixed SSD setup uses SSD = <b>${SSD} cm</b>. The tumor is at a depth of <b>${depth} cm</b>. What is the SAD (source to axis distance)?`;
-      document.getElementById('ssd-entry-label').textContent = "SAD (cm):";
     } else {
-      // Midplane: given SAD and pt thickness, what is SSD at entrance surface?
-      ssdProbParams.scenario = "midplane";
-      ssdProbParams.SAD = SAD;
-      ssdProbParams.ptThick = ptThick;
-      ssdProbParams.answer = +(Math.round((SAD - ptThick/2)*10)/10).toFixed(1);
-      document.getElementById('ssd-prob-type').textContent = "Type: Manual Calculation";
-      document.getElementById('ssd-desc').textContent = `For a midplane technique, SAD = <b>${SAD} cm</b> and patient thickness is <b>${ptThick} cm</b>. Calculate the SSD at the entrance surface.`;
+      // Non-isocentric: SSD is always 100 on skin
+      ssdProbParams.scenario = "noniso";
+      ssdProbParams.answer = "100.0";
+      document.getElementById('ssd-prob-type').textContent = "Type: Non-Isocentric Calculation";
+      document.getElementById('ssd-desc').textContent = `A patient is treated non-isocentrically. What is the SSD at the skin surface?`;
       document.getElementById('ssd-entry-label').textContent = "SSD (cm):";
     }
   }
@@ -162,22 +153,19 @@ function drawSSDBEV() {
   let c = document.getElementById('ssd-bev-canvas');
   let ctx = c.getContext('2d');
   ctx.clearRect(0,0,c.width,c.height);
-  // Layout: vertical scale through CAX, field centered, CAX at field center
+  // Layout: vertical scale (center), field, CAX off-center
   let cx = c.width/2, top = 60, bottom = c.height-40;
   let fieldPxPerCm = 12;
   let fieldW = (ssdProbParams.x1 + ssdProbParams.x2) * fieldPxPerCm;
   let fieldH = (ssdProbParams.y1 + ssdProbParams.y2) * fieldPxPerCm;
   let fieldLeft = cx - fieldW/2;
   let fieldRight = cx + fieldW/2;
-  let fieldTop = top + (ssdProbParams.y1 * fieldPxPerCm) - fieldH/2; // fieldY1 above CAX
+  let fieldTop = top + (ssdProbParams.y1 * fieldPxPerCm) - fieldH/2;
   let fieldBot = fieldTop + fieldH;
-  // Draw field
-  ctx.save();
-  ctx.strokeStyle="#1976d2";
-  ctx.lineWidth=2.6;
-  ctx.setLineDash([14,7]);
-  ctx.strokeRect(fieldLeft, fieldTop, fieldRight-fieldLeft, fieldBot-fieldTop);
-  ctx.restore();
+
+  // CAX X position: offset from field center
+  let caxX = cx + ssdProbParams.caxFrac * (fieldW/2);
+
   // SSD scale (vertical ruler) through field center
   let ssdMin = 80, ssdMax = 110;
   let pxPerCm = (bottom-top)/(ssdMax-ssdMin);
@@ -195,24 +183,32 @@ function drawSSDBEV() {
       ctx.fillText(i, cx-40, y+3);
     }
   }
-  // Draw vertical line (CAX)
+  // Draw field jaws
+  ctx.save();
+  ctx.strokeStyle="#1976d2";
+  ctx.lineWidth=2.6;
+  ctx.setLineDash([14,7]);
+  ctx.strokeRect(fieldLeft, fieldTop, fieldRight-fieldLeft, fieldBot-fieldTop);
+  ctx.restore();
+
+  // Draw vertical CAX (off-center)
   ctx.save();
   ctx.strokeStyle="#c60000";
   ctx.lineWidth=3.5;
   ctx.beginPath();
-  ctx.moveTo(cx, top-22);
-  ctx.lineTo(cx, bottom+22);
+  ctx.moveTo(caxX, top-22);
+  ctx.lineTo(caxX, bottom+22);
   ctx.stroke();
-  // Arrowhead at skin surface
+  // Arrowhead at skin surface (off-center)
   ctx.beginPath();
-  ctx.moveTo(cx, bottom+14); ctx.lineTo(cx-8, bottom+2); ctx.lineTo(cx+8, bottom+2); ctx.closePath();
+  ctx.moveTo(caxX, bottom+14); ctx.lineTo(caxX-8, bottom+2); ctx.lineTo(caxX+8, bottom+2); ctx.closePath();
   ctx.fillStyle="#c60000";
   ctx.fill();
   ctx.restore();
-  // Draw CAX marker at field center bottom
+  // Draw CAX marker at field CAX/skin surface
   let caxY = fieldBot;
   ctx.beginPath();
-  ctx.arc(cx, caxY, 8, 0, 2*Math.PI);
+  ctx.arc(caxX, caxY, 8, 0, 2*Math.PI);
   ctx.fillStyle = "#fff";
   ctx.fill();
   ctx.strokeStyle="#c60000";
@@ -220,7 +216,8 @@ function drawSSDBEV() {
   ctx.stroke();
   ctx.font = "bold 13px sans-serif";
   ctx.fillStyle="#c60000";
-  ctx.fillText("CAX", cx-17, caxY+5);
+  ctx.fillText("CAX", caxX-18, caxY+5);
+
   // Jaw labels
   ctx.font = "bold 13px system-ui, sans-serif";
   ctx.fillStyle="#1976d2";
@@ -228,6 +225,7 @@ function drawSSDBEV() {
   ctx.fillText("Y2", cx-30, fieldBot+16);
   ctx.fillText("X1", fieldLeft-26, (fieldTop+fieldBot)/2+5);
   ctx.fillText("X2", fieldRight+12, (fieldTop+fieldBot)/2+5);
+
   // Draw "skin surface"
   ctx.save();
   ctx.fillStyle = "#e1e7ee";
@@ -263,13 +261,11 @@ function showSSDSolution() {
   let type = ssdProbParams.type;
   let sol = '';
   if (type === 0) {
-    sol = `SSD at CAX is the value where the central vertical scale crosses the skin surface at the <b>center of the field</b>.`;
+    sol = `SSD at CAX is the value where the off-centered red line (CAX) crosses the skin surface/field.`;
   } else if (ssdProbParams.scenario==="iso") {
-    sol = `SSD = SAD – depth = ${ssdProbParams.SAD} – ${ssdProbParams.depth} = <b>${ssdProbParams.answer} cm</b>`;
-  } else if (ssdProbParams.scenario==="findSAD") {
-    sol = `SAD = SSD + depth = ${ssdProbParams.SSD} + ${ssdProbParams.depth} = <b>${ssdProbParams.answer} cm</b>`;
-  } else if (ssdProbParams.scenario==="midplane") {
-    sol = `SSD = SAD – (patient thickness / 2) = ${ssdProbParams.SAD} – (${ssdProbParams.ptThick}/2) = <b>${ssdProbParams.answer} cm</b>`;
+    sol = `SSD = 100 – depth = 100 – ${ssdProbParams.depth} = <b>${ssdProbParams.answer} cm</b>`;
+  } else if (ssdProbParams.scenario==="noniso") {
+    sol = `SSD is always <b>100.0 cm</b> on the skin surface for non-isocentric setups.`;
   }
   document.getElementById('ssd-solution').style.display = '';
   document.getElementById('ssd-solution').innerHTML = sol;
