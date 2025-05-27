@@ -39,7 +39,7 @@
     <ul>
       <li>You will see two types of problems:
         <ul>
-          <li><b>BEV SSD:</b> Read the SSD value at the CAX (center vertical) from a simulated field/ruler and enter it.</li>
+          <li><b>BEV SSD:</b> Read the SSD value at the center of the treatment field (CAX) from the vertical scale. <b>The CAX is marked, but the value is not labeled—you must read it visually.</b></li>
           <li><b>Manual Calculation:</b> Use the given patient and beam geometry to calculate the SSD or related value.</li>
         </ul>
       </li>
@@ -57,7 +57,7 @@
     <div id="ssd-prob-type" style="font-weight:bold; margin-bottom:7px; color:#007096;"></div>
     <div class="desc" id="ssd-desc"></div>
     <div id="ssd-bev-area" style="display:none;">
-      <div class="ssd-bev-label">BEV: Read the SSD at the CAX from the vertical scale in the center of the field</div>
+      <div class="ssd-bev-label">BEV: Read the SSD value at the <span style="color:#c60000;">CAX</span> (center of the treatment field) from the vertical scale.</div>
       <canvas id="ssd-bev-canvas" width="500" height="440"></canvas>
     </div>
     <form class="inputs" id="ssd-inputs-form" autocomplete="off" onsubmit="event.preventDefault();">
@@ -107,7 +107,7 @@ function randomizeSSDProb() {
   let type = ssdProblems[ssdCurrent];
   ssdProbParams = { type };
   if (type === 0) {
-    // BEV SSD visual read (full field perimeter, vertical SSD scale)
+    // BEV SSD visual read (full field perimeter, vertical SSD scale, CAX at field center)
     let ssdMin = 80, ssdMax = 110;
     let trueSSD = +(Math.round((ssdMin+Math.random()*(ssdMax-ssdMin))*10)/10).toFixed(1);
     ssdProbParams.ssd = trueSSD;
@@ -115,8 +115,9 @@ function randomizeSSDProb() {
     ssdProbParams.x2 = +(5+Math.random()*10).toFixed(1);
     ssdProbParams.y1 = +(5+Math.random()*10).toFixed(1);
     ssdProbParams.y2 = +(5+Math.random()*10).toFixed(1);
+    // Central axis is at center of field
     document.getElementById('ssd-prob-type').textContent = "Type: BEV SSD (Field Perimeter)";
-    document.getElementById('ssd-desc').textContent = "Read the SSD at the CAX from the vertical scale running through the field. The field perimeter is illustrated by the jaws.";
+    document.getElementById('ssd-desc').textContent = "Read the SSD at the <b>center of the treatment field</b> (CAX) from the vertical scale. The value is not labeled—you must read it visually.";
     document.getElementById('ssd-bev-area').style.display = '';
     drawSSDBEV();
     document.getElementById('ssd-entry-label').textContent = "SSD at CAX (cm):";
@@ -161,11 +162,15 @@ function drawSSDBEV() {
   let c = document.getElementById('ssd-bev-canvas');
   let ctx = c.getContext('2d');
   ctx.clearRect(0,0,c.width,c.height);
-  // Layout: vertical scale through center, field centered (jaws), "skin" at bottom
+  // Layout: vertical scale through CAX, field centered, CAX at field center
   let cx = c.width/2, top = 60, bottom = c.height-40;
   let fieldPxPerCm = 12;
-  let fieldLeft = cx-(ssdProbParams.x1*fieldPxPerCm), fieldRight = cx+(ssdProbParams.x2*fieldPxPerCm);
-  let fieldTop = top+(ssdProbParams.y1*fieldPxPerCm), fieldBot = top+(ssdProbParams.y1+ssdProbParams.y2)*fieldPxPerCm;
+  let fieldW = (ssdProbParams.x1 + ssdProbParams.x2) * fieldPxPerCm;
+  let fieldH = (ssdProbParams.y1 + ssdProbParams.y2) * fieldPxPerCm;
+  let fieldLeft = cx - fieldW/2;
+  let fieldRight = cx + fieldW/2;
+  let fieldTop = top + (ssdProbParams.y1 * fieldPxPerCm) - fieldH/2; // fieldY1 above CAX
+  let fieldBot = fieldTop + fieldH;
   // Draw field
   ctx.save();
   ctx.strokeStyle="#1976d2";
@@ -173,7 +178,7 @@ function drawSSDBEV() {
   ctx.setLineDash([14,7]);
   ctx.strokeRect(fieldLeft, fieldTop, fieldRight-fieldLeft, fieldBot-fieldTop);
   ctx.restore();
-  // SSD scale (vertical ruler)
+  // SSD scale (vertical ruler) through field center
   let ssdMin = 80, ssdMax = 110;
   let pxPerCm = (bottom-top)/(ssdMax-ssdMin);
   for (let i = ssdMin; i <= ssdMax; i += 1) {
@@ -204,23 +209,25 @@ function drawSSDBEV() {
   ctx.fillStyle="#c60000";
   ctx.fill();
   ctx.restore();
-  // Label CAX and jaws
-  ctx.font = "bold 14px sans-serif";
+  // Draw CAX marker at field center bottom
+  let caxY = fieldBot;
+  ctx.beginPath();
+  ctx.arc(cx, caxY, 8, 0, 2*Math.PI);
+  ctx.fillStyle = "#fff";
+  ctx.fill();
+  ctx.strokeStyle="#c60000";
+  ctx.lineWidth=2.8;
+  ctx.stroke();
+  ctx.font = "bold 13px sans-serif";
   ctx.fillStyle="#c60000";
-  ctx.fillText("CAX", cx+10, top-11);
+  ctx.fillText("CAX", cx-17, caxY+5);
+  // Jaw labels
   ctx.font = "bold 13px system-ui, sans-serif";
   ctx.fillStyle="#1976d2";
   ctx.fillText("Y1", cx-30, fieldTop-8);
   ctx.fillText("Y2", cx-30, fieldBot+16);
   ctx.fillText("X1", fieldLeft-26, (fieldTop+fieldBot)/2+5);
   ctx.fillText("X2", fieldRight+12, (fieldTop+fieldBot)/2+5);
-  // Draw SSD at skin
-  let ySSD = top + (ssdProbParams.ssd-ssdMin)*pxPerCm;
-  ctx.save();
-  ctx.fillStyle="#c60000";
-  ctx.font = "bold 16px sans-serif";
-  ctx.fillText(`${ssdProbParams.ssd} cm`, cx+28, ySSD+4);
-  ctx.restore();
   // Draw "skin surface"
   ctx.save();
   ctx.fillStyle = "#e1e7ee";
@@ -256,7 +263,7 @@ function showSSDSolution() {
   let type = ssdProbParams.type;
   let sol = '';
   if (type === 0) {
-    sol = `SSD at CAX is the value where the central vertical scale crosses the skin surface, at the center of the field: <b>${ssdProbParams.ssd} cm</b>.`;
+    sol = `SSD at CAX is the value where the central vertical scale crosses the skin surface at the <b>center of the field</b>.`;
   } else if (ssdProbParams.scenario==="iso") {
     sol = `SSD = SAD – depth = ${ssdProbParams.SAD} – ${ssdProbParams.depth} = <b>${ssdProbParams.answer} cm</b>`;
   } else if (ssdProbParams.scenario==="findSAD") {
