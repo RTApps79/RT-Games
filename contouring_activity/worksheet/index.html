@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contouring Practice & Worksheet</title>
+    <style>
+        /* --- Global Styles --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 15px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .section-wrapper {
+            background-color: #fff;
+            padding: 25px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 850px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        h1, h2, h3 {
+            color: #0056b3;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 20px;
+        }
+        h1 { font-size: 1.8em; border-width: 2px; }
+        h2 { font-size: 1.4em; }
+        h3 { font-size: 1.1em; color: #004085; border-bottom: none; margin-top: 25px;}
+
+        /* --- Contouring App Styles --- */
+        #upload-section {
+            background-color: #e7f3ff;
+            border: 1px dashed #b3d7ff;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-radius: 5px;
+        }
+        #prompt-text {
+            font-size: 1.2em; font-weight: bold; color: #d9534f;
+            margin-bottom: 15px; min-height: 1.5em;
+        }
+        #image-wrapper {
+            position: relative; border: 1px solid #ccc; min-height: 300px;
+            margin: 0 auto 15px auto; display: inline-block;
+            background-color: #e0e0e0; overflow: hidden;
+        }
+        #image-wrapper img { display: block; max-width: 100%; height: auto; vertical-align: top; }
+        #drawing-canvas { position: absolute; top: 0; left: 0; cursor: crosshair; }
+        #caption-text { font-style: italic; color: #555; margin-top: 10px; min-height: 1.2em; }
+        #controls-area, #nav-area {
+            margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+        }
+        button, input[type="color"], input[type="range"], input[type="file"]::file-selector-button {
+            padding: 8px 15px; border-radius: 5px; border: 1px solid #ccc;
+            cursor: pointer; font-size: 1em; background-color: #f8f8f8;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        button { background-color: #007bff; color: white; border-color: #007bff; }
+        button:hover { background-color: #0056b3; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button.secondary { background-color: #6c757d; border-color: #6c757d; }
+        button.secondary:hover { background-color: #5a6268; }
+        button:disabled { background-color: #aaa; cursor: not-allowed; border-color: #aaa; }
+        #loading-error { color: red; font-weight: bold; margin-top: 10px; }
+        hr { border: 0; border-top: 2px solid #0056b3; margin: 40px 0; }
+
+        /* --- Worksheet Styles --- */
+        #worksheet-section { text-align: left; }
+        #worksheet-section h2 { text-align: center; }
+        #worksheet-section label {
+            font-weight: bold; display: block;
+            margin-top: 15px; margin-bottom: 5px;
+        }
+        #worksheet-section input[type="text"],
+        #worksheet-section textarea,
+        #worksheet-section select {
+            width: 100%; padding: 8px; margin-bottom: 10px;
+            border: 1px solid #ddd; border-radius: 4px;
+            box-sizing: border-box; font-size: 0.95rem;
+        }
+        #worksheet-section table {
+            width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 25px;
+        }
+        #worksheet-section th, #worksheet-section td {
+            border: 1px solid #dee2e6; padding: 10px; text-align: left; vertical-align: top;
+        }
+        #worksheet-section th { background-color: #e9ecef; font-weight: 600; }
+        #worksheet-section td input[type="text"],
+        #worksheet-section td select { width: 95%; margin: 0; }
+        #worksheet-section td textarea { width: 95%; margin: 0; min-height: 40px; }
+        .worksheet-subsection {
+             background-color: #f9f9f9; padding: 15px;
+             border: 1px solid #eee; border-radius: 5px; margin-bottom: 20px;
+        }
+         #worksheet-controls { text-align: center; margin-top: 25px; }
+         #worksheet-controls button { background-color: #28a745; border-color: #28a745; }
+         #worksheet-controls button:hover { background-color: #218838; }
+
+
+        /* --- Print Styles --- */
+        @media print {
+            body { background-color: #fff; margin: 10px; padding: 0; font-size: 10pt; }
+            .section-wrapper { box-shadow: none; border: none; width: 100%; max-width: 100%; padding: 5px; margin-bottom: 15px;}
+            #app-container { display: none; } /* Hide the app when printing */
+            #worksheet-section { display: block !important; } /* Ensure worksheet shows */
+            hr { display: none; }
+            h1, h2, h3 { color: #000; border-color: #000; margin-bottom: 15px; }
+            #worksheet-section table, #worksheet-section th, #worksheet-section td {
+                border: 1px solid #666 !important; page-break-inside: auto; font-size: 9pt; padding: 6px;
+            }
+            #worksheet-section input[type="text"], #worksheet-section textarea, #worksheet-section select {
+                 border: 1px solid #999; background-color: #f0f0f0; padding: 5px; width: 98%;
+            }
+            #worksheet-controls { display: none; }
+            .worksheet-subsection { border: 1px solid #ccc; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container" class="section-wrapper">
+        <h1>Contouring Practice Tool</h1>
+
+        <div id="upload-section">
+            <h3>Load Your Image Folder Here</h3>
+            <p>Make sure all images are in one folder, then select that folder below.</p>
+            <label for="image-upload">Select Folder:</label>
+            <input type="file" id="image-upload" accept="image/*" webkitdirectory>
+        </div>
+
+        <h2 id="prompt-text">Select an image folder to begin.</h2>
+        <div id="image-wrapper">
+             <div id="loading-error"></div>
+        </div>
+        <p id="caption-text"></p>
+
+        <div id="controls-area">
+            <label for="color-picker">Color:</label>
+            <input type="color" id="color-picker" value="#FF0000">
+
+            <label for="line-width">Width:</label>
+            <input type="range" id="line-width" min="1" max="10" value="2">
+            <span id="line-width-value">2</span>px
+
+            <button id="clear-button" class="secondary" disabled>Clear Contour</button>
+            <button id="save-button" disabled>Save Image + Contour</button>
+            </div>
+
+        <div id="nav-area">
+            <button id="prev-button" disabled>Previous Image</button>
+            <span id="image-counter">0 / 0</span>
+            <button id="next-button" disabled>Next Image</button>
+        </div>
+    </div>
+
+    <hr>
+
+    <div id="worksheet-section" class="section-wrapper">
+        <h1>Contouring Practice Worksheet</h1>
+
+        <div class="worksheet-subsection">
+             <label for="studentName">Student Name:</label>
+             <input type="text" id="studentName" name="studentName">
+             <label for="activityDate">Date:</label>
+             <input type="date" id="activityDate" name="activityDate" style="width: auto; padding: 7px;">
+        </div>
+
+        <h3>Image Contouring Log</h3>
+        <p>For each image you contour in the tool above, fill out a row below.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Img #</th>
+                    <th>Filename / Caption</th>
+                    <th>Target Structure</th>
+                    <th>Contour Quality (1-5)</th>
+                    <th>Notes / Challenges</th>
+                </tr>
+            </thead>
+            <tbody id="log-table-body">
+                <tr>
+                    <td><input type="number" name="log_num1"></td>
+                    <td><input type="text" name="log_cap1"></td>
+                    <td><input type="text" name="log_tar1"></td>
+                    <td><select name="log_q1"><option value="">-</option><option value="1">1 (Poor)</option><option value="2">2</option><option value="3">3 (Fair)</option><option value="4">4</option><option value="5">5 (Good)</option></select></td>
+                    <td><textarea name="log_n1" rows="2"></textarea></td>
+                </tr>
+                 <tr>
+                    <td><input type="number" name="log_num2"></td>
+                    <td><input type="text" name="log_cap2"></td>
+                    <td><input type="text" name="log_tar2"></td>
+                    <td><select name="log_q2"><option value="">-</option><option value="1">1 (Poor)</option><option value="2">2</option><option value="3">3 (Fair)</option><option value="4">4</option><option value="5">5 (Good)</option></select></td>
+                    <td><textarea name="log_n2" rows="2"></textarea></td>
+                </tr>
+                 <tr>
+                    <td><input type="number" name="log_num3"></td>
+                    <td><input type="text" name="log_cap3"></td>
+                    <td><input type="text" name="log_tar3"></td>
+                    <td><select name="log_q3"><option value="">-</option><option value="1">1 (Poor)</option><option value="2">2</option><option value="3">3 (Fair)</option><option value="4">4</option><option value="5">5 (Good)</option></select></td>
+                    <td><textarea name="log_n3" rows="2"></textarea></td>
+                </tr>
+                 <tr>
+                    <td><input type="number" name="log_num4"></td>
+                    <td><input type="text" name="log_cap4"></td>
+                    <td><input type="text" name="log_tar4"></td>
+                    <td><select name="log_q4"><option value="">-</option><option value="1">1 (Poor)</option><option value="2">2</option><option value="3">3 (Fair)</option><option value="4">4</option><option value="5">5 (Good)</option></select></td>
+                    <td><textarea name="log_n4" rows="2"></textarea></td>
+                </tr>
+                 <tr>
+                    <td><input type="number" name="log_num5"></td>
+                    <td><input type="text" name="log_cap5"></td>
+                    <td><input type="text" name="log_tar5"></td>
+                    <td><select name="log_q5"><option value="">-</option><option value="1">1 (Poor)</option><option value="2">2</option><option value="3">3 (Fair)</option><option value="4">4</option><option value="5">5 (Good)</option></select></td>
+                    <td><textarea name="log_n5" rows="2"></textarea></td>
+                </tr>
+                 </tbody>
+        </table>
+
+         <h3>Reflection Questions</h3>
+         <div class="worksheet-subsection">
+            <label for="reflect_1">1. What was the most significant challenge you faced during this contouring session, and how did you approach it?</label>
+            <textarea id="reflect_1" name="reflect_1" rows="3"></textarea>
+
+            <label for="reflect_2">2. Which type of structure (e.g., small, large, irregular, low-contrast) did you find easiest or hardest to contour, and why?</label>
+            <textarea id="reflect_2" name="reflect_2" rows="3"></textarea>
+
+            <label for="reflect_3">3. How did changing the color or line width affect your ability to contour accurately?</label>
+            <textarea id="reflect_3" name="reflect_3" rows="3"></textarea>
+
+            <label for="reflect_4">4. What is one specific technique or piece of knowledge you gained or reinforced during this practice?</label>
+            <textarea id="reflect_4" name="reflect_4" rows="3"></textarea>
+
+            <label for="reflect_5">5. What will you focus on improving in your next contouring practice session?</label>
+            <textarea id="reflect_5" name="reflect_5" rows="3"></textarea>
+         </div>
+
+         <div id="worksheet-controls">
+            <button onclick="window.print()">Print Worksheet</button>
+         </div>
+
+    </div>
+
+
+    <script>
+        // --- Contouring App JS (Mostly unchanged) ---
+        const imageUpload = document.getElementById('image-upload');
+        const promptText = document.getElementById('prompt-text');
+        const imageWrapper = document.getElementById('image-wrapper');
+        const captionText = document.getElementById('caption-text');
+        const colorPicker = document.getElementById('color-picker');
+        const lineWidth = document.getElementById('line-width');
+        const lineWidthValue = document.getElementById('line-width-value');
+        const clearButton = document.getElementById('clear-button');
+        const saveButton = document.getElementById('save-button');
+        // const printButton = document.getElementById('print-button'); // Removed print view button
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const imageCounter = document.getElementById('image-counter');
+        const loadingError = document.getElementById('loading-error');
+        let imagesData = [];
+        let currentImageIndex = 0;
+        let currentImageElement = null;
+        let currentCanvas = null;
+        let ctx = null;
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        function handleFileUpload(event) {
+            const files = event.target.files;
+            if (files.length === 0) { alert("Please select a folder containing image files."); return; }
+            imagesData = []; let loadedCount = 0;
+            const fileList = Array.from(files).filter(f => f.type.startsWith('image/'));
+            if (fileList.length === 0) { alert("No valid image files were found."); return; }
+
+            fileList.sort((a, b) => a.name.localeCompare(b.name));
+
+            fileList.forEach((file) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagesData.push({
+                        src: e.target.result,
+                        caption: file.webkitRelativePath || file.name,
+                        target: "Target Structure" // Default - You should know this from context
+                    });
+                    loadedCount++;
+                    if (loadedCount === fileList.length) {
+                        imagesData.sort((a, b) => a.caption.localeCompare(b.caption));
+                        load(0);
+                    }
+                };
+                reader.onerror = () => { console.error("Error reading file:", file.name); loadedCount++; /* continue */ };
+                reader.readAsDataURL(file);
+            });
+        }
+
+       function load(index) {
+            if (index < 0 || index >= imagesData.length) return;
+            currentImageIndex = index;
+            imageWrapper.innerHTML = ''; loadingError.textContent = '';
+            // *** NEW: Update worksheet fields (optional) ***
+            try {
+                 const rowNum = index + 1;
+                 const numInput = document.querySelector(`input[name="log_num${rowNum}"]`);
+                 const capInput = document.querySelector(`input[name="log_cap${rowNum}"]`);
+                 const tarInput = document.querySelector(`input[name="log_tar${rowNum}"]`);
+                 if(numInput) numInput.value = rowNum;
+                 if(capInput) capInput.value = imagesData[index].caption;
+                 if(tarInput) tarInput.value = imagesData[index].target; // Set target if known
+            } catch(e) { console.warn("Could not auto-fill worksheet row."); }
+            // ********************************************
+
+            promptText.textContent = `Please contour: ${imagesData[index].target}`;
+            captionText.textContent = `(${index + 1}/${imagesData.length}) ${imagesData[index].caption}`;
+            currentImageElement = new Image();
+            currentImageElement.onload = () => {
+                currentCanvas = document.createElement('canvas'); currentCanvas.id = 'drawing-canvas';
+                currentCanvas.width = currentImageElement.width; currentCanvas.height = currentImageElement.height;
+                ctx = currentCanvas.getContext('2d');
+                imageWrapper.style.width = `${currentImageElement.width}px`; imageWrapper.style.height = `${currentImageElement.height}px`;
+                imageWrapper.appendChild(currentImageElement); imageWrapper.appendChild(currentCanvas);
+                setupDrawingListeners(); updateNavButtons(); enableControls();
+            };
+            currentImageElement.onerror = () => { /* ... error handling ... */
+                 loadingError.textContent = `Error: Could not load image ${imagesData[index].caption}.`;
+                 promptText.textContent = 'Image Load Error'; captionText.textContent = '---';
+                 updateNavButtons(); disableControls();
+             };
+            currentImageElement.src = imagesData[index].src;
+        }
+
+        function setupDrawingListeners() {
+            if (!currentCanvas) return;
+            ctx.strokeStyle = colorPicker.value; ctx.lineWidth = lineWidth.value;
+            ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+            const getMousePos = (evt) => {
+                const rect = currentCanvas.getBoundingClientRect();
+                const scaleX = currentCanvas.width / rect.width;    // relationship bitmap vs. element for X
+                const scaleY = currentCanvas.height / rect.height;  // relationship bitmap vs. element for Y
+                return {
+                    x: (evt.clientX - rect.left) * scaleX,
+                    y: (evt.clientY - rect.top) * scaleY
+                };
+            }
+            const draw = (e, isTouch = false) => {
+                 if (!isDrawing) return;
+                 const eventSource = isTouch ? e.touches[0] : e;
+                 if(!eventSource) return;
+                 if(isTouch) e.preventDefault();
+                 const pos = getMousePos(eventSource);
+                 ctx.lineTo(pos.x, pos.y); ctx.stroke();
+                 [lastX, lastY] = [pos.x, pos.y];
+            }
+            const startDraw = (e, isTouch = false) => {
+                 const eventSource = isTouch ? e.touches[0] : e;
+                 if(!eventSource || (!isTouch && e.button !== 0)) return;
+                 if(isTouch) e.preventDefault();
+                 isDrawing = true;
+                 const pos = getMousePos(eventSource);
+                 [lastX, lastY] = [pos.x, pos.y];
+                 ctx.beginPath(); ctx.moveTo(lastX, lastY);
+            }
+            const stopDraw = () => { isDrawing = false; }
+            currentCanvas.addEventListener('mousedown', (e) => startDraw(e, false));
+            currentCanvas.addEventListener('mousemove', (e) => draw(e, false));
+            currentCanvas.addEventListener('mouseup', stopDraw); currentCanvas.addEventListener('mouseout', stopDraw);
+            currentCanvas.addEventListener('touchstart', (e) => startDraw(e, true), { passive: false });
+            currentCanvas.addEventListener('touchmove', (e) => draw(e, true), { passive: false });
+            currentCanvas.addEventListener('touchend', stopDraw); currentCanvas.addEventListener('touchcancel', stopDraw);
+        }
+
+        function clearCanvas() { if (ctx && currentCanvas) { ctx.clearRect(0, 0, currentCanvas.width, currentCanvas.height); } }
+
+        function saveCanvas() {
+            if (!currentCanvas || !currentImageElement || !currentImageElement.complete || currentImageElement.naturalHeight === 0) {
+                 alert("Cannot save - Image not loaded."); return;
+            }
+            const tempCanvas = document.createElement('canvas'); tempCanvas.width = currentImageElement.width; tempCanvas.height = currentImageElement.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(currentImageElement, 0, 0); tempCtx.drawImage(currentCanvas, 0, 0);
+            const link = document.createElement('a');
+            link.download = `contour_${imagesData[currentImageIndex].caption.replace(/[/\\?%*:|"<>]/g, '-')}.png`;
+            link.href = tempCanvas.toDataURL('image/png'); link.click();
+        }
+
+        function updateNavButtons() {
+            const hasImages = imagesData.length > 0;
+            prevButton.disabled = !hasImages || currentImageIndex === 0;
+            nextButton.disabled = !hasImages || currentImageIndex === imagesData.length - 1;
+            imageCounter.textContent = hasImages ? `${currentImageIndex + 1} / ${imagesData.length}` : '0 / 0';
+        }
+
+        function enableControls() { saveButton.disabled = false; clearButton.disabled = false; /* printButton.disabled = false; */ }
+        function disableControls() { saveButton.disabled = true; clearButton.disabled = true; /* printButton.disabled = true; */ }
+
+        imageUpload.addEventListener('change', handleFileUpload);
+        colorPicker.addEventListener('change', () => { if(ctx) ctx.strokeStyle = colorPicker.value; });
+        lineWidth.addEventListener('input', () => { if(ctx) ctx.lineWidth = lineWidth.value; lineWidthValue.textContent = lineWidth.value; });
+        clearButton.addEventListener('click', clearCanvas);
+        saveButton.addEventListener('click', saveCanvas);
+        // printButton.addEventListener('click', () => window.print()); // Use worksheet print button
+        prevButton.addEventListener('click', () => load(currentImageIndex - 1));
+        nextButton.addEventListener('click', () => load(currentImageIndex + 1));
+
+        // --- Worksheet JS ---
+        document.getElementById('activityDate').valueAsDate = new Date(); // Set today's date
+
+    </script>
+
+</body>
+</html>
