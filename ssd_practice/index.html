@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>SSD Practice - Advanced</title>
+  <title>SSD Practice - Field BEV</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { font-family: system-ui, sans-serif; background: #e9ecef; color: #223; margin:0;}
-    .container { max-width: 540px; margin: 36px auto 0 auto; background: #fff; border-radius: 13px; box-shadow: 0 2px 18px #0001; padding: 28px 22px 32px 22px;}
+    .container { max-width: 640px; margin: 36px auto 0 auto; background: #fff; border-radius: 13px; box-shadow: 0 2px 18px #0001; padding: 28px 22px 32px 22px;}
     h1 { text-align:center; color: #1976d2; margin-bottom: 16px;}
     .instructions { background: #e3f2fd; border-radius: 10px; padding: 13px 16px; margin-bottom: 18px; color: #135;}
     .problem-settings { margin-bottom: 18px; }
@@ -26,21 +26,20 @@
     .badge.silver { background: #f2f2f2; color: #444; border: 2px solid #bbb;}
     .badge.bronze { background: #ffe0b3; color: #795548; border: 2px solid #c97;}
     .badge.try { background: #ffbdbd; color:#a00; border:2px solid #f88;}
-    .top-spacer { margin-top: 10px; }
     .ssd-bev-label { font-size:1.07em; color:#a15c00; font-weight:bold; margin-bottom: 6px;}
     .ssd-cax-arrow { stroke:#c60000; stroke-width:2.4; marker-end:url(#arrowhead);}
-    @media (max-width: 600px){ .container{padding: 8px 2vw 18px 2vw;} }
+    @media (max-width: 700px){ .container{padding: 8px 2vw 18px 2vw;} }
   </style>
 </head>
 <body>
 <div class="container">
-  <h1>SSD Practice (Advanced)</h1>
+  <h1>SSD Practice (Field BEV)</h1>
   <div class="instructions" id="instructions">
     <b>Instructions:</b>
     <ul>
       <li>You will see two types of problems:
         <ul>
-          <li><b>Visual (BEV) SSD:</b> Read the SSD value at the CAX from a simulated field/ruler and enter it.</li>
+          <li><b>BEV SSD:</b> Read the SSD value at the CAX (center vertical) from a simulated field/ruler and enter it.</li>
           <li><b>Manual Calculation:</b> Use the given patient and beam geometry to calculate the SSD or related value.</li>
         </ul>
       </li>
@@ -58,8 +57,8 @@
     <div id="ssd-prob-type" style="font-weight:bold; margin-bottom:7px; color:#007096;"></div>
     <div class="desc" id="ssd-desc"></div>
     <div id="ssd-bev-area" style="display:none;">
-      <div class="ssd-bev-label">BEV: Read the SSD at the CAX from the ruler below</div>
-      <canvas id="ssd-bev-canvas" width="320" height="120"></canvas>
+      <div class="ssd-bev-label">BEV: Read the SSD at the CAX from the vertical scale in the center of the field</div>
+      <canvas id="ssd-bev-canvas" width="500" height="440"></canvas>
     </div>
     <form class="inputs" id="ssd-inputs-form" autocomplete="off" onsubmit="event.preventDefault();">
       <span id="ssd-entry-label"></span>
@@ -108,21 +107,21 @@ function randomizeSSDProb() {
   let type = ssdProblems[ssdCurrent];
   ssdProbParams = { type };
   if (type === 0) {
-    // BEV SSD visual read
+    // BEV SSD visual read (full field perimeter, vertical SSD scale)
     let ssdMin = 80, ssdMax = 110;
     let trueSSD = +(Math.round((ssdMin+Math.random()*(ssdMax-ssdMin))*10)/10).toFixed(1);
     ssdProbParams.ssd = trueSSD;
-    ssdProbParams.field = Math.random()<0.5 ? "rect" : "square";
-    ssdProbParams.width = +(8+Math.random()*12).toFixed(1);
-    ssdProbParams.height = +(8+Math.random()*12).toFixed(1);
-    document.getElementById('ssd-prob-type').textContent = "Type: Visual (BEV) SSD";
-    document.getElementById('ssd-desc').textContent = "Read the SSD at the central axis (CAX) from the projected ruler. Enter the value (cm), rounded to the nearest tenth.";
+    ssdProbParams.x1 = +(5+Math.random()*10).toFixed(1);
+    ssdProbParams.x2 = +(5+Math.random()*10).toFixed(1);
+    ssdProbParams.y1 = +(5+Math.random()*10).toFixed(1);
+    ssdProbParams.y2 = +(5+Math.random()*10).toFixed(1);
+    document.getElementById('ssd-prob-type').textContent = "Type: BEV SSD (Field Perimeter)";
+    document.getElementById('ssd-desc').textContent = "Read the SSD at the CAX from the vertical scale running through the field. The field perimeter is illustrated by the jaws.";
     document.getElementById('ssd-bev-area').style.display = '';
     drawSSDBEV();
     document.getElementById('ssd-entry-label').textContent = "SSD at CAX (cm):";
   } else {
-    // Calculation scenario
-    // Randomize scenario type: isocentric, fixed SSD, midplane, etc.
+    // Calculation scenario (same as before)
     let scenario = Math.random();
     let SAD = [100, 105, 110][Math.floor(Math.random()*3)];
     let ptThick = +(Math.round((16+Math.random()*14)*10)/10); // 16-30cm
@@ -162,59 +161,70 @@ function drawSSDBEV() {
   let c = document.getElementById('ssd-bev-canvas');
   let ctx = c.getContext('2d');
   ctx.clearRect(0,0,c.width,c.height);
+  // Layout: vertical scale through center, field centered (jaws), "skin" at bottom
+  let cx = c.width/2, top = 60, bottom = c.height-40;
+  let fieldPxPerCm = 12;
+  let fieldLeft = cx-(ssdProbParams.x1*fieldPxPerCm), fieldRight = cx+(ssdProbParams.x2*fieldPxPerCm);
+  let fieldTop = top+(ssdProbParams.y1*fieldPxPerCm), fieldBot = top+(ssdProbParams.y1+ssdProbParams.y2)*fieldPxPerCm;
+  // Draw field
   ctx.save();
-  // "Skin" surface
-  ctx.fillStyle = "#d7e9f7";
-  ctx.fillRect(0, 80, c.width, 30);
-  // Draw field: project field as rectangle
-  let fieldW = ssdProbParams.width*8, fieldH = 26;
-  let cx = c.width/2;
-  ctx.save();
-  ctx.globalAlpha = 0.6;
   ctx.strokeStyle="#1976d2";
-  ctx.lineWidth=2.2;
-  ctx.setLineDash([11,6]);
-  ctx.strokeRect(cx-fieldW/2, 82, fieldW, fieldH);
+  ctx.lineWidth=2.6;
+  ctx.setLineDash([14,7]);
+  ctx.strokeRect(fieldLeft, fieldTop, fieldRight-fieldLeft, fieldBot-fieldTop);
   ctx.restore();
-  // SSD ruler (ticks every 1cm, labels every 5cm)
-  let ssd0 = 80, pxPerCm = 2.2;
-  let minSSD = 80, maxSSD = 110;
-  for (let i = minSSD; i <= maxSSD; i += 1) {
-    let x = 22 + (i-minSSD)*pxPerCm;
+  // SSD scale (vertical ruler)
+  let ssdMin = 80, ssdMax = 110;
+  let pxPerCm = (bottom-top)/(ssdMax-ssdMin);
+  for (let i = ssdMin; i <= ssdMax; i += 1) {
+    let y = top + (i-ssdMin)*pxPerCm;
     ctx.beginPath();
     ctx.strokeStyle = i%5==0 ? "#1976d2" : "#888";
     ctx.lineWidth = i%5==0 ? 2.2 : 1;
-    ctx.moveTo(x, 104); ctx.lineTo(x, 118);
+    ctx.moveTo(cx-18, y); ctx.lineTo(cx+18, y);
     ctx.stroke();
     if (i%5===0) {
-      ctx.font = "10px monospace";
+      ctx.font = "10.5px monospace";
       ctx.fillStyle = "#1976d2";
-      ctx.fillText(i, x-8, 101);
+      ctx.fillText(i, cx+22, y+3);
+      ctx.fillText(i, cx-40, y+3);
     }
   }
-  // Draw CAX arrow
-  let ssdAtCAX = ssdProbParams.ssd;
-  let xCAX = 22 + (ssdAtCAX-minSSD)*pxPerCm;
+  // Draw vertical line (CAX)
   ctx.save();
   ctx.strokeStyle="#c60000";
-  ctx.lineWidth=2.5;
+  ctx.lineWidth=3.5;
   ctx.beginPath();
-  ctx.moveTo(xCAX, 75); ctx.lineTo(xCAX, 104);
+  ctx.moveTo(cx, top-22);
+  ctx.lineTo(cx, bottom+22);
   ctx.stroke();
-  // Arrowhead
+  // Arrowhead at skin surface
   ctx.beginPath();
-  ctx.moveTo(xCAX, 75); ctx.lineTo(xCAX-5, 82); ctx.lineTo(xCAX+5, 82); ctx.closePath();
+  ctx.moveTo(cx, bottom+14); ctx.lineTo(cx-8, bottom+2); ctx.lineTo(cx+8, bottom+2); ctx.closePath();
   ctx.fillStyle="#c60000";
   ctx.fill();
   ctx.restore();
-  // CAX label
-  ctx.font = "bold 12px sans-serif";
+  // Label CAX and jaws
+  ctx.font = "bold 14px sans-serif";
   ctx.fillStyle="#c60000";
-  ctx.fillText("CAX", xCAX-16, 71);
-  // SSD label at CAX
-  ctx.font = "bold 13px sans-serif";
+  ctx.fillText("CAX", cx+10, top-11);
+  ctx.font = "bold 13px system-ui, sans-serif";
+  ctx.fillStyle="#1976d2";
+  ctx.fillText("Y1", cx-30, fieldTop-8);
+  ctx.fillText("Y2", cx-30, fieldBot+16);
+  ctx.fillText("X1", fieldLeft-26, (fieldTop+fieldBot)/2+5);
+  ctx.fillText("X2", fieldRight+12, (fieldTop+fieldBot)/2+5);
+  // Draw SSD at skin
+  let ySSD = top + (ssdProbParams.ssd-ssdMin)*pxPerCm;
+  ctx.save();
   ctx.fillStyle="#c60000";
-  ctx.fillText(`${ssdAtCAX} cm`, xCAX-17, 96);
+  ctx.font = "bold 16px sans-serif";
+  ctx.fillText(`${ssdProbParams.ssd} cm`, cx+28, ySSD+4);
+  ctx.restore();
+  // Draw "skin surface"
+  ctx.save();
+  ctx.fillStyle = "#e1e7ee";
+  ctx.fillRect(fieldLeft, bottom, fieldRight-fieldLeft, 18);
   ctx.restore();
 }
 function checkSSDProb() {
@@ -246,7 +256,7 @@ function showSSDSolution() {
   let type = ssdProbParams.type;
   let sol = '';
   if (type === 0) {
-    sol = `SSD at CAX is simply the value shown at the center axis on the projected ruler: <b>${ssdProbParams.ssd} cm</b>.`;
+    sol = `SSD at CAX is the value where the central vertical scale crosses the skin surface, at the center of the field: <b>${ssdProbParams.ssd} cm</b>.`;
   } else if (ssdProbParams.scenario==="iso") {
     sol = `SSD = SAD – depth = ${ssdProbParams.SAD} – ${ssdProbParams.depth} = <b>${ssdProbParams.answer} cm</b>`;
   } else if (ssdProbParams.scenario==="findSAD") {
