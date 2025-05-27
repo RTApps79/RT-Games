@@ -1,63 +1,292 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>RT Games Menu</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+  <title>SSD Practice - BEV (CAX Center, Full Skin Surface)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f6fa; margin: 0; padding: 0; }
-    h1 { text-align: center; color: #2d3436; margin-top: 30px;}
-    .category { margin: 30px auto; max-width: 600px; background: #fff; border-radius: 10px; box-shadow: 0 2px 10px #dfe6e9; padding: 20px; }
-    .category h2 { color: #0984e3; margin-top: 0; }
-    ul { padding-left: 20px; }
-    li { margin-bottom: 10px; }
-    a { color: #0984e3; text-decoration: none; font-weight: bold; }
-    a:hover { text-decoration: underline; }
-    .note { text-align: center; color: #636e72; font-size: 1.1em; margin-top: 35px;}
+    body { font-family: system-ui, sans-serif; background: #e9ecef; color: #223; margin:0;}
+    .container { max-width: 640px; margin: 36px auto 0 auto; background: #fff; border-radius: 13px; box-shadow: 0 2px 18px #0001; padding: 28px 22px 32px 22px;}
+    h1 { text-align:center; color: #1976d2; margin-bottom: 16px;}
+    .instructions { background: #e3f2fd; border-radius: 10px; padding: 13px 16px; margin-bottom: 18px; color: #135;}
+    .problem-settings { margin-bottom: 18px; }
+    .problem-settings label { font-weight: 500; }
+    .desc { color: #1976d2; font-size: 1.01em; margin: 10px 0 8px 0;}
+    .btn { background: #1976d2; color: #fff; border: none; border-radius: 4px; padding: 7px 20px; margin: 8px 6px 0 0; font-size:1.07em;}
+    .btn.secondary { background: #bcdffb; color: #136;}
+    .result, .feedback { margin: 14px 0 0 0; font-size: 1.11em;}
+    .pass { color: #18a900; font-weight: bold;}
+    .fail { color: #c40000; font-weight: bold;}
+    .tick { font-size:1.2em; }
+    .solution { background: #e3f2fd; border-radius: 8px; padding: 10px 14px; margin-top: 15px; font-size:0.98em;}
+    .section-label { font-weight:bold; color:#1976d2; margin: 8px 0 2px 0; display:block;}
+    .summary { background: #d5f5e3; border-radius: 10px; padding: 16px 20px; margin: 20px 0 0 0; color: #1976d2; text-align: center;}
+    .badge { display: inline-block; margin: 0 8px; font-size: 1.1em; font-weight: bold; padding: 5px 16px; border-radius: 18px;}
+    .badge.gold { background: #ffd700; color: #664d00; border: 2px solid #e5c300;}
+    .badge.silver { background: #f2f2f2; color: #444; border: 2px solid #bbb;}
+    .badge.bronze { background: #ffe0b3; color: #795548; border: 2px solid #c97;}
+    .badge.try { background: #ffbdbd; color:#a00; border:2px solid #f88;}
+    .ssd-bev-label { font-size:1.07em; color:#a15c00; font-weight:bold; margin-bottom: 6px;}
+    @media (max-width: 700px){ .container{padding: 8px 2vw 18px 2vw;} }
   </style>
 </head>
 <body>
-  <h1>RT Games Menu</h1>
-
-  <div class="category">
-    <h2>Orientation Vocabulary</h2>
+<div class="container">
+  <h1>SSD Practice (BEV, CAX Center of Field/Skin)</h1>
+  <div class="instructions" id="instructions">
+    <b>Principles:</b>
     <ul>
-      <li><a href="healthcare-roles-speech-quiz/" target="_blank">Healthcare Roles Speech Quiz</a></li>
-      <li><a href="dosimetry_vocabulary/" target="_blank">Dosimetry Vocabulary</a></li>
-      <!-- Add more healthcare games here -->
+      <li><b>SAD is always 100 cm.</b></li>
+      <li>For isocentric setups: SSD = 100 cm - depth (depth = tumor distance from skin).</li>
+      <li>For non-isocentric setups: field is set with SSD = 100 cm at the skin surface.</li>
+      <li>In BEV problems, the entire canvas is the skin surface. The field is shown as a rectangle centered on the canvas. The CAX (circle and label) marks the exact center of the field and canvas. The vertical SSD scale always runs through the CAX. Read the SSD value at CAX where the scale crosses the center.</li>
+      <li>All answers must be rounded to the nearest tenth (e.g., 97.4).</li>
+      <li>Choose your practice quantity. Get a summary and badge at the end!</li>
     </ul>
   </div>
+  <div class="problem-settings" id="problem-settings">
+    <label for="num-problems">Number of Problems:</label>
+    <input type="number" id="num-problems" min="3" max="20" value="6" style="width:48px;">
+    <button class="btn secondary" onclick="startSSDPractice();return false;">Start Practice</button>
+  </div>
+  <div id="ssd-practice-area" style="display:none;">
+    <div style="margin-bottom: 5px; color:#1976d2; font-weight:bold;" id="ssd-prob-status"></div>
+    <div id="ssd-prob-type" style="font-weight:bold; margin-bottom:7px; color:#007096;"></div>
+    <div class="desc" id="ssd-desc"></div>
+    <div id="ssd-bev-area" style="display:none;">
+      <div class="ssd-bev-label">BEV: Read the SSD value at the <span style="color:#c60000;">CAX</span> (center of the field/canvas) from the vertical scale.</div>
+      <canvas id="ssd-bev-canvas" width="500" height="440"></canvas>
+    </div>
+    <form class="inputs" id="ssd-inputs-form" autocomplete="off" onsubmit="event.preventDefault();">
+      <span id="ssd-entry-label"></span>
+      <input type="number" step="0.1" id="ssd-entry" style="width:80px;">
+    </form>
+    <button class="btn" onclick="checkSSDProb()">Check</button>
+    <button class="btn secondary" onclick="showSSDSolution()">Show Solution</button>
+    <button class="btn secondary" onclick="nextSSDProb();return false;" id="ssd-next-btn" style="display:none;">Next Problem</button>
+    <div class="result" id="ssd-feedback"></div>
+    <div class="solution" id="ssd-solution" style="display:none;"></div>
+  </div>
+  <div id="ssd-completion-summary" class="summary" style="display:none;"></div>
+</div>
+<script>
+let ssdTotal = 6;
+let ssdCurrent = 0;
+let ssdResults = [];
+let ssdProblems = [];
+function startSSDPractice() {
+  ssdTotal = Math.max(3, Math.min(20, Math.round(+document.getElementById('num-problems').value || 6)));
+  ssdCurrent = 0;
+  ssdResults = [];
+  ssdProblems = [];
+  document.getElementById('ssd-practice-area').style.display = '';
+  document.getElementById('problem-settings').style.display = 'none';
+  document.getElementById('ssd-completion-summary').style.display = 'none';
+  // Mix problem types (0: BEV-visual, 1: manual calculation)
+  for (let i=0;i<ssdTotal;++i) {
+    let t = Math.random() < 0.5 ? 0 : 1;
+    if (i<2) t = i; // Ensure both types at least once
+    ssdProblems.push(t);
+  }
+  randomizeSSDProb();
+  updateSSDStatus();
+}
+function updateSSDStatus() {
+  document.getElementById('ssd-prob-status').textContent = `Problem ${ssdCurrent+1} of ${ssdTotal}`;
+}
+let ssdProbParams = {};
+function randomizeSSDProb() {
+  document.getElementById('ssd-feedback').textContent = '';
+  document.getElementById('ssd-solution').style.display = 'none';
+  document.getElementById('ssd-next-btn').style.display = 'none';
+  document.getElementById('ssd-bev-area').style.display = 'none';
+  document.getElementById('ssd-inputs-form').reset();
+  let type = ssdProblems[ssdCurrent];
+  ssdProbParams = { type };
+  if (type === 0) {
+    // BEV SSD visual read (vertical SSD scale, CAX at field/canvas center)
+    let ssdMin = 80, ssdMax = 110;
+    let trueSSD = +(Math.round((ssdMin+Math.random()*(ssdMax-ssdMin))*10)/10).toFixed(1);
+    ssdProbParams.ssd = trueSSD;
+    // Field
+    ssdProbParams.x1 = +(5+Math.random()*10).toFixed(1);
+    ssdProbParams.x2 = +(5+Math.random()*10).toFixed(1);
+    ssdProbParams.y1 = +(5+Math.random()*10).toFixed(1);
+    ssdProbParams.y2 = +(5+Math.random()*10).toFixed(1);
+    document.getElementById('ssd-prob-type').textContent = "Type: BEV SSD (CAX at Center)";
+    document.getElementById('ssd-desc').textContent = "Read the SSD at the <b>CAX</b> (center of the field/canvas) from the vertical scale. The value is not labeled—you must estimate visually.";
+    document.getElementById('ssd-bev-area').style.display = '';
+    drawSSDBEV();
+    document.getElementById('ssd-entry-label').textContent = "SSD at CAX (cm):";
+  } else {
+    // Calculation scenario (SAD always 100)
+    let scenario = Math.random();
+    let depth = +(Math.round((3+Math.random()*17)*10)/10); // depth: 3-20cm
+    if (scenario < 0.5) {
+      // Isocentric: SSD = SAD - depth, SAD=100
+      ssdProbParams.scenario = "iso";
+      ssdProbParams.SAD = 100;
+      ssdProbParams.depth = depth;
+      ssdProbParams.answer = +(Math.round((100 - depth)*10)/10).toFixed(1);
+      document.getElementById('ssd-prob-type').textContent = "Type: Isocentric Calculation";
+      document.getElementById('ssd-desc').textContent = `A patient is treated isocentrically (SAD = 100 cm). Tumor depth: ${depth} cm. What is the SSD at the skin?`;
+      document.getElementById('ssd-entry-label').textContent = "SSD (cm):";
+    } else {
+      // Non-isocentric: SSD is always 100 on skin
+      ssdProbParams.scenario = "noniso";
+      ssdProbParams.answer = "100.0";
+      document.getElementById('ssd-prob-type').textContent = "Type: Non-Isocentric Calculation";
+      document.getElementById('ssd-desc').textContent = `A patient is treated non-isocentrically. What is the SSD at the skin surface?`;
+      document.getElementById('ssd-entry-label').textContent = "SSD (cm):";
+    }
+  }
+}
+function drawSSDBEV() {
+  let c = document.getElementById('ssd-bev-canvas');
+  let ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  // Layout: vertical scale (center), field, CAX at field/canvas center
+  let cx = c.width/2, cy = c.height/2;
+  // Field centered on canvas
+  let fieldPxPerCm = 12;
+  let fieldW = (ssdProbParams.x1 + ssdProbParams.x2) * fieldPxPerCm;
+  let fieldH = (ssdProbParams.y1 + ssdProbParams.y2) * fieldPxPerCm;
+  let fieldLeft = cx - fieldW/2;
+  let fieldTop = cy - fieldH/2;
+  let fieldRight = cx + fieldW/2;
+  let fieldBot = cy + fieldH/2;
 
-   <div class="category">
-    <h2>Sectional Anatomy</h2>
-    <ul>
-      <li><a href="sectional_anatomy_challenge" target="_blank">Sectional Anatomy Challenge</a></li>
-      <li><a href="inverse-square-challenge/" target="_blank">More Games to be added..</a></li>
-      <!-- Add more science games here -->
-    </ul>
-  </div>
-  
-  <div class="category">
-    <h2>Math</h2>
-    <ul>
-      <li><a href="algebra-refresher/" target="_blank">Algebra Refresher</a></li>
-      <li><a href="ssd_practice/" target="_blank">SSD Calculation Practice</a></li>
-      <!-- Add more math games here -->
-    </ul>
-  </div>
+  // Draw vertical SSD scale through center
+  let ssdMin = 80, ssdMax = 110;
+  let top = 60, bottom = c.height-40;
+  let pxPerCm = (bottom-top)/(ssdMax-ssdMin);
+  ctx.save();
+  ctx.strokeStyle="#1976d2";
+  ctx.lineWidth=2.2;
+  ctx.beginPath();
+  ctx.moveTo(cx, top-22);
+  ctx.lineTo(cx, bottom+22);
+  ctx.stroke();
+  ctx.restore();
+  for (let i = ssdMin; i <= ssdMax; i += 1) {
+    let y = top + (i-ssdMin)*pxPerCm;
+    ctx.beginPath();
+    ctx.strokeStyle = i%5==0 ? "#1976d2" : "#888";
+    ctx.lineWidth = i%5==0 ? 2.2 : 1;
+    ctx.moveTo(cx-18, y); ctx.lineTo(cx+18, y);
+    ctx.stroke();
+    if (i%5===0) {
+      ctx.font = "10.5px monospace";
+      ctx.fillStyle = "#1976d2";
+      ctx.fillText(i, cx+22, y+3);
+      ctx.fillText(i, cx-40, y+3);
+    }
+  }
+  // Draw field jaws
+  ctx.save();
+  ctx.strokeStyle="#1976d2";
+  ctx.lineWidth=2.6;
+  ctx.setLineDash([14,7]);
+  ctx.strokeRect(fieldLeft, fieldTop, fieldRight-fieldLeft, fieldBot-fieldTop);
+  ctx.restore();
 
-  <div class="category">
-    <h2>Radiation Physics</h2>
-    <ul>
-      <li><a href="rad_units_challenge" target="_blank">Radiation Units Challenge</a></li>
-      <li><a href="inverse-square-challenge/" target="_blank">Inverse Square Challenge</a></li>
-      <!-- Add more science games here -->
-    </ul>
-  </div>
+  // Draw CAX marker at center
+  ctx.beginPath();
+  ctx.arc(cx, cy, 12, 0, 2*Math.PI);
+  ctx.fillStyle = "#fff";
+  ctx.fill();
+  ctx.strokeStyle="#c60000";
+  ctx.lineWidth=3.0;
+  ctx.stroke();
+  ctx.font = "bold 15px sans-serif";
+  ctx.fillStyle="#c60000";
+  ctx.fillText("CAX", cx-22, cy+6);
 
-  <div class="note">
-    All games are playable directly in your browser.<br>
-    For games using speech recognition, please use Google Chrome and allow microphone access.
-  </div>
+  // Jaw labels
+  ctx.font = "bold 13px system-ui, sans-serif";
+  ctx.fillStyle="#1976d2";
+  ctx.fillText("Y1", cx-30, fieldTop-8);
+  ctx.fillText("Y2", cx-30, fieldBot+16);
+  ctx.fillText("X1", fieldLeft-26, cy+5);
+  ctx.fillText("X2", fieldRight+12, cy+5);
+}
+function checkSSDProb() {
+  let userVal = Math.round(+document.getElementById('ssd-entry').value*10)/10;
+  let type = ssdProbParams.type;
+  let correct = false;
+  let answer = null;
+  let tol = 0.2; // Accept ±0.2 cm
+  if (type === 0) {
+    answer = ssdProbParams.ssd;
+    correct = Math.abs(userVal-answer)<=tol;
+  } else {
+    answer = +ssdProbParams.answer;
+    correct = Math.abs(userVal-answer)<=tol;
+  }
+  let fb = correct
+    ? `<span class="pass">&#10003; Correct!</span>`
+    : `<span class="fail">&#10008;</span> Correct value: ${answer} cm`;
+  ssdResults[ssdCurrent] = { correct, fb };
+  document.getElementById('ssd-feedback').innerHTML = fb;
+  document.getElementById('ssd-next-btn').style.display = '';
+  if (ssdCurrent === ssdTotal-1) {
+    document.getElementById('ssd-next-btn').textContent = "Finish & View Summary";
+  } else {
+    document.getElementById('ssd-next-btn').textContent = "Next Problem";
+  }
+}
+function showSSDSolution() {
+  let type = ssdProbParams.type;
+  let sol = '';
+  if (type === 0) {
+    sol = `SSD at CAX is the value where the centered red circle (CAX) meets the vertical scale at the center of the field/canvas.`;
+  } else if (ssdProbParams.scenario==="iso") {
+    sol = `SSD = 100 – depth = 100 – ${ssdProbParams.depth} = ${ssdProbParams.answer} cm`;
+  } else if (ssdProbParams.scenario==="noniso") {
+    sol = `SSD is always 100.0 cm on the skin surface for non-isocentric setups.`;
+  }
+  document.getElementById('ssd-solution').style.display = '';
+  document.getElementById('ssd-solution').innerHTML = sol;
+}
+function nextSSDProb() {
+  if (ssdCurrent < ssdTotal-1) {
+    ssdCurrent++;
+    randomizeSSDProb();
+    updateSSDStatus();
+  } else {
+    finishSSDPractice();
+  }
+}
+function finishSSDPractice() {
+  document.getElementById('ssd-practice-area').style.display = 'none';
+  let nCorrect = ssdResults.filter(r => r && r.correct).length;
+  let percent = Math.round((nCorrect/ssdTotal)*100);
+  let badge = "";
+  let badgeText = "";
+  if (percent === 100)      { badge = "gold"; badgeText = "Perfect!"; }
+  else if (percent >= 90)   { badge = "gold"; badgeText = "Excellent!"; }
+  else if (percent >= 75)   { badge = "silver"; badgeText = "Great job!"; }
+  else if (percent >= 60)   { badge = "bronze"; badgeText = "Keep practicing!"; }
+  else                      { badge = "try"; badgeText = "Try again!"; }
+  let summary = `<div style="font-size:1.2em;">Practice Complete!</div>
+  <div style="margin:10px 0 18px 0;">You answered <b>${nCorrect} of ${ssdTotal}</b> correctly (${percent}%).</div>
+  <span class="badge ${badge}">${badgeText}</span>
+  <div style="margin:18px 0 0 0; font-size:1em;">Review:</div>
+  <ol style="text-align:left; margin: 8px 0 0 2em; color:#333;">
+    ${ssdResults.map((r,i)=>`<li>${r && r.correct ? '<span class="pass">&#10003;</span>' : '<span class="fail">&#10008;</span>'} ${r ? r.fb : ''}</li>`).join("")}
+  </ol>
+  <button class="btn" onclick="restartSSDPractice();">Practice Again</button>
+  `;
+  document.getElementById('ssd-completion-summary').innerHTML = summary;
+  document.getElementById('ssd-completion-summary').style.display = '';
+}
+function restartSSDPractice() {
+  document.getElementById('ssd-practice-area').style.display = 'none';
+  document.getElementById('problem-settings').style.display = '';
+  document.getElementById('ssd-completion-summary').style.display = 'none';
+  document.getElementById('ssd-feedback').textContent = '';
+  document.getElementById('ssd-solution').style.display = 'none';
+}
+</script>
 </body>
 </html>
