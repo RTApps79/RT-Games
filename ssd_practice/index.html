@@ -28,7 +28,7 @@
     .badge.bronze { background: #ffe0b3; color: #795548; border: 2px solid #c97;}
     .badge.try { background: #ffbdbd; color:#a00; border:2px solid #f88;}
     .ssd-bev-label { font-size:1.07em; color:#a15c00; font-weight:bold; margin-bottom: 6px;}
-    #ssd-bev-canvas { border: 1px solid #ccc; } /* Added a border to canvas for clarity */
+    #ssd-bev-canvas { border: 1px solid #ccc; }
     @media (max-width: 700px){ .container{padding: 8px 2vw 18px 2vw;} }
   </style>
 </head>
@@ -41,7 +41,7 @@
       <li><b>SAD is always 100 cm.</b></li>
       <li>For isocentric setups: SSD = 100 cm - depth (depth = tumor distance from skin).</li>
       <li>For non-isocentric setups: field is set with SSD = 100 cm at the skin surface.</li>
-      <li>In BEV problems, the entire canvas is the skin surface. The field is shown as a rectangle centered on the canvas. The <b>CAX marker</b> (<span style="color:#c60000;">circle or bold +</span>) is exactly on the SSD value, with the CAX label to the side. The vertical SSD scale always runs through the CAX. Read the SSD value at the marker.</li>
+      <li>In BEV problems, the entire canvas is the skin surface. The field is shown as a rectangle centered on the canvas. The <b>CAX marker</b> (<span style="color:#c60000;">bold +</span>) is exactly on the SSD value, with the CAX label to the side. The vertical SSD scale always runs through the CAX. Read the SSD value at the marker.</li>
       <li>All answers must be rounded to the nearest tenth (e.g., 97.4).</li>
       <li>Choose your practice quantity. Get a summary and badge at the end!</li>
     </ul>
@@ -72,8 +72,8 @@
   <div id="ssd-completion-summary" class="summary" style="display:none;"></div>
 </div>
 <script>
-// Toggle between "circle" or "plus" for the CAX marker style
-const caxStyle = "plus"; // or "circle"
+// Set CAX marker style
+const caxStyle = "plus";
 let ssdTotal = 6;
 let ssdCurrent = 0;
 let ssdResults = [];
@@ -140,31 +140,23 @@ function randomizeSSDProb() {
     let scale_pxPerCm = (scale_bottom_canvas_px - scale_top_canvas_px) / (scale_ssdMax_val - scale_ssdMin_val);
 
     if (scale_pxPerCm <= 0) { 
-        console.error("SSD scale has zero or negative range (pxPerCm). Defaulting SSD.");
         ssdProbParams.ssd = scale_ssdMin_val;
     } else {
         let ssd_at_fieldTop = scale_ssdMin_val + (fieldTop_px - scale_top_canvas_px) / scale_pxPerCm;
         let ssd_at_fieldBot = scale_ssdMin_val + (fieldBot_px - scale_top_canvas_px) / scale_pxPerCm;
-
         let constrained_ssd_min_gen = Math.max(scale_ssdMin_val, ssd_at_fieldTop);
         let constrained_ssd_max_gen = Math.min(scale_ssdMax_val, ssd_at_fieldBot);
-        
         let randomSSDInConstrainedRange;
-        if (constrained_ssd_min_gen >= constrained_ssd_max_gen) { // Use >= to handle single point case
+        if (constrained_ssd_min_gen >= constrained_ssd_max_gen) {
             let field_center_ssd_val = scale_ssdMin_val + (canvas_cy - scale_top_canvas_px) / scale_pxPerCm;
             randomSSDInConstrainedRange = Math.max(scale_ssdMin_val, Math.min(scale_ssdMax_val, field_center_ssd_val));
-            if (constrained_ssd_min_gen > constrained_ssd_max_gen) { // Log only if truly invalid range
-                 console.warn("CAX constrained SSD range was invalid. Defaulting to field's vertical center SSD:", randomSSDInConstrainedRange);
-            }
         } else {
             randomSSDInConstrainedRange = constrained_ssd_min_gen + Math.random() * (constrained_ssd_max_gen - constrained_ssd_min_gen);
         }
         ssdProbParams.ssd = randomSSDInConstrainedRange;
     }
-    
     ssdProbParams.ssd = +(Math.round(ssdProbParams.ssd * 10) / 10).toFixed(1);
     drawSSDBEV();
-
   } else { 
     let scenario = Math.random();
     let depth = +(Math.round((3+Math.random()*17)*10)/10).toFixed(1);
@@ -194,7 +186,7 @@ function drawSSDBEV() {
   ctx.clearRect(0,0,c.width,c.height);
 
   // 1. Draw Skin Tone Background
-  ctx.fillStyle = '#F5D7B9'; // Example Light Peach/Beige Skin Tone
+  ctx.fillStyle = '#F5D7B9';
   ctx.fillRect(0, 0, c.width, c.height);
 
   let cx = c.width/2, cy = c.height/2;
@@ -204,14 +196,13 @@ function drawSSDBEV() {
   let fieldLeft = cx - fieldW/2;
   let fieldTop = cy - fieldH/2;
 
-  // 2. Draw Illuminated Light Field
-  ctx.fillStyle = 'rgba(255, 255, 210, 0.22)'; // Pale yellow, slightly more transparent
+  // 2. Draw semi-translucent yellow light field
+  ctx.fillStyle = 'rgba(255,255,110,0.37)';
   ctx.fillRect(fieldLeft, fieldTop, fieldW, fieldH);
 
-  // 3. Draw Collimator Jaw Lines (edges of the light field)
-  ctx.strokeStyle = '#4A4A4A'; // Dark grey for jaw "edges"
-  ctx.lineWidth = 3.5;      // Slightly thicker
-  // No dashes ctx.setLineDash([]); // Ensure solid lines
+  // 3. Draw Collimator Jaw Lines
+  ctx.strokeStyle = '#4A4A4A';
+  ctx.lineWidth = 3.5;
   ctx.strokeRect(fieldLeft, fieldTop, fieldW, fieldH);
 
   // 4. Draw vertical SSD scale
@@ -219,19 +210,13 @@ function drawSSDBEV() {
   let scaleTopY = 60, scaleBottomY = c.height-40; 
   let pxPerCmOnScale = (scaleBottomY-scaleTopY)/(ssdMax-ssdMin);
 
-  if (pxPerCmOnScale <= 0) { 
-      console.error("Invalid SSD scale parameters for drawing.");
-      return; 
-  }
-
-  ctx.save(); // Save context for scale drawing
-  ctx.strokeStyle="#002244"; // Darker, more muted blue for scale line
+  ctx.save();
+  ctx.strokeStyle="#002244";
   ctx.lineWidth=1.25; 
   ctx.beginPath();
   ctx.moveTo(cx, scaleTopY-20); 
   ctx.lineTo(cx, scaleBottomY+20);
   ctx.stroke();
-  
   for (let i = ssdMin; i <= ssdMax; i += 1) {
     let yPos = scaleTopY + (i-ssdMin)*pxPerCmOnScale;
     ctx.beginPath();
@@ -251,50 +236,36 @@ function drawSSDBEV() {
       ctx.fillText(i, cx - tickLength - 5, yPos + 3);
     }
   }
-  ctx.restore(); // Restore context after scale drawing
+  ctx.restore();
 
-  // 5. CAX marker (ensure drawn on top)
+  // 5. CAX marker (bold +, semi-transparent)
   let markerY = scaleTopY + (parseFloat(ssdProbParams.ssd) - ssdMin) * pxPerCmOnScale;
+  ctx.save();
+  // Add faint white "glow" behind the plus for contrast
+  ctx.strokeStyle = "rgba(255,255,255,0.35)";
+  ctx.lineWidth = 8.0;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(cx-10, markerY); ctx.lineTo(cx+10, markerY);
+  ctx.moveTo(cx, markerY-10); ctx.lineTo(cx, markerY+10);
+  ctx.stroke();
+  // Main semi-transparent red plus
+  ctx.strokeStyle="rgba(198,0,0,0.40)";
+  ctx.lineWidth=4.5;
+  ctx.beginPath();
+  ctx.moveTo(cx-10, markerY); ctx.lineTo(cx+10, markerY);
+  ctx.moveTo(cx, markerY-10); ctx.lineTo(cx, markerY+10);
+  ctx.stroke();
+  ctx.restore();
 
-  if (caxStyle === "circle") {
-    ctx.beginPath();
-    ctx.arc(cx, markerY, 6, 0, 2*Math.PI); // Slightly smaller circle
-    ctx.fillStyle = "rgba(255, 0, 0, 0.35)"; // Semi-transparent red fill
-    ctx.fill();
-    ctx.strokeStyle="#c60000"; 
-    ctx.lineWidth=2.0;
-    ctx.stroke();
-  } else if (caxStyle === "plus") {
-    // Optional: Thin white "glow" or outline behind the plus for contrast
-    ctx.save();
-    ctx.strokeStyle = "rgba(255,255,255,0.6)"; // White outline
-    ctx.lineWidth = 7.0; // Wider than the main plus
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(cx-10, markerY); ctx.lineTo(cx+10, markerY);
-    ctx.moveTo(cx, markerY-10); ctx.lineTo(cx, markerY+10);
-    ctx.stroke();
-    ctx.restore();
-    // Main red plus
-    ctx.save();
-    ctx.strokeStyle="#c60000"; 
-    ctx.lineWidth=4.5; // Slightly less thick main plus
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(cx-10, markerY); ctx.lineTo(cx+10, markerY);
-    ctx.moveTo(cx, markerY-10); ctx.lineTo(cx, markerY+10);
-    ctx.stroke();
-    ctx.restore();
-  }
-  
   // 6. Text labels (CAX, Y1, Y2, X1, X2)
   ctx.font = "bold 11px sans-serif"; 
-  ctx.fillStyle="#c60000"; // CAX label in red
+  ctx.fillStyle="#c60000";
   ctx.textAlign = "left"; 
   ctx.fillText("CAX", cx+15, markerY+4); 
 
   ctx.font = "bold 10px system-ui, sans-serif"; 
-  ctx.fillStyle="#333333"; // Dark grey for jaw labels for good contrast
+  ctx.fillStyle="#333333";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("Y1", cx, fieldTop-10);
@@ -312,22 +283,17 @@ function checkSSDProb() {
       return;
   }
   let userVal = parseFloat(userInput);
-  // Round user input to one decimal place for consistent comparison
   userVal = Math.round(userVal * 10) / 10; 
-
   let type = ssdProbParams.type;
   let correct = false;
   let answer = null;
-  // For BEV, allow a small tolerance due to visual estimation. For calculations, expect precision.
   let tol = (type === 0) ? 0.2 : 0.05; 
-  
-  if (type === 0) { // BEV
+  if (type === 0) { 
     answer = parseFloat(ssdProbParams.ssd);
-  } else { // Calculation
+  } else {
     answer = parseFloat(ssdProbParams.answer);
   }
   correct = Math.abs(userVal - answer) <= tol;
-
   let fb = correct
     ? `<span class="pass">&#10003; Correct!</span>`
     : `<span class="fail">&#10008; Incorrect.</span> Correct value was: <b>${answer.toFixed(1)} cm</b>`;
