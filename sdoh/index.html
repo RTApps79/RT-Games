@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDoH in Cancer Care & Contouring Practice</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.7;
+            margin: 20px;
+            background-color: #f4f4f4; /* Light grey for overall page */
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background-color: #fff;
+            padding: 25px 35px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 900px;
+            margin-bottom: 30px;
+        }
+        h1, h2, h3, h4 {
+            color: #0056b3; /* Theme Blue */
+        }
+        h1 {
+            text-align: center;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        h2 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            color: #003d7a;
+            font-size: 1.6em;
+        }
+        h3 {
+            color: #004085;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+         h4 {
+            color: #17a2b8; /* Teal for sub-points */
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        p, li {
+            margin-bottom: 12px;
+            font-size: 1.05em;
+        }
+        ul, ol {
+            margin-bottom: 15px;
+            padding-left: 25px;
+        }
+        strong {
+            font-weight: 600; /* Slightly bolder */
+            color: #004085;
+        }
+
+        /* --- Flip Page Lesson Styles --- */
+        .flip-lesson-container {
+            border: 1px solid #b3d7ff;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f0f8ff; /* Light Alice Blue */
+            margin-bottom: 30px;
+        }
+        .lesson-page {
+            display: none; /* Hidden by default */
+            padding: 15px;
+            border: 1px solid #ddeeff;
+            background-color: #fff;
+            border-radius: 5px;
+            min-height: 300px; /* Ensure consistent page height */
+        }
+        .lesson-page.active {
+            display: block;
+        }
+        .lesson-navigation {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .lesson-navigation button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 0 10px;
+            transition: background-color 0.2s;
+        }
+        .lesson-navigation button:hover {
+            background-color: #0056b3;
+        }
+        .lesson-navigation button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .page-indicator {
+            font-style: italic;
+            color: #555;
+            margin: 10px 0;
+        }
+        .sdoh-domain {
+            background-color: #e7f3ff;
+            padding: 10px;
+            margin-bottom:10px;
+            border-left: 3px solid #007bff;
+            border-radius: 3px;
+        }
+
+        /* --- Case Study and Worksheet Styles (from previous) --- */
+        .section { margin-bottom: 30px; padding: 15px; border-left: 4px solid #0056b3; background-color: #f0f8ff; border-radius: 0 5px 5px 0; }
+        .case-study { margin-bottom: 35px; padding: 20px; border: 1px solid #b3d7ff; border-radius: 5px; background-color: #fff; }
+        .case-summary p { margin: 5px 0 10px 0; background-color: #e7f3ff; padding: 10px; border-radius: 4px; }
+        .prompt-question { background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px 15px; margin-bottom: 15px; border-radius: 4px; font-weight: 500; }
+        .prompt-question strong { color: #856404; }
+        textarea#worksheet-textarea { /* Differentiate worksheet textareas */
+            width: 98%; padding: 10px; margin-top: 5px; margin-bottom: 15px;
+            border: 1px solid #ccc; border-radius: 4px; font-family: inherit;
+            font-size: 1em; min-height: 70px; resize: vertical;
+        }
+        .button-container { text-align: center; margin-top: 30px; }
+        .button-container button { background-color: #28a745; border-color: #28a745; padding: 12px 25px; }
+        .button-container button:hover { background-color: #218838; }
+        .print-instructions { text-align: center; font-style: italic; color: #555; margin-top: 10px; }
+
+         hr { border: 0; border-top: 2px solid #0056b3; margin: 40px 0; }
+
+
+        /* Print Styles */
+        @media print {
+            body { background-color: #fff; margin: 10px; padding: 0; font-size: 10pt; }
+            .container, .flip-lesson-container { box-shadow: none; border: none; width: 100%; max-width: 100%; padding: 5px; margin-bottom: 15px;}
+            .lesson-navigation, .button-container { display: none; }
+            .lesson-page, .section, .case-study { page-break-inside: avoid; border: 1px solid #eee; }
+             #case-study-activity-section { margin-top: 30px; } /* Add space before activity in print */
+             h1, h2, h3, h4 { color: #000; border-color: #000; margin-bottom: 10px; padding-bottom: 3px;}
+            textarea#worksheet-textarea { background-color: #f0f0f0; border: 1px solid #999; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Understanding SDoH & Their Impact in Radiation Oncology</h1>
+
+        <div class="flip-lesson-container">
+            <h2>Introduction to Social Determinants of Health (SDoH)</h2>
+
+            <div id="lesson-page-1" class="lesson-page active">
+                <h3>Page 1: What are Social Determinants of Health?</h3>
+                <p>Social Determinants of Health (SDoH) are the <strong>non-medical factors</strong> that influence health outcomes. They are the conditions in which people are born, grow, live, work, and age.</p>
+                <p>These circumstances are shaped by the distribution of money, power, and resources at global, national, and local levels. SDoH can have a greater impact on health than individual behaviors or even healthcare access.</p>
+                <p><em>(Definition adapted from the World Health Organization - WHO)</em></p>
+                <img src="https://placehold.co/600x300/e0f0ff/003d7a?text=Social+Determinants+of+Health" alt="Abstract representation of SDoH" style="max-width:100%; border-radius:5px;">
+            </div>
+
+            <div id="lesson-page-2" class="lesson-page">
+                <h3>Page 2: Key Domains of SDoH</h3>
+                <p>SDoH are often grouped into five key domains (as identified by Healthy People 2030/CDC):</p>
+                <ul>
+                    <li class="sdoh-domain"><strong>Economic Stability:</strong> Poverty, employment status, food security, housing stability (e.g., homelessness, consistent access to utilities).</li>
+                    <li class="sdoh-domain"><strong>Education Access and Quality:</strong> Early childhood education, high school graduation, enrollment in higher education, language and literacy skills, health literacy.</li>
+                    <li class="sdoh-domain"><strong>Health Care Access and Quality:</strong> Access to health care services (including specialists), access to primary care, insurance coverage, quality of care received.</li>
+                    <li class="sdoh-domain"><strong>Neighborhood and Built Environment:</strong> Quality of housing, access to transportation, availability of healthy foods, air and water quality, neighborhood crime and violence, walkability.</li>
+                    <li class="sdoh-domain"><strong>Social and Community Context:</strong> Social support systems, community cohesion, civic participation, experiences of discrimination or stigma, stress, exposure to trauma, incarceration history.</li>
+                </ul>
+            </div>
+
+            <div id="lesson-page-3" class="lesson-page">
+                <h3>Page 3: Why SDoH Matter in Cancer Care</h3>
+                <p>SDoH play a critical role across the entire cancer care continuum:</p>
+                <ul>
+                    <li><strong>Risk and Prevention:</strong> Exposure to environmental carcinogens (e.g., pollution in certain neighborhoods), access to cancer screening services, and ability to adopt healthy lifestyles can all be influenced by SDoH.</li>
+                    <li><strong>Diagnosis:</strong> Factors like lack of insurance, transportation barriers, or low health literacy can lead to delayed cancer diagnosis, often at later, less treatable stages.</li>
+                    <li><strong>Treatment:</strong> A patient's ability to access specialized cancer centers, complete complex and lengthy treatment regimens (like radiation therapy), and manage side effects effectively is heavily impacted by SDoH.</li>
+                    <li><strong>Survivorship and Outcomes:</strong> Access to follow-up care, management of long-term side effects, mental health support, and overall quality of life post-treatment are also shaped by these social and economic factors.</li>
+                </ul>
+                 <img src="https://placehold.co/600x250/d0e0f0/003d7a?text=Cancer+Care+Continuum" alt="Diagram of cancer care continuum" style="max-width:100%; border-radius:5px;">
+            </div>
+
+            <div id="lesson-page-4" class="lesson-page">
+                <h3>Page 4: SDoH & the Radiation Therapy Patient Experience</h3>
+                <p>Radiation therapy often involves daily treatments for several weeks, creating specific challenges related to SDoH:</p>
+                <ul>
+                    <li><strong>Transportation:</strong> Daily travel to the RT center can be a significant burden without reliable personal or public transport, especially for elderly patients or those living far away.</li>
+                    <li><strong>Financial Strain:</strong> Treatment costs, even with insurance, can be high. Add lost wages (for patient and/or caregiver), childcare costs, and travel/lodging expenses, and the financial toxicity can be immense.</li>
+                    <li><strong>Social Support:</strong> Managing side effects, attending appointments, and coping emotionally is much harder without a strong support system. Isolation can worsen treatment tolerance and outcomes.</li>
+                    <li><strong>Housing & Nutrition:</strong> Stable housing is crucial for recovery. Access to nutritious food is vital, especially when dealing with side effects like mucositis, dysphagia, or fatigue that affect appetite and energy.</li>
+                    <li><strong>Health Literacy:</strong> Understanding the complex RT plan, potential side effects, consent forms, and self-care instructions requires adequate health literacy. Language barriers can further complicate this.</li>
+                    <li><strong>Geographic Disparities:</strong> Access to advanced RT techniques (e.g., proton therapy, SBRT) may be limited in rural or underserved areas, leading to disparities in treatment options.</li>
+                </ul>
+            </div>
+
+            <div id="lesson-page-5" class="lesson-page">
+                <h3>Page 5: The Affective Dimension of SDoH</h3>
+                <p>The impact of SDoH is not just practical; it's deeply emotional and psychological:</p>
+                <ul>
+                    <li>Patients facing multiple SDoH barriers may experience increased <strong>stress, anxiety, and depression</strong>.</li>
+                    <li>Constant worry about finances, transportation, or childcare can overshadow their focus on healing.</li>
+                    <li>Feelings of <strong>helplessness, shame, or being overwhelmed</strong> are common.</li>
+                    <li>Past negative experiences or perceived discrimination can lead to <strong>distrust in the healthcare system</strong>.</li>
+                </ul>
+                <p>As healthcare professionals, recognizing these affective components is vital. <strong>Empathy, active listening, and patient-centered communication</strong> are key to building trust and providing truly supportive care that acknowledges the whole person, not just their disease.</p>
+            </div>
+
+             <div id="lesson-page-6" class="lesson-page">
+                <h3>Page 6: Moving to Practice</h3>
+                <p>Now that we've reviewed the fundamental concepts of Social Determinants of Health and their specific relevance to patients undergoing radiation therapy, we will move on to a case-based learning activity.</p>
+                <p>Through these scenarios, you'll have the opportunity to:</p>
+                <ul>
+                    <li>Apply your understanding of SDoH.</li>
+                    <li>Think critically about how these factors impact diverse patients.</li>
+                    <li>Consider the emotional journey of patients.</li>
+                    <li>Brainstorm ways the healthcare team can provide more equitable and supportive care.</li>
+                </ul>
+                <p>Click "Start Activity" below to begin the case studies.</p>
+            </div>
+
+            <div class="lesson-navigation">
+                <button id="prevLessonPage" onclick="changeLessonPage(-1)" disabled>Previous</button>
+                <span class="page-indicator" id="lessonPageIndicator">Page 1 of 6</span>
+                <button id="nextLessonPage" onclick="changeLessonPage(1)">Next</button>
+                <button id="startActivityButton" onclick="startCaseActivity()" style="display:none; background-color: #28a745;">Start Activity</button>
+            </div>
+        </div>
+
+        <div id="case-study-activity-section" style="display:none;">
+             <hr>
+            <h2>SDoH Case Studies & Reflection</h2>
+            <div class="section">
+                <h3>Instructions</h3>
+                <p>For each case study presented below:</p>
+                <ol>
+                    <li>Read the patient snapshot carefully.</li>
+                    <li>Consider the discussion prompts, focusing on both critical thinking about the SDoH and the affective (emotional/empathetic) aspects of the patient's situation.</li>
+                    <li>Use the text areas to jot down your thoughts and responses to the prompts.</li>
+                    <li>After reviewing all cases, complete the general reflection questions.</li>
+                    <li>Be prepared to discuss your insights if this is a group activity.</li>
+                </ol>
+            </div>
+
+            <h3>Case 1: Sarah Chen</h3>
+            <div class="case-study">
+                <div class="case-summary">
+                    <p><strong>Age:</strong> 56</p>
+                    <p><strong>Diagnosis:</strong> Squamous Cell Carcinoma of the Left Tonsil, Stage I (HPV-Positive)</p>
+                    <p><strong>Treatment:</strong> Definitive Chemoradiation (IMRT 70 Gy/35 fx + concurrent Cisplatin)</p>
+                    <p><strong>Key EMR Notes:</strong> PEG tube placed pre-treatment. Nutrition and Speech Pathology consults pre-treatment. Lives with husband, David. Extensive supportive care medications prescribed.</p>
+                </div>
+                <h4>Discussion Prompts for Sarah Chen:</h4>
+                <div class="prompt-question"><strong>1. SDoH Identification:</strong> Based on this snapshot, what potential SDoH challenges might Sarah and her husband be facing?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question"><strong>2. Impact Analysis:</strong> How might these challenges affect Sarah's treatment adherence, side effect management, and nutritional status?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question"><strong>3. Affective Domain - Empathy:</strong> What might be Sarah's primary emotional concerns beyond the cancer itself?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question"><strong>4. Healthcare Team Actions:</strong> What specific actions could the RT team take to support Sarah?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+            </div>
+
+            <h3>Case 2: Emily Carter</h3>
+            <div class="case-study">
+                <div class="case-summary">
+                    <p><strong>Age:</strong> 6 years old</p>
+                    <p><strong>Diagnosis:</strong> High-Risk Medulloblastoma</p>
+                    <p><strong>Treatment:</strong> Post-surgery/chemo, now for CSI 36 Gy(RBE) + Boost to 54 Gy(RBE) via IMPT (6-7 weeks).</p>
+                    <p><strong>Key EMR Notes:</strong> Custom pediatric mask/body mold. Daily IGRT. Insurance: Medicaid. Mother is emergency contact.</p>
+                </div>
+                 <h4>Discussion Prompts for Emily Carter:</h4>
+                <div class="prompt-question"><strong>1. SDoH Identification:</strong> What SDoH factors might be prominent for Emily's family?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question"><strong>2. Impact Analysis - Child's Perspective:</strong> How might daily RT impact a 6-year-old emotionally and socially?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question"><strong>3. Affective Domain - Parent's Perspective:</strong> What are the primary stressors for Emily's mother?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question"><strong>4. Healthcare Team Actions & Resources:</strong> What support services are critical for Emily and her family?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+            </div>
+
+            <h3>Case 3: Carlos Jones</h3>
+             <div class="case-study">
+                <div class="case-summary">
+                    <p><strong>Age:</strong> Adult (Assumed)</p>
+                    <p><strong>Diagnosis:</strong> Kaposi Sarcoma (KS), HIV-Associated. ACTG Stage: T1 I1 S0.</p>
+                    <p><strong>Treatment:</strong> Palliative EBRT for oral & leg lesions, concurrent systemic chemo (Liposomal Doxorubicin) & ART.</p>
+                    <p><strong>Key EMR Notes:</strong> Multiple painful lesions, lymphedema. CD4 180 (improving). Medicaid. Referred from ID.</p>
+                </div>
+                <h4>Discussion Prompts for Carlos Jones:</h4>
+                <div class="prompt-question"><strong>1. SDoH Identification:</strong> What SDoH factors are likely at play for Carlos?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question"><strong>2. Impact of Competing Health Needs:</strong> How might managing both HIV and KS impact Carlos?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question"><strong>3. Affective Domain - Stigma & Trust:</strong> How might societal stigma affect Carlos's care experience?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question"><strong>4. Healthcare Team Actions:</strong> What are key supportive care needs for Carlos?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+            </div>
+
+            <h3>Case 4: Maria Garcia</h3>
+            <div class="case-study">
+                <div class="case-summary">
+                     <p><strong>Age:</strong> 60</p>
+                     <p><strong>Diagnosis:</strong> Metastatic NSCLC with Multiple Brain Metastases.</p>
+                     <p><strong>Treatment:</strong> Palliative WBRT 30 Gy/10 fx.</p>
+                     <p><strong>Key EMR Notes:</strong> Headaches, L-sided weakness, cognitive changes. ECOG 2. Requires walker. Hospice referral. DNR/DNI.</p>
+                </div>
+                <h4>Discussion Prompts for Maria Garcia:</h4>
+                <div class="prompt-question"><strong>1. SDoH in Palliative Care:</strong> What SDoH factors are crucial for Maria and her son?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question"><strong>2. Impact of Functional Decline:</strong> How does Maria's weakness impact her and her son?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question"><strong>3. Affective Domain - Goals of Care:</strong> What are Maria's and Juan's likely primary emotional concerns?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question"><strong>4. Healthcare Team Actions & Communication:</strong> What is the RT team's role in supporting Maria, Juan, and coordinating with hospice?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+            </div>
+
+            <div class="section">
+                <h3>General Reflection</h3>
+                <div class="prompt-question">1. After reviewing these cases, what common themes related to SDoH and patient needs in radiation therapy did you observe?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question">2. How has this activity influenced your understanding of the patient experience beyond their medical diagnosis?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                <div class="prompt-question">3. What is one key takeaway you will carry forward to be more mindful of SDoH?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+                 <div class="prompt-question">4. What systemic changes within healthcare could better support patients facing SDoH during radiation therapy?</div>
+                <textarea id="worksheet-textarea" placeholder="Your thoughts..."></textarea>
+            </div>
+
+            <div class="button-container">
+                <button onclick="window.print()">Print Worksheet & Responses</button>
+                <p class="print-instructions">(Enable "Background graphics" in print settings for best results.)</p>
+            </div>
+        </div> </div> <script>
+        let currentLessonPage = 1;
+        const totalLessonPages = 6;
+        const lessonPages = document.querySelectorAll('.lesson-page');
+        const prevLessonButton = document.getElementById('prevLessonPage');
+        const nextLessonButton = document.getElementById('nextLessonPage');
+        const lessonPageIndicator = document.getElementById('lessonPageIndicator');
+        const startActivityButton = document.getElementById('startActivityButton');
+        const caseStudyActivitySection = document.getElementById('case-study-activity-section');
+
+        function displayLessonPage() {
+            lessonPages.forEach((page, index) => {
+                page.classList.toggle('active', index === currentLessonPage - 1);
+            });
+            prevLessonButton.disabled = currentLessonPage === 1;
+            nextLessonButton.style.display = currentLessonPage === totalLessonPages ? 'none' : 'inline-block';
+            startActivityButton.style.display = currentLessonPage === totalLessonPages ? 'inline-block' : 'none';
+            lessonPageIndicator.textContent = `Page ${currentLessonPage} of ${totalLessonPages}`;
+        }
+
+        function changeLessonPage(direction) {
+            currentLessonPage += direction;
+            if (currentLessonPage < 1) currentLessonPage = 1;
+            if (currentLessonPage > totalLessonPages) currentLessonPage = totalLessonPages;
+            displayLessonPage();
+        }
+
+        function startCaseActivity() {
+            document.querySelector('.flip-lesson-container').style.display = 'none';
+            caseStudyActivitySection.style.display = 'block';
+            // Optionally scroll to the activity
+            caseStudyActivitySection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Initialize first lesson page
+        displayLessonPage();
+    </script>
+
+</body>
+</html>
