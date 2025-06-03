@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RadTherapy Apps - RT UNO Challenge</title>
+    <style>
+        /* --- Global Ecosystem Styles (subset for consistency) --- */
+        html, body {
+            height: 100%; margin: 0; padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: #eef2f7; color: #334155;
+            overflow-x: hidden;
+        }
+        body { display: flex; flex-direction: column; }
+        .main-header {
+            background-color: #1e3a8a; color: white; padding: 10px 20px; text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header-title-group { display: flex; align-items: center; gap: 12px; }
+        .header-title-group img.header-logo { height: 38px; width: auto; border-radius: 4px; }
+        .main-header h1 { margin: 0; font-size: 1.6em; font-weight: 600; letter-spacing: 0.5px; }
+        #activityBalanceDisplayUNO { /* Specific ID for this activity's balance display */
+            font-size: 1.1em; font-weight: 600; background-color: rgba(255,255,255,0.2); 
+            padding: 6px 12px; border-radius: 6px;
+        }
+        .activity-content-container { /* Main container for the activity below header */
+            flex-grow: 1; padding: 20px; box-sizing: border-box;
+            overflow-y: auto; display: flex; flex-direction: column; align-items: center;
+        }
+        .return-to-hub-button-activity {
+            display: block; width: auto; padding: 10px 20px;
+            margin: 0 auto 20px auto; 
+            background-color: #64748b; font-size: 0.95em; color:white;
+            text-decoration: none; border-radius: 6px; text-align:center; border:none; cursor:pointer;
+        }
+        .return-to-hub-button-activity:hover { background-color: #475569; }
+        footer {
+            background-color: #1e293b; color: #94a3b8; text-align: center;
+            padding: 12px 0; font-size: 0.9em; flex-shrink: 0; width: 100%;
+            border-top: 1px solid #334155; 
+        }
+
+        /* --- UNO Game Specific Styles (from user's code, slightly adapted) --- */
+        #unoStartScreen { /* Renamed for clarity */
+            max-width: 600px; margin: 30px auto; padding: 30px; background: #fff;
+            border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center;
+            border: 1px solid #dde4ed;
+        }
+        #unoStartScreen h2 { margin-top: 0; color: #1e3a8a; font-size: 1.5em; }
+        #unoStartScreen p { margin-bottom: 15px; line-height: 1.6; color: #475569; font-size: 0.95em;}
+        #unoStartScreen label { margin-right: 10px; font-weight: bold; color: #334155; }
+        #unoStartScreen input[type="number"] {
+            width: 60px; padding: 8px; border-radius: 4px; border: 1px solid #cbd5e1;
+            text-align: center; font-size: 1em;
+        }
+        #unoStartScreen button, .uno-game-button { /* Added .uno-game-button class */
+            padding: 12px 24px; font-size: 1em; border-radius: 6px; border: none;
+            background: #2563eb; color: #fff; cursor: pointer;
+            transition: background-color 0.2s; margin-top: 20px;
+        }
+        #unoStartScreen button:hover, .uno-game-button:hover:not(:disabled) { background: #1d4ed8; }
+        .uno-game-button:disabled { background: #cbd5e1; color: #64748b; cursor: not-allowed; }
+
+        #unoGameArea { /* Renamed */
+            max-width: 800px; margin: 20px auto; background: #fff; border-radius: 8px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 24px; display: none;
+            border: 1px solid #dde4ed;
+        }
+        #unoGameArea h2 { text-align: center; color: #1e3a8a; font-size:1.4em; margin-bottom: 15px; }
+        #player-hand, #computer-hand { 
+            display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; 
+            min-height: 150px; justify-content: center; padding: 10px;
+            background-color: #e9eef2; border-radius: 6px;
+        }
+        .card {
+            width: 90px; height: 130px; border-radius: 8px; /* Slightly smaller cards */
+            box-shadow: 0 1px 4px #0003; display: flex; flex-direction: column;
+            align-items: center; justify-content: space-around; /* Space out content */
+            font-size: 14px; font-weight: bold; 
+            cursor: pointer; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; user-select: none;
+            border: 2px solid #eee; position: relative; overflow: hidden; 
+            text-align: center; padding: 8px; box-sizing: border-box;
+        }
+        .card.playing { transform: scale(1.15) translateY(-20px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); z-index: 100;}
+        .card.dealing { animation: dealAnimationUNO 0.5s ease-out; }
+        @keyframes dealAnimationUNO {
+            from { transform: scale(0.5) translateY(-100px) rotate(-45deg); opacity: 0; }
+            to { transform: scale(1) translateY(0) rotate(0deg); opacity: 1; }
+        }
+        .card:hover:not(.no-hover) { transform: scale(1.07); } 
+        .card .card-name { font-size: 0.8em; display: block; margin-bottom: 4px; word-wrap: break-word; line-height:1.2; }
+        .card .card-color-text { font-size: 0.7em; opacity: 0.8; }
+        .blue { background: #4fa3ff; color: #fff; }
+        .red { background: #ff6b6b; color: #fff; }
+        .yellow { background: #ffe066; color: #333; }
+        .green { background: #51cf66; color: #fff; }
+        .wild { background: linear-gradient(45deg, #6c757d, #343a40); color: #fff; } 
+
+        #discard-pile { margin: 0 auto 20px; text-align: center; }
+        #discard-card-container { display: inline-block; min-width: 100px; min-height: 140px; border: 2px dashed #cbd5e1; padding:5px; border-radius: 8px;}
+        #discard-card { display: inline-block; } 
+        
+        .action-buttons-uno { text-align: center; margin-bottom: 20px;} /* Prefixed class */
+        .action-buttons-uno button { margin: 0 5px; }
+        
+        #unoStatus { /* Renamed */
+            margin: 16px 0; text-align: center; font-size: 1.1em; min-height: 40px; color: #334155; font-weight: 500;
+        }
+        .uno-text { color: #d7263d; font-weight: bold; font-size: 1.1em;} /* Prefixed class */
+        #educational-fact-uno { /* Renamed */
+            text-align: center; margin: 15px auto; padding: 12px; 
+            background: #e0f2fe; border-radius: 6px; color: #0c4a6e; 
+            font-size: 0.9em; max-width: 90%; line-height: 1.5;
+            display: none; border: 1px solid #bae6fd;
+        }
+        #unoGameOverScreen { /* Renamed */
+            display: none; text-align: center; padding: 30px;
+            background-color: #fff; border-radius: 8px; margin-top: 20px;
+        }
+        #unoGameOverScreen h3 { font-size: 1.5em; margin-bottom: 15px; color: #2563eb; }
+        #unoGameOverScreen p { font-size: 1.1em; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <header> 
+        <div class="header-title-group">
+            <img src="placeholder_logo_care_theme.jpg" alt="RTApps Logo" class="header-logo" onerror="this.style.display='none';"> 
+            <h1>RT UNO Challenge</h1>
+        </div>
+        <div id="activityBalanceDisplayUNO">RadCreds: RC$0</div>
+    </header>
+
+    <div class="activity-content-container">
+        <a href="index.html" class="return-to-hub-button-activity">Return to Main Menu</a>
+
+        <div id="unoStartScreen"> <h2>Welcome to Radiation Therapy UNO!</h2>
+            <p>Match the color or RT-themed category of the card on the discard pile. Special cards (like 'Machine QA' or 'Extra Imaging') have unique actions. Wild cards ('Treatment Plan Review', 'Emergency Physics Consult') let you change the category. First to empty their hand wins RadCreds!</p>
+            <p>Pay attention to the educational facts that appear when certain cards are played!</p>
+            <div>
+                <label for="num-cards-input-uno">Cards per hand (5-10):</label>
+                <input type="number" id="num-cards-input-uno" value="7" min="5" max="10">
+            </div>
+            <button id="start-game-btn-uno" class="uno-game-button">Start Game</button>
+        </div>
+
+        <div id="unoGameArea"> <h2 style="font-size:1.8em; color:#1e40af;">RT UNO Challenge</h2>
+            <div id="unoStatus"></div>
+            <div id="educational-fact-uno"></div>
+            <div id="discard-pile">
+                <b>Discard Pile:</b>
+                <div id="discard-card-container">
+                    <span id="discard-card"></span> 
+                </div>
+            </div>
+            <div class="action-buttons-uno">
+                <button id="draw-btn-uno" class="uno-game-button">Draw Card</button>
+            </div>
+            <div>
+                <b>Your Hand (<span id="player-card-count-uno">0</span>):</b>
+                <div id="player-hand"></div>
+            </div>
+            <div style="margin-top: 20px;">
+                <b>Computer's Hand (<span id="computer-card-count-uno">0</span>):</b>
+                <div id="computer-hand"></div>
+            </div>
+            <div id="unoGameOverScreen">
+                <h3 id="uno-game-over-message"></h3>
+                <p>Total RadCreds Balance: <span id="finalBalanceDisplayUNO">RC$0</span></p>
+                <button id="play-again-btn-uno" class="uno-game-button">Play Again?</button>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; <span id="copyrightYear"></span> RadTherapy Apps</p>
+    </footer>
+
+    <script type="module">
+        // Guard to prevent re-execution
+        if (!window.RT_APPS_UNO_CHALLENGE_INITIALIZED) { 
+            window.RT_APPS_UNO_CHALLENGE_INITIALIZED = true;
+
+            // --- Global Game State Variables (from localStorage) ---
+            let currentGlobalBalance = 0;
+            const GAME_STATE_KEY = 'linacGameState_v6'; // Consistent key
+            const CURRENCY_SYMBOL_UNO = "RC$";
+            const WIN_REWARD_UNO = 50; // RadCreds for winning
+
+            // --- DOM Elements for UNO ---
+            const unoStartScreenDiv = document.getElementById('unoStartScreen');
+            const unoGameAreaDiv = document.getElementById('unoGameArea');
+            const startGameBtnUno = document.getElementById('start-game-btn-uno');
+            const numCardsInputUno = document.getElementById('num-cards-input-uno');
+            const playerHandDivUno = document.getElementById('player-hand');
+            const computerHandDivUno = document.getElementById('computer-hand');
+            const discardCardContainerUno = document.getElementById('discard-card-container');
+            const unoStatusDiv = document.getElementById('unoStatus');
+            const educationalFactDivUno = document.getElementById('educational-fact-uno');
+            const drawBtnUno = document.getElementById('draw-btn-uno');
+            const playerCardCountUno = document.getElementById('player-card-count-uno');
+            const computerCardCountUno = document.getElementById('computer-card-count-uno');
+            const unoGameOverScreenDiv = document.getElementById('unoGameOverScreen');
+            const unoGameOverMessageEl = document.getElementById('uno-game-over-message');
+            const playAgainBtnUno = document.getElementById('play-again-btn-uno');
+            const activityBalanceDisplayUNOElem = document.getElementById('activityBalanceDisplayUNO');
+            const finalBalanceDisplayUNOElem = document.getElementById('finalBalanceDisplayUNO');
+            const copyrightYearSpan = document.getElementById('copyrightYear');
+
+
+            // --- UNO Card Definitions ---
+            const COLORS_UNO = ['blue', 'red', 'yellow', 'green'];
+            const COLOR_NAMES_UNO = {
+                blue: 'Linear Accelerator', red: 'CT Simulation',
+                yellow: 'Patient Care', green: 'Dosimetry'
+            };
+            const ACTIONS_UNO = [
+                { type: 'skip', name: 'Machine QA', factKey: 'Machine QA' },
+                { type: 'reverse', name: 'Beam Direction Change', factKey: 'Beam Direction Change' },
+                { type: 'draw2', name: 'Extra Imaging', factKey: 'Extra Imaging' }
+            ];
+            const WILDS_UNO = [
+                { type: 'wild', name: 'Treatment Plan Review', factKey: 'Treatment Plan Review' },
+                { type: 'wild4', name: 'Emergency Physics Consult', factKey: 'Emergency Physics Consult' }
+            ];
+            const EDUCATIONAL_FACTS_UNO = {
+                'Machine QA': "Machine QA: Regular quality assurance tests ensure radiation therapy machines deliver accurate and safe treatments.",
+                'Beam Direction Change': "Beam Direction Change: Beams are often delivered from multiple angles to target tumors precisely while sparing healthy tissue.",
+                'Extra Imaging': "Extra Imaging: Image-Guided Radiation Therapy (IGRT) uses frequent imaging to verify patient and tumor position.",
+                'Treatment Plan Review': "Treatment Plan Review: Radiation oncologists, physicists, and dosimetrists review each treatment plan for safety and effectiveness.",
+                'Emergency Physics Consult': "Emergency Physics Consult: Medical physicists handle urgent issues related to treatment machines or plans."
+                // Add more facts for colors/numbers later if desired
+            };
+
+            // --- UNO Game State ---
+            let deckUNO, playerHandUNO, computerHandUNO, discardPileUNO, currentColorUNO, currentValueUNO, currentTypeUNO;
+            let playerTurnUNO = true;
+            let drawCountUNO = 0;
+            let skipNextUNO = false;
+            let gameIsOverUNO = false;
+            let initialCardsCountUNO = 7;
+
+            // --- Ecosystem Balance Functions ---
+            function loadGlobalBalanceUNO() {
+                const savedState = localStorage.getItem(GAME_STATE_KEY);
+                if (savedState) {
+                    try {
+                        const gameState = JSON.parse(savedState);
+                        currentGlobalBalance = gameState.balance || 0;
+                    } catch (e) { console.error("Error parsing game state: ", e); currentGlobalBalance = 0; }
+                } else { currentGlobalBalance = 0; }
+                updateBalanceDisplayUNO();
+            }
+            function saveGlobalBalanceUNO() {
+                try {
+                    let gameState = {};
+                    const savedState = localStorage.getItem(GAME_STATE_KEY);
+                    if (savedState) { gameState = JSON.parse(savedState); }
+                    gameState.balance = currentGlobalBalance;
+                    gameState.purchasedStoreItems = gameState.purchasedStoreItems || [];
+                    localStorage.setItem(GAME_STATE_KEY, JSON.stringify(gameState));
+                } catch (e) { console.error("Save failed for UNO: ", e); }
+                updateBalanceDisplayUNO();
+            }
+            function updateBalanceDisplayUNO() {
+                if (activityBalanceDisplayUNOElem) activityBalanceDisplayUNOElem.textContent = `RadCreds: ${CURRENCY_SYMBOL_UNO}${currentGlobalBalance}`;
+                if (finalBalanceDisplayUNOElem) finalBalanceDisplayUNOElem.textContent = `${CURRENCY_SYMBOL_UNO}${currentGlobalBalance}`;
+            }
+
+            // --- UNO Utility Functions ---
+            function shuffleUNO(array) { /* ... same as user's code ... */ 
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+            function cardMatchesUNO(card) { /* ... same as user's code, using UNO state vars ... */ 
+                if (gameIsOverUNO) return false;
+                if (card.color === 'wild') return true;
+                if (card.color === currentColorUNO) return true;
+                if (card.value !== undefined && card.value === currentValueUNO) return true;
+                if (card.type && card.type === currentTypeUNO && card.type !=='wild' && card.type !== 'wild4') return true;
+                return false;
+            }
+            function drawCardFromDeckUNO(hand, count = 1) { /* ... same as user's code, using UNO deck/discard ... */ 
+                 for (let i = 0; i < count; i++) {
+                    if (deckUNO.length === 0) reshuffleDeckUNO();
+                    if (deckUNO.length > 0) hand.push(deckUNO.pop());
+                    else { break; }
+                }
+            }
+            function reshuffleDeckUNO() { /* ... same as user's code, using UNO discard ... */
+                if (discardPileUNO.length <= 1) return; 
+                const last = discardPileUNO.pop();
+                deckUNO = shuffleUNO(discardPileUNO.filter(card => card)); 
+                discardPileUNO = last ? [last] : [];
+                if (deckUNO.length === 0 && discardPileUNO.length === 0 && !last) {
+                    updateDisplayUNO("No cards left to reshuffle!");
+                }
+            }
+            function capitalizeUNO(str) { return str ? str.charAt(0).toUpperCase() + str.slice(1) : ''; }
+
+            function createCardDivUNO(card, idx, isPlayerCard, isDealing = false) {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = `card ${card.color || 'wild'}`;
+                if (isDealing) cardDiv.classList.add('dealing');
+                
+                cardDiv.innerHTML = `<span class="card-name">${card.name}</span>` + 
+                                    `${(card.color === 'wild' || !card.color) ? '' : `<span class="card-color-text">${capitalizeUNO(COLOR_NAMES_UNO[card.color] || card.color)}</span>`}`;
+                
+                if (isPlayerCard && !isDealing) { 
+                    cardDiv.onclick = () => { 
+                        if (playerTurnUNO && cardMatchesUNO(card) && !gameIsOverUNO) {
+                            cardDiv.classList.add('playing');
+                            cardDiv.style.pointerEvents = 'none'; 
+                            setTimeout(() => {
+                                playCardUNO(playerHandUNO, idx, true);
+                            }, 400); 
+                        }
+                    };
+                }
+                if (!isPlayerCard && !isDealing && card.owner !== 'computer') { 
+                     cardDiv.classList.add('no-hover'); 
+                }
+                return cardDiv;
+            }
+
+            function updateDisplayUNO(statusMsg) {
+                if (gameIsOverUNO && !statusMsg.toLowerCase().includes("win") && !statusMsg.toLowerCase().includes("game over")) return; 
+                
+                playerHandDivUno.innerHTML = '';
+                playerHandUNO.forEach((card, idx) => {
+                    playerHandDivUno.appendChild(createCardDivUNO(card, idx, true));
+                });
+                playerCardCountUno.textContent = playerHandUNO.length;
+
+                computerHandDivUno.innerHTML = '';
+                for (let i = 0; i < computerHandUNO.length; i++) {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.className = 'card no-hover'; 
+                    cardDiv.style.background = '#bbb';
+                    cardDiv.innerHTML = `<div style="font-size:40px;">🩺</div>`; 
+                    computerHandDivUno.appendChild(cardDiv);
+                }
+                computerCardCountUno.textContent = computerHandUNO.length;
+
+                discardCardContainerUno.innerHTML = ''; 
+                if (discardPileUNO.length > 0) {
+                    const top = discardPileUNO[discardPileUNO.length - 1];
+                    const topCardDiv = createCardDivUNO(top, -1, false); 
+                    topCardDiv.classList.remove('playing', 'dealing'); 
+                    topCardDiv.classList.add('no-hover');
+                    if (top.originalColor === 'wild' && top.color !== 'wild') {
+                         topCardDiv.className = `card ${top.color} no-hover`; 
+                         topCardDiv.innerHTML = `<span class="card-name">${top.name} (${playerTurnUNO ? "Computer chose" : "You chose"} ${capitalizeUNO(COLOR_NAMES_UNO[top.color] || top.color)})</span>`;
+                    }
+                    discardCardContainerUno.appendChild(topCardDiv);
+                }
+                
+                unoStatusDiv.innerHTML = statusMsg +
+                    (playerHandUNO.length === 1 && !gameIsOverUNO ? ' <span class="uno-text">UNO!</span>' : '') +
+                    (computerHandUNO.length === 1 && !gameIsOverUNO ? ' <span class="uno-text">Computer: UNO!</span>' : '');
+                
+                drawBtnUno.disabled = !playerTurnUNO || gameIsOverUNO || drawCountUNO > 0;
+            }
+
+            // --- UNO Gameplay Functions ---
+            function generateDeckUNO() { /* ... same as user's code, using _UNO suffixed consts ... */ 
+                let deck = [];
+                COLORS_UNO.forEach(color => {
+                    deck.push({ color, value: 0, name: `${COLOR_NAMES_UNO[color]} 0` });
+                    for (let n = 1; n <= 9; n++) {
+                        deck.push({ color, value: n, name: `${COLOR_NAMES_UNO[color]} ${n}` });
+                        deck.push({ color, value: n, name: `${COLOR_NAMES_UNO[color]} ${n}` });
+                    }
+                    ACTIONS_UNO.forEach(action => {
+                        deck.push({ color, type: action.type, name: action.name, factKey: action.factKey });
+                        deck.push({ color, type: action.type, name: action.name, factKey: action.factKey });
+                    });
+                });
+                WILDS_UNO.forEach(wild => {
+                    for (let i = 0; i < 4; i++) {
+                        deck.push({ color: 'wild', type: wild.type, name: wild.name, factKey: wild.factKey });
+                    }
+                });
+                return shuffleUNO(deck);
+            }
+            
+            async function startGameFlowUNO() {
+                gameIsOverUNO = false;
+                deckUNO = generateDeckUNO();
+                playerHandUNO = []; computerHandUNO = []; discardPileUNO = [];
+                
+                playerHandDivUno.innerHTML = ''; computerHandDivUno.innerHTML = '';
+
+                for (let i = 0; i < initialCardsCountUNO; i++) {
+                    if (deckUNO.length > 0) playerHandUNO.push(deckUNO.pop()); else break; 
+                    await dealCardAnimationUNO(playerHandDivUno, playerHandUNO[playerHandUNO.length-1], true, i);
+                    
+                    if (deckUNO.length > 0) computerHandUNO.push(deckUNO.pop()); else break;
+                    await dealCardAnimationUNO(computerHandDivUno, computerHandUNO[computerHandUNO.length-1], false, i);
+                }
+                
+                let firstCard;
+                do {
+                    if (deckUNO.length === 0) reshuffleDeckUNO();
+                    if (deckUNO.length === 0) { endGameUNO("Error: Not enough cards to start."); return; }
+                    firstCard = deckUNO.pop(); discardPileUNO.push(firstCard);
+                } while (firstCard.color === 'wild');
+                
+                currentColorUNO = firstCard.color; currentValueUNO = firstCard.value;
+                currentTypeUNO = firstCard.type || null;
+                playerTurnUNO = true; drawCountUNO = 0; skipNextUNO = false;
+                educationalFactDivUno.style.display = 'none';
+                updateDisplayUNO("Your turn! Play a card or draw.");
+            }
+
+            async function dealCardAnimationUNO(handDiv, cardData, isPlayerCard, dealIndex) {
+                return new Promise(resolve => {
+                    if (!cardData) { resolve(); return; } 
+                    const cardDiv = createCardDivUNO(cardData, -1, isPlayerCard, true); 
+                    cardDiv.style.animationDelay = `${dealIndex * 0.1}s`; 
+                    
+                    if (isPlayerCard) { /* Player card is visible */ } 
+                    else { cardDiv.style.background = '#bbb'; cardDiv.innerHTML = '<div style="font-size:40px;">🩺</div>'; }
+                    handDiv.appendChild(cardDiv);
+                    setTimeout(resolve, 500 + dealIndex * 100); 
+                });
+            }
+
+            function playCardUNO(hand, idx, isPlayer) { /* ... adapted from user's code ... */ 
+                if (gameIsOverUNO) return;
+                const card = hand[idx];
+                // if (!cardMatchesUNO(card)) return; // Match check is done in click handler
+                
+                hand.splice(idx, 1);
+                const playedCardForDiscard = {...card, originalColor: card.color}; 
+                discardPileUNO.push(playedCardForDiscard);
+                
+                if (card.factKey && EDUCATIONAL_FACTS_UNO[card.factKey]) {
+                    educationalFactDivUno.textContent = EDUCATIONAL_FACTS_UNO[card.factKey];
+                    educationalFactDivUno.style.display = 'block';
+                } else {
+                    educationalFactDivUno.style.display = 'none';
+                }
+
+                const oldColor = currentColorUNO; 
+                currentColorUNO = card.color === 'wild' ? oldColor : card.color; 
+                currentValueUNO = card.value !== undefined ? card.value : null;
+                currentTypeUNO = card.type || null;
+                
+                if (card.color === 'wild') {
+                    if (isPlayer) {
+                        chooseColorUNO().then(chosenColor => {
+                            currentColorUNO = chosenColor;
+                            discardPileUNO[discardPileUNO.length - 1].color = chosenColor; 
+                            updateDisplayAfterColorChoiceUNO(discardPileUNO[discardPileUNO.length - 1], isPlayer);
+                            handleActionUNO(card, isPlayer);
+                        });
+                        return;
+                    } else { 
+                        currentColorUNO = COLORS_UNO[Math.floor(Math.random() * 4)];
+                        discardPileUNO[discardPileUNO.length - 1].color = currentColorUNO; 
+                        updateDisplayAfterColorChoiceUNO(discardPileUNO[discardPileUNO.length - 1], isPlayer);
+                    }
+                }
+                handleActionUNO(card, isPlayer);
+            }
+
+            function updateDisplayAfterColorChoiceUNO(playedCardOnDiscard, isPlayer) {
+                discardCardContainerUno.innerHTML = ''; 
+                const topCardDiv = createCardDivUNO(playedCardOnDiscard, -1, false); 
+                topCardDiv.classList.add('no-hover');
+                topCardDiv.className = `card ${playedCardOnDiscard.color} no-hover`; 
+                topCardDiv.innerHTML = `<span class="card-name">${playedCardOnDiscard.name} (${isPlayer ? "You chose" : "Computer chose"} ${capitalizeUNO(COLOR_NAMES_UNO[playedCardOnDiscard.color] || playedCardOnDiscard.color)})</span>`;
+                discardCardContainerUno.appendChild(topCardDiv);
+            }
+
+            function handleActionUNO(card, isPlayer) { /* ... adapted from user's code, handles turn switching, calls endGameUNO ... */ 
+                 if (gameIsOverUNO) return;
+                let nextMsg = '';
+                if (card.type === 'skip') { skipNextUNO = true; nextMsg = isPlayer ? "You played Machine QA! Computer's turn is skipped." : "Computer played Machine QA! Your turn is skipped."; } 
+                else if (card.type === 'reverse') { skipNextUNO = true; nextMsg = isPlayer ? "You played Beam Direction Change! Computer's turn is skipped." : "Computer played Beam Direction Change! Your turn is skipped.";} 
+                else if (card.type === 'draw2') { drawCountUNO += 2; nextMsg = isPlayer ? "You played Extra Imaging! Computer draws 2 cards." : "Computer played Extra Imaging! You draw 2 cards.";} 
+                else if (card.type === 'wild4') { drawCountUNO += 4; nextMsg = isPlayer ? "You played Emergency Physics Consult! Computer draws 4 cards." : "Computer played Emergency Physics Consult! You draw 4 cards.";}
+                
+                if (playerHandUNO.length === 0) { endGameUNO("You win! 🎉"); return; }
+                if (computerHandUNO.length === 0) { endGameUNO("Computer wins! 💻"); return; }
+                
+                if (isPlayer) { 
+                    playerTurnUNO = false; 
+                    updateDisplayUNO(nextMsg + "<br>Computer's turn...");
+                    setTimeout(() => computerTurnUNO(nextMsg), 1500); 
+                } else { 
+                    playerTurnUNO = true; 
+                    if (drawCountUNO > 0) {
+                        updateDisplayUNO(nextMsg); 
+                        drawBtnUno.disabled = true;
+                        setTimeout(() => {
+                            drawCardFromDeckUNO(playerHandUNO, drawCountUNO);
+                            let statusAfterPlayerDraw = `You drew ${drawCountUNO} card(s).`;
+                            drawCountUNO = 0; 
+                            if (playerHandUNO.length === 0) { endGameUNO("You win! 🎉 (by drawing last card - unusual!)"); return; }
+                            playerTurnUNO = false; 
+                            updateDisplayUNO(statusAfterPlayerDraw + "<br>Computer's turn...");
+                            setTimeout(() => computerTurnUNO(statusAfterPlayerDraw), 1200); 
+                        }, 1500); 
+                    } else {
+                        updateDisplayUNO(nextMsg + "<br>Your turn! Play a card or draw.");
+                    }
+                }
+            }
+            function endGameUNO(message) { /* ... adapted, calls saveGlobalBalanceUNO ... */
+                gameIsOverUNO = true;
+                if(unoGameOverMessageEl) unoGameOverMessageEl.textContent = message;
+                if(unoGameOverScreenDiv) unoGameOverScreenDiv.style.display = 'block';
+                if(drawBtnUno) drawBtnUno.disabled = true;
+                if(educationalFactDivUno) educationalFactDivUno.style.display = 'none';
+                if(unoStatusDiv) unoStatusDiv.innerHTML = message;
+
+                if (message.toLowerCase().includes("you win")) {
+                    currentGlobalBalance += WIN_REWARD_UNO;
+                    saveGlobalBalanceUNO(); // Save the updated global balance
+                    if(unoGameOverMessageEl) unoGameOverMessageEl.textContent += ` You earned ${CURRENCY_SYMBOL_UNO}${WIN_REWARD_UNO}!`;
+                    alert(`Congratulations! You earned ${CURRENCY_SYMBOL_UNO}${WIN_REWARD_UNO} for winning! Your new balance is ${CURRENCY_SYMBOL_UNO}${currentGlobalBalance}.`);
+                }
+                updateBalanceDisplayUNO(); // To show final balance on game over screen
+            }
+            function chooseColorUNO() { /* ... same as user's code, using _UNO suffixed consts/elements ... */ 
+                 return new Promise(resolve => {
+                    const colorButtonsHTML = COLORS_UNO.map(c => 
+                        `<button class="uno-game-button" style="background:${c}; color: ${c === 'yellow' ? '#333' : '#fff'}; margin:5px;" onclick="window._rtUnoInternalChooseColor('${c}')">${capitalizeUNO(COLOR_NAMES_UNO[c])}</button>`
+                    ).join('');
+                    unoStatusDiv.innerHTML = 'Choose a color for your Wild card:<br>' + colorButtonsHTML;
+                    educationalFactDivUno.style.display = 'none'; 
+                    drawBtnUno.disabled = true; 
+
+                    window._rtUnoInternalChooseColor = chosenColor => {
+                        delete window._rtUnoInternalChooseColor; 
+                        drawBtnUno.disabled = gameIsOverUNO || !playerTurnUNO; 
+                        resolve(chosenColor);
+                    };
+                });
+            }
+            async function computerTurnUNO(statusPrefix = '') { /* ... adapted, uses _UNO vars ... */
+                playerTurnUNO = false; 
+                drawBtnUno.disabled = true;
+                await new Promise(resolve => setTimeout(resolve, 500)); 
+                if (gameIsOverUNO) return;
+                let currentStatus = statusPrefix;
+                if (skipNextUNO) {
+                    skipNextUNO = false; playerTurnUNO = true;
+                    updateDisplayUNO(currentStatus + "<br>Your turn! Play a card or draw.");
+                    return;
+                }
+                if (drawCountUNO > 0) { 
+                    drawCardFromDeckUNO(computerHandUNO, drawCountUNO);
+                    currentStatus += `<br>Computer draws ${drawCountUNO} card(s).`;
+                    drawCountUNO = 0; playerTurnUNO = true; 
+                    updateDisplayUNO(currentStatus + "<br>Your turn! Play a card or draw.");
+                    return;
+                }
+                
+                const playableCardIndex = computerHandUNO.findIndex(card => cardMatchesUNO(card));
+                
+                if (playableCardIndex !== -1) {
+                    const cardToPlay = computerHandUNO[playableCardIndex];
+                    currentStatus += `<br>Computer is playing ${cardToPlay.name}...`;
+                    updateDisplayUNO(currentStatus); 
+                    await new Promise(resolve => setTimeout(resolve, 1200)); 
+                    playCardUNO(computerHandUNO, playableCardIndex, false); 
+                } else {
+                    drawCardFromDeckUNO(computerHandUNO, 1);
+                    currentStatus += "<br>Computer draws a card.";
+                    playerTurnUNO = true; 
+                    updateDisplayUNO(currentStatus + "<br>Your turn! Play a card or draw.");
+                }
+            }
+
+            if(startGameBtnUno) {
+                startGameBtnUno.onclick = () => {
+                    let numCards = parseInt(numCardsInputUno.value);
+                    if (isNaN(numCards) || numCards < 5 || numCards > 10) {
+                        numCards = 7; 
+                        numCardsInputUno.value = 7; 
+                    }
+                    initialCardsCountUNO = numCards;
+                    unoStartScreenDiv.style.display = 'none';
+                    unoGameAreaDiv.style.display = 'block';
+                    if(unoGameOverScreenDiv) unoGameOverScreenDiv.style.display = 'none';
+                    startGameFlowUNO();
+                };
+            }
+
+            if(playAgainBtnUno) {
+                playAgainBtnUno.onclick = () => {
+                    if(unoGameOverScreenDiv) unoGameOverScreenDiv.style.display = 'none';
+                    startGameFlowUNO(); 
+                };
+            }
+
+            if(drawBtnUno) {
+                drawBtnUno.onclick = async function() {
+                    if (!playerTurnUNO || gameIsOverUNO || drawCountUNO > 0) return; 
+                    educationalFactDivUno.style.display = 'none'; 
+                    drawCardFromDeckUNO(playerHandUNO, 1); 
+                    playerTurnUNO = false;
+                    updateDisplayUNO("You drew a card. Computer's turn...");
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    computerTurnUNO("You drew a card."); 
+                };
+            }
+            
+            // --- Global Ecosystem Functions (Common to all pages) ---
+            function initializeStartScreen() { /* ... (content for the main start screen, not UNO's) ... */ }
+            
+            window.addEventListener('DOMContentLoaded', () => {
+                if(loadingScreen) loadingScreen.style.display = 'none'; 
+                // Unlike index.html, we don't show the ecosystem start screen here.
+                // This activity page is shown directly.
+                if(gameHeader) gameHeader.style.display = 'flex'; // Show activity header
+                if(unoStartScreenDiv) unoStartScreenDiv.style.display = 'block'; // Show UNO start screen
+                if(unoGameAreaDiv) unoGameAreaDiv.style.display = 'none'; // Hide UNO game area until started
+                loadGlobalBalanceUNO(); 
+                if(copyrightYearSpan) copyrightYearSpan.textContent = new Date().getFullYear();
+            });
+             window.addEventListener('pageshow', function(event) { loadGlobalBalanceUNO(); });
+             window.addEventListener('storage', function(event) { if (event.key === GAME_STATE_KEY) { loadGlobalBalanceUNO(); } });
+
+        } // End of RT_APPS_UNO_CHALLENGE_INITIALIZED guard
+    </script>
+</body>
+</html>
