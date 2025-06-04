@@ -2,13 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>CT Simulation Border Challenge</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CT Simulation Border Challenge & Admin Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Base styles from index (9).html */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .hero-banner {
+            background: linear-gradient(to right, #667eea, #764ba2);
+        }
+
+        /* Adjusted styles from index (10).html, integrated with new theme */
         :root {
-            --color-primary: #0056b3;
-            --color-primary-dark: #003d82;
+            --color-primary: #764ba2; /* Purple from hero-banner */
+            --color-primary-dark: #667eea; /* Lighter purple from hero-banner */
             --color-secondary: #5a4fcf;
             --color-secondary-dark: #483d9e;
             --color-admin-toggle: #6c757d;
@@ -16,20 +26,45 @@
             --color-success: #16a34a;
             --color-error: #dc2626;
             --color-warning-bg: #fefce8;
-            --color-border-draggable: rgba(220, 38, 38, 0.6); /* Red for user's lines */
-            --color-border-draggable-hover: rgba(220, 38, 38, 0.8);
+            --color-border-draggable: rgba(150, 50, 50, 0.6); /* Adjusted red for user's lines */
+            --color-border-draggable-hover: rgba(150, 50, 50, 0.8);
             --color-border-correct: rgba(22, 163, 74, 0.7); /* Green for correct lines */
-            --font-family-main: Arial, sans-serif;
         }
 
-        body { font-family: var(--font-family-main); line-height: 1.5; background-color: #f4f4f4; padding: 10px; }
-        h1, h2, h3, h4 { color: #333; }
-        h1 { text-align: center; color: var(--color-primary); border-bottom: 2px solid var(--color-primary); padding-bottom: 6px; margin-bottom: 15px; font-size: 1.6em;}
-        .content-container { max-width: 800px; margin: 0 auto; background-color: #f8f9fa; padding: 15px; border-radius: 8px; }
+        /* Specific overrides/integrations for 10.html functionality */
+        h1, h2, h3, h4 { color: var(--color-primary); } /* Apply primary color */
+        h1 { text-align: center; border-bottom: 2px solid var(--color-primary); padding-bottom: 6px; margin-bottom: 15px; font-size: 1.8em;}
+        .content-container { max-width: 800px; margin: 0 auto; padding: 15px; border-radius: 8px; } /* Removed background, let card styles apply */
         .activity-section { background-color: #fff; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        
+        /* Apply card styling for sections */
+        .game-section-card {
+            background-color: #fff;
+            padding: 24px; /* Increased padding */
+            border-radius: 12px; /* More rounded corners */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Stronger shadow */
+            transition: box-shadow 0.3s ease-in-out;
+            margin-bottom: 24px; /* Space between sections */
+        }
+        .game-section-card:hover {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15); /* Hover effect */
+        }
+
+        /* Keep existing button styles */
+        button#next-button, button#playAgainBtn, button#check-visual-button, button.admin-button, button#toggle-admin-tool {
+            background-color: var(--color-primary); color: white; padding: 9px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 1.0em; margin-top: 8px; display: inline-block; width: auto; margin-bottom: 8px; transition: background-color 0.15s ease-in-out;
+        }
+        button#playAgainBtn { background-color: var(--color-secondary);}
+        button#toggle-admin-tool { background-color: var(--color-admin-toggle); float: right;}
+        button:hover:not(:disabled) { background-color: var(--color-primary-dark); }
+        button#playAgainBtn:hover:not(:disabled) { background-color: var(--color-secondary-dark); }
+        button#toggle-admin-tool:hover:not(:disabled) { background-color: var(--color-admin-toggle-dark); }
+        button:disabled { background-color: #cccccc; cursor: not-allowed; }
+
+        /* Other specific styles from 10.html */
         #problem-area { background-color: var(--color-warning-bg); }
         #problem-text { font-weight: 500;}
-        #problem-text strong { color: var(--color-primary-dark); } /* Style for landmarks */
+        #problem-text strong { color: var(--color-primary-dark); }
         .feedback-correct { color: var(--color-success); }
         .feedback-incorrect { color: var(--color-error); }
         .answer-button {
@@ -42,70 +77,47 @@
         .answer-button.selected-correct { background-color: #dcfce7; border-color: #4ade80; font-weight: bold; }
         .answer-button.selected-incorrect { background-color: #fee2e2; border-color: #f87171; }
         .answer-button.reveal-correct { background-color: #dcfce7; border-color: #4ade80; font-weight: bold; }
-        button#next-button, button#playAgainBtn, button#check-visual-button, button.admin-button, button#toggle-admin-tool { background-color: var(--color-primary); color: white; padding: 9px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 1.0em; margin-top: 8px; display: inline-block; width: auto; margin-bottom: 8px; transition: background-color 0.15s ease-in-out;}
-        button#playAgainBtn { background-color: var(--color-secondary);}
-        button#toggle-admin-tool { background-color: var(--color-admin-toggle); float: right;}
-        button:hover:not(:disabled) { background-color: var(--color-primary-dark); }
-        button#playAgainBtn:hover:not(:disabled) { background-color: var(--color-secondary-dark); }
-        button#toggle-admin-tool:hover:not(:disabled) { background-color: var(--color-admin-toggle-dark); }
-        button#check-visual-button:hover:not(:disabled) { background-color: #218838; } /* Specific hover for check button */
-        button:disabled { background-color: #cccccc; cursor: not-allowed; }
         #score-area { font-size: 1.0em;}
         #feedback-area { font-size: 1.0em; font-weight: bold;}
         #instructions-area ol { padding-left: 20px; font-size: 0.9em; list-style: decimal; }
         #instructions-area li { margin-bottom: 2px; }
 
-        /* Visual Input Specific Styles */
         #visual-input-area { display: flex; align-items: flex-start; gap: 15px; }
         #image-container {
             position: relative;
-            width: 70%; /* Adjust width as needed */
-            height: 400px; /* Maintain fixed height for consistency */
+            width: 70%;
+            height: 400px;
             background-color: #ccc;
             border: 1px solid #999;
             overflow: hidden;
-            user-select: none; /* Prevent image selection when dragging borders */
+            user-select: none;
         }
-        #sim-image { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; } /* pointer-events to allow dragging over image */
+        #sim-image { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
 
         #border-values-container { width: 30%; display: flex; flex-direction: column; align-items: center; justify-content: space-around; height: 400px; }
         #border-values-container label { font-size: 0.8em; margin-bottom: 2px; }
         #border-values-container span { font-size: 1.1em; font-weight: 600; margin-bottom: 8px; color: var(--color-error); }
 
-
         .draggable-border-line {
-            position: absolute;
-            left: 0;
-            width: 100%;
-            height: 10px; /* Thickness for easier dragging */
-            background-color: var(--color-border-draggable);
-            z-index: 10;
-            cursor: ns-resize;
-            transition: background-color 0.15s ease-in-out;
+            position: absolute; left: 0; width: 100%; height: 10px; background-color: var(--color-border-draggable);
+            z-index: 10; cursor: ns-resize; transition: background-color 0.15s ease-in-out;
         }
         .draggable-border-line:hover { background-color: var(--color-border-draggable-hover); }
         .draggable-border-line.disabled { cursor: default; pointer-events: none; opacity: 0.7;}
 
-        #sup-border-line { top: 10%; } /* Default positions */
+        #sup-border-line { top: 10%; }
         #inf-border-line { top: 90%; }
 
         .correct-visual-border-line {
-            position: absolute;
-            left: 0;
-            width: 100%;
-            height: 4px; /* Thinner, distinct from user's lines */
-            background-color: var(--color-border-correct);
-            z-index: 9; /* Below draggable lines if they have transparency */
-            pointer-events: none;
-            display: none; /* Initially hidden */
+            position: absolute; left: 0; width: 100%; height: 4px; background-color: var(--color-border-correct);
+            z-index: 9; pointer-events: none; display: none;
         }
         #correct-sup-line { top: 0%; }
         #correct-inf-line { top: 0%; }
 
-
         #check-visual-button { background-color: #28a745; width: auto; padding: 8px 15px;}
 
-        /* --- Admin Tool Styles --- */
+        /* Admin Tool Styles */
         #admin-tool-container { border: 2px dashed var(--color-admin-toggle); margin-top: 20px; padding: 15px; background-color: #e9ecef; }
         #admin-image-container { position: relative; width: 100%; max-width: 500px; height: 350px; background-color: #555; border: 1px solid #333; margin: 10px auto; cursor: crosshair; overflow: hidden; }
         #admin-image { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
@@ -115,94 +127,117 @@
         .admin-controls label, .admin-controls input { margin-right: 5px;}
     </style>
 </head>
-<body class="bg-gray-100 font-['Inter',_sans-serif] p-6 flex justify-center items-start min-h-screen">
-
-    <div class="content-container">
-        <h1>CT Simulation Border Challenge</h1>
-
-        <div id="game-content">
-            <div class="activity-section">
-                <h2 class="text-lg font-semibold">Instructions</h2>
-                <div id="instructions-area">
-                    <ol>
-                        <li>Read the question or patient scenario, paying attention to any specified anatomical landmarks.</li>
-                        <li>For multiple-choice questions, select the best answer.</li>
-                        <li id="instruction-visual">For visual questions, review the scenario and image. Drag the <strong>Superior</strong> and <strong>Inferior</strong> borders on the image to match the described anatomical scan range. Click "Check Borders".</li>
-                        <li>The game ends when you achieve 10 correct answers OR 5 incorrect answers.</li>
-                    </ol>
-                </div>
+<body class="bg-slate-100 text-slate-800">
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="index.html" class="flex items-center text-purple-700 hover:text-purple-900 transition-colors duration-300">
+                <span class="text-2xl font-bold">RT Games Menu</span>
+            </a>
+            <h1 class="text-2xl font-bold text-purple-700">CT Simulation Border Challenge</h1>
             </div>
+    </header>
 
-            <div id="score-area" class="text-center font-semibold mb-3 p-2 bg-blue-50 rounded border border-blue-200">
-                Correct: <span id="correct-count">0</span> | Incorrect: <span id="incorrect-count">0</span> | Question: <span id="question-number">0</span>
-            </div>
+    <section class="hero-banner text-white py-16 px-6 text-center">
+        <div class="container mx-auto">
+            <h2 class="text-4xl font-bold mb-4">Master Your Scan Ranges</h2>
+            <p class="text-lg mb-8">Practice identifying anatomical borders for accurate CT simulations.</p>
+        </div>
+    </section>
 
-            <div id="problem-area" class="text-base text-left text-gray-800 mb-4 p-4 border border-yellow-300 rounded-md min-h-[60px]">
-                <p id="problem-text">Loading question...</p>
-            </div>
-
-            <div id="answer-area" class="mt-4 mb-4 min-h-[420px]">
-                <div id="mc-input" class="grid grid-cols-1 sm:grid-cols-2 gap-2 hidden">
-                    <button class="answer-button py-2 px-4 rounded-lg shadow-sm">Option 1</button>
-                    <button class="answer-button py-2 px-4 rounded-lg shadow-sm">Option 2</button>
-                    <button class="answer-button py-2 px-4 rounded-lg shadow-sm">Option 3</button>
-                    <button class="answer-button py-2 px-4 rounded-lg shadow-sm">Option 4</button>
-                </div>
-
-                <div id="visual-input-area" class="hidden">
-                    <div id="image-container">
-                        <img id="sim-image" src="https://via.placeholder.com/400x600.png?text=Placeholder+Scout+Image" alt="Simulation Anatomy Reference">
-                        <div id="sup-border-line" class="draggable-border-line"></div>
-                        <div id="inf-border-line" class="draggable-border-line"></div>
-                        <div id="correct-sup-line" class="correct-visual-border-line"></div>
-                        <div id="correct-inf-line" class="correct-visual-border-line"></div>
-                    </div>
-                    <div id="border-values-container">
-                        <div class="text-center">
-                            <label for="sup-border-val-display">Superior Border</label>
-                            <span id="sup-border-val-display">10%</span>
-                        </div>
-                        <button id="check-visual-button">Check Borders</button>
-                        <div class="text-center">
-                            <label for="inf-border-val-display">Inferior Border</label>
-                            <span id="inf-border-val-display">90%</span>
-                        </div>
+    <main class="container mx-auto px-6 py-12">
+        <div class="content-container bg-white p-6 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300">
+            <div id="game-content">
+                <div class="game-section-card">
+                    <h2 class="text-xl font-semibold mb-4">Instructions</h2>
+                    <div id="instructions-area">
+                        <ol>
+                            <li>Read the question or patient scenario, paying attention to any specified anatomical landmarks.</li>
+                            <li>For multiple-choice questions, select the best answer.</li>
+                            <li id="instruction-visual">For visual questions, review the scenario and image. Drag the <strong>Superior</strong> and <strong>Inferior</strong> borders on the image to match the described anatomical scan range. Click "Check Borders".</li>
+                            <li>The game ends when you achieve 10 correct answers OR 5 incorrect answers.</li>
+                        </ol>
                     </div>
                 </div>
+
+                <div id="score-area" class="text-center font-semibold mb-3 p-4 bg-blue-50 rounded-xl border border-blue-200 game-section-card">
+                    Correct: <span id="correct-count">0</span> | Incorrect: <span id="incorrect-count">0</span> | Question: <span id="question-number">0</span>
+                </div>
+
+                <div id="problem-area" class="text-base text-left text-gray-800 mb-4 p-4 border border-yellow-300 rounded-md min-h-[60px] game-section-card">
+                    <p id="problem-text">Loading question...</p>
+                </div>
+
+                <div id="answer-area" class="mt-4 mb-4 min-h-[420px] game-section-card">
+                    <div id="mc-input" class="grid grid-cols-1 sm:grid-cols-2 gap-4 hidden">
+                        <button class="answer-button py-2 px-4 rounded-lg shadow-sm">Option 1</button>
+                        <button class="answer-button py-2 px-4 rounded-lg shadow-sm">Option 2</button>
+                        <button class="answer-button py-2 px-4 rounded-lg shadow-sm">Option 3</button>
+                        <button class="answer-button py-2 px-4 rounded-lg shadow-sm">Option 4</button>
+                    </div>
+
+                    <div id="visual-input-area" class="hidden">
+                        <div id="image-container">
+                            <img id="sim-image" src="https://via.placeholder.com/400x600.png?text=Placeholder+Scout+Image" alt="Simulation Anatomy Reference">
+                            <div id="sup-border-line" class="draggable-border-line"></div>
+                            <div id="inf-border-line" class="draggable-border-line"></div>
+                            <div id="correct-sup-line" class="correct-visual-border-line"></div>
+                            <div id="correct-inf-line" class="correct-visual-border-line"></div>
+                        </div>
+                        <div id="border-values-container">
+                            <div class="text-center">
+                                <label for="sup-border-val-display">Superior Border</label>
+                                <span id="sup-border-val-display">10%</span>
+                            </div>
+                            <button id="check-visual-button">Check Borders</button>
+                            <div class="text-center">
+                                <label for="inf-border-val-display">Inferior Border</label>
+                                <span id="inf-border-val-display">90%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="feedback-area" class="text-center font-medium mt-3 mb-3 min-h-[2em]">
+                </div>
+
+                <div class="flex justify-center mt-4 space-x-4">
+                    <button id="next-button">Next Question</button>
+                    <button id="playAgainBtn" class="hidden">Play Again</button>
+                </div>
+            </div> <hr class="my-8 border-gray-400">
+
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold text-gray-700">Admin Section</h2>
+                <button id="toggle-admin-tool">Show/Hide Border Tool</button>
             </div>
 
-            <div id="feedback-area" class="text-center font-medium mt-3 mb-3 min-h-[2em]">
+            <div id="admin-tool-container" class="game-section-card hidden">
+                <h3 class="text-md font-semibold mb-2">Define Visual Borders</h3>
+                 <p class="text-sm text-gray-600 mb-1">For visual questions, describe target anatomical landmarks in the 'scenarioText'. Then, use this tool to define the percentage-based `correctRange` that corresponds to those landmarks on the chosen image.</p>
+                <div class="admin-controls my-3">
+                    <label for="admin-image-url">Image URL:</label>
+                    <input type="text" id="admin-image-url" class="border p-1 rounded w-3/4" placeholder="Paste image URL here">
+                    <button id="admin-load-image" class="admin-button">Load Image</button>
+                </div>
+                <p class="text-sm text-gray-600 mb-2">Click and drag on the image below to define the scan area rectangle. The percentage coordinates will be generated.</p>
+                <div id="admin-image-container">
+                    <img id="admin-image" src="https://via.placeholder.com/500x350.png?text=Load+Image+URL" alt="Admin Scout Image">
+                    <div id="selection-box"></div>
+                </div>
+                <div id="admin-output">Coordinates will appear here...</div>
+                <button id="copy-coords-button" class="admin-button bg-green-600 hover:bg-green-700 mt-2">Copy Coordinates</button>
             </div>
-
-            <div class="flex justify-center mt-4 space-x-4">
-                <button id="next-button">Next Question</button>
-                <button id="playAgainBtn" class="hidden">Play Again</button>
-            </div>
-        </div> <hr class="my-8 border-gray-400">
-
-        <div class="flex justify-between items-center mb-2">
-            <h2 class="text-lg font-semibold text-gray-700">Admin Section</h2>
-            <button id="toggle-admin-tool">Show/Hide Border Tool</button>
         </div>
+    </main>
 
-        <div id="admin-tool-container" class="activity-section hidden">
-            <h3 class="text-md font-semibold mb-2">Define Visual Borders</h3>
-             <p class="text-sm text-gray-600 mb-1">For visual questions, describe target anatomical landmarks in the 'scenarioText'. Then, use this tool to define the percentage-based `correctRange` that corresponds to those landmarks on the chosen image.</p>
-            <div class="admin-controls my-3">
-                <label for="admin-image-url">Image URL:</label>
-                <input type="text" id="admin-image-url" class="border p-1 rounded w-3/4" placeholder="Paste image URL here">
-                <button id="admin-load-image" class="admin-button">Load Image</button>
-            </div>
-            <p class="text-sm text-gray-600 mb-2">Click and drag on the image below to define the scan area rectangle. The percentage coordinates will be generated.</p>
-            <div id="admin-image-container">
-                <img id="admin-image" src="https://via.placeholder.com/500x350.png?text=Load+Image+URL" alt="Admin Scout Image">
-                <div id="selection-box"></div>
-            </div>
-            <div id="admin-output">Coordinates will appear here...</div>
-            <button id="copy-coords-button" class="admin-button bg-green-600 hover:bg-green-700 mt-2">Copy Coordinates</button>
+    <footer class="bg-slate-800 text-slate-300 py-8 mt-12 text-center">
+        <div class="container mx-auto px-6">
+            <p>&copy; <span id="currentYear"></span> Radiation Therapy E-Workbook. All Rights Reserved.</p>
+            <p class="text-sm mt-1">Designed to support your educational journey in radiation therapy.</p>
         </div>
+    </footer>
 
-    </div> <script>
+    <script>
         // --- DOM Elements (Game) ---
         const gameContent = document.getElementById('game-content');
         const problemTextEl = document.getElementById('problem-text');
@@ -789,6 +824,9 @@ Suggested correctRange object (Sup/Inf with +/- ${tolerance*100}% tolerance):<br
             adminToolContainer.classList.add('hidden');
             startGame();
         });
+
+        // Set current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
     </script>
 </body>
 </html>
