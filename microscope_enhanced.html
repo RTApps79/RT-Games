@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Three.js Microscope: Tumor Grades, Lymph Nodes & Pathology Menu</title>
+  <style>
+    body {
+      margin: 0;
+      background: #1a1b2f; /* Darker background */
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      user-select: none;
+      color: #e0e0e0;
+    }
+    #main-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+    }
+    #microscope-view-container { /* Container for the 3D microscope model */
+      width: 40%;
+      height: 100%;
+      position: relative;
+    }
+    #slide-view-container { /* Container for the main slide/lens view */
+      width: 60%;
+      height: 100%;
+      position: relative;
+      border-left: 2px solid #444;
+    }
+    canvas { display: block; } /* Ensure canvas takes up its container */
+
+    #ui-panel {
+      position: absolute;
+      left: 10px;
+      top: 10px;
+      z-index: 100;
+      background: rgba(30, 30, 50, 0.9);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      width: 280px;
+      max-height: calc(100vh - 20px);
+      overflow-y: auto;
+    }
+    #ui-panel h2, #ui-panel h3 {
+      margin-top: 0;
+      font-size: 1.2em;
+      color: #87CEFA; /* Light Sky Blue */
+      border-bottom: 1px solid #444;
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+    }
+     #ui-panel h3 { /* Specific for sub-sections like Pathology Menu */
+        font-size: 1.1em;
+        color: #FFD700; /* Gold for sub-section */
+        margin-top: 15px;
+    }
+    #ui-panel label {
+      display: block;
+      margin: 12px 0 3px 0;
+      font-size: 0.95em;
+    }
+    #ui-panel input[type='range'], #ui-panel select {
+      width: 100%;
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 3px;
+      border: 1px solid #555;
+      background-color: #333;
+      color: #fff;
+      margin-bottom:10px;
+    }
+    #ui-panel button {
+        background-color: #4CAF50; /* Green */
+        border: none;
+        color: white;
+        padding: 8px 12px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 0.9em;
+        margin-top: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        width: calc(100% - 0px); /* Full width button */
+        box-sizing: border-box;
+    }
+    #ui-panel button:hover {
+        background-color: #45a049;
+    }
+
+    #instructions-panel {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      z-index: 90; /* Lower than UI panel if they could overlap */
+      background: rgba(30, 30, 50, 0.9);
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      width: 320px;
+      max-height: calc(100vh - 220px); 
+      overflow-y: auto;
+      transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+    }
+    #instructions-panel.hidden-instructions {
+        opacity: 0;
+        transform: translateY(-20px);
+        pointer-events: none;
+    }
+    #instructions-panel h2 {
+      margin-top: 0;
+      font-size: 1.2em;
+      color: #FFD700; /* Gold */
+    }
+    #instructions-panel ul { padding-left: 20px; font-size: 0.9em; }
+    #instructions-panel strong { color: #FFA07A; } /* Light Salmon */
+    #instructions-panel .malignant { color: #F08080; font-weight: bold; } 
+    #instructions-panel .benign { color: #DDA0DD; font-weight: bold; } 
+    #instructions-panel .normal { color: #87CEEB; font-weight: bold; }
+    .close-instructions-btn {
+        position: absolute;
+        top: 5px;
+        right: 10px;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 1.5em;
+        cursor: pointer;
+    }
+    .close-instructions-btn:hover {
+        color: #FFD700;
+    }
+
+
+    #info-panel { 
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 110;
+      background: rgba(20, 20, 40, 0.95);
+      padding: 10px 15px;
+      border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      color: #fff;
+      font-size: 0.9em;
+      display: none; 
+      border-top: 2px solid #87CEFA;
+      text-align: center;
+      max-width: 80%;
+    }
+    #info-panel h3 { margin: 0 0 5px 0; color: #FFD700; }
+    #info-panel p { margin: 3px 0; }
+
+    #overview-map-container {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        width: 200px; 
+        height: 150px; 
+        border: 1px solid #555;
+        background-color: rgba(50, 50, 70, 0.8);
+        z-index: 100;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        border-radius: 5px;
+        overflow: hidden; 
+    }
+    #overview-map-canvas {
+        width: 100%;
+        height: 100%;
+        cursor: crosshair;
+    }
+     #overview-map-indicator { 
+        position: absolute;
+        border: 1px solid rgba(255, 0, 0, 0.7);
+        background-color: rgba(255, 0, 0, 0.1);
+        pointer-events: none; 
+        box-sizing: border-box;
+    }
+
+    #objective-message {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 120;
+      background: rgba(76, 175, 80, 0.9); 
+      color: white;
+      padding: 12px 20px;
+      border-radius: 5px;
+      font-size: 1.1em;
+      font-weight: bold;
+      display: none; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+  <div id="main-container">
+    <div id="microscope-view-container">
+      </div>
+    <div id="slide-view-container">
+      </div>
+  </div>
+
+  <div id="ui-panel">
+    <h2>Microscope Controls</h2>
+    <label for="focus">Focus</label>
+    <input type="range" id="focus" min="-1.5" max="1.5" step="0.01" value="0" />
+    <label for="stage-y">Stage Vertical (Y)</label>
+    <input type="range" id="stage-y" min="-2" max="2" step="0.01" value="0" />
+    <label for="stage-x">Stage Horizontal (X)</label>
+    <input type="range" id="stage-x" min="-2" max="2" step="0.01" value="0" />
+    <label for="objective">Objective (Zoom)</label>
+    <input type="range" id="objective" min="1" max="4" step="0.01" value="1.5" />
+    <button id="reset-view-button">Reset View</button>
+    <button id="toggle-instructions-button">Toggle Instructions</button>
+
+    <h3>Pathology Viewer</h3>
+    <label for="pathology-select">Select Case:</label>
+    <select id="pathology-select">
+        </select>
+  </div>
+
+  <div id="instructions-panel">
+    <button class="close-instructions-btn" title="Close Instructions" onclick="toggleInstructions(false)">×</button>
+    <h2>Your Mission: Pathologist</h2>
+    <p>Examine the tissue sample to identify different cell types and structures.</p>
+    <ul>
+      <li>Use controls to adjust Focus, Stage (X, Y), and Zoom.</li>
+      <li><span class="normal">Normal Cells:</span> Small, regular, various colors.</li>
+      <li><span class="benign">Benign Tumor Cells:</span> Larger, regular spheres (purple), not invasive.</li>
+      <li><span class="malignant">Malignant Cells (Low Grade):</span> Reddish, slightly irregular, attached to structures. May have a visible nucleus.</li>
+      <li><span class="malignant">Malignant Cells (High Grade):</span> Dark red/purple, highly irregular/spiky, prominent nucleus, attached and may appear invasive. Some show subtle pulsation.</li>
+      <li><strong>Lymph Nodes:</strong> Bean-shaped (beige). Examine for signs of <strong>metastasis</strong> (malignant cells within).</li>
+      <li><strong>Lymphatic Vessels:</strong> Thin tubes connecting to lymph nodes.</li>
+      <li>Hover over objects for info. Click on the <strong>Overview Map</strong> to pan.</li>
+    </ul>
+    <p><strong>Objective:</strong> Locate and center a <strong class="malignant">High-Grade Malignant Cell</strong>. Then, find a <strong>Lymph Node with Metastasis</strong>.</p>
+  </div>
+
+  <div id="info-panel">
+    <h3 id="info-title">Object Information</h3>
+    <p id="info-description">Hover over an object in the slide view.</p>
+    <p id="info-details"></p>
+  </div>
+
+  <div id="overview-map-container">
+    <canvas id="overview-map-canvas"></canvas>
+    <div id="overview-map-indicator"></div>
+  </div>
+
+  <div id="objective-message">Objective Complete! 🎉</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Constants and Configuration ---
+        const CELL_TYPES = {
+            NORMAL: 'Normal Cell',
+            BENIGN_TUMOR: 'Benign Tumor Cell',
+            MALIGNANT_LOW: 'Malignant Cell (Low Grade)',
+            MALIGNANT_HIGH: 'Malignant Cell (High Grade)',
+            LYMPH_NODE: 'Lymph Node',
+            LYMPH_NODE_METASTATIC: 'Lymph Node (Metastasis)',
+            LYMPHATIC_VESSEL: 'Lymphatic Vessel',
+            STRUCTURE: 'Anatomical Structure',
+            NECROTIC_DEBRIS: 'Necrotic Debris',
+            ABNORMAL_LYMPHOCYTE: 'Abnormal Lymphocyte'
+        };
+
+        const COLORS = {
+            NORMAL_1: 0x4fa3ff, NORMAL_2: 0xfabb5a, NORMAL_3: 0x51cf66,
+            BENIGN_TUMOR: 0xcc99ff, 
+            MALIGNANT_LOW: 0xf6554d, 
+            MALIGNANT_HIGH: 0xaa0033, 
+            MALIGNANT_HIGH_EMISSIVE: 0x550011,
+            NUCLEUS: 0x333333,
+            LYMPH_NODE: 0xF5CBA7, 
+            LYMPHATIC_VESSEL: 0xADD8E6, 
+            STRUCTURE_DEFAULT: 0xaaaaaa, 
+            STRUCTURE_BRAIN: 0xead5c7, 
+            STRUCTURE_LUNG: 0xffc0cb, 
+            STRUCTURE_BREAST: 0xfadadd, 
+            NECROTIC_DEBRIS: 0x404040,
+            ABNORMAL_LYMPHOCYTE: 0x8A2BE2, 
+        };
+
+        const patientCases = [
+            { id: "default", name: "Default View", description: "Standard mixed cell sample." },
+            { id: "glioblastoma_js", name: "Glioblastoma (J. Smith)", diagnosis: "Primary Brain - Glioblastoma", description: "High-grade malignant brain tumor." },
+            { id: "lung_dg", name: "Lung Cancer (D. Garcia)", diagnosis: "Lung - 3D-CRT", description: "Malignant cells in lung-like tissue." },
+            { id: "breast_mp", name: "Breast Cancer (M. Peterson)", diagnosis: "Breast - Tangents Only", description: "Tumor cells in breast-like tissue." },
+            { id: "lymphoma_mr", name: "Hodgkin Lymphoma (M. Rivera)", diagnosis: "Hodgkin Lymphoma - Mantle", description: "Abnormal lymphocytes and affected lymph nodes." }
+        ];
+
+        let sceneMicroscope, camMicroscope, rendererMicroscope;
+        let sceneSlide, camSlide, rendererSlide;
+        let sceneOverview, camOverview, rendererOverview;
+        let microscopeModel, objectiveLens, stagePlatform, focusKnob;
+        let allInteractiveObjects = []; 
+        let highGradeMalignantCells = []; 
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const focusSlider = document.getElementById('focus');
+        const stageYSlider = document.getElementById('stage-y');
+        const stageXSlider = document.getElementById('stage-x');
+        const objectiveSlider = document.getElementById('objective');
+        const resetViewButton = document.getElementById('reset-view-button');
+        const toggleInstructionsButton = document.getElementById('toggle-instructions-button');
+        const instructionsPanel = document.getElementById('instructions-panel');
+        const pathologySelect = document.getElementById('pathology-select');
+        const infoPanel = document.getElementById('info-panel');
+        const infoTitle = document.getElementById('info-title');
+        const infoDescription = document.getElementById('info-description');
+        const infoDetails = document.getElementById('info-details');
+        const objectiveMessage = document.getElementById('objective-message');
+        const overviewMapCanvas = document.getElementById('overview-map-canvas');
+        const overviewMapIndicator = document.getElementById('overview-map-indicator');
+        let objectivesState = { foundHighGrade: false, foundMetastaticLymphNode: false };
+        let lastHoveredObject = null;
+
+        function init() {
+            console.log("THREE object available, initializing simulation...");
+            setupViews();
+            createMicroscopeModel();
+            populatePathologyMenu();
+            loadPathology(patientCases[0].id); 
+            setupOverviewMap(); 
+            setupEventListeners();
+            animate();
+        }
+
+        function setupViews() {
+            const microContainer = document.getElementById('microscope-view-container');
+            rendererMicroscope = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            rendererMicroscope.setSize(microContainer.clientWidth, microContainer.clientHeight);
+            microContainer.appendChild(rendererMicroscope.domElement);
+            sceneMicroscope = new THREE.Scene();
+            camMicroscope = new THREE.PerspectiveCamera(45, microContainer.clientWidth / microContainer.clientHeight, 0.1, 100);
+            camMicroscope.position.set(0, 2.5, 8);
+            camMicroscope.lookAt(0, 1.5, 0);
+
+            const slideContainer = document.getElementById('slide-view-container');
+            rendererSlide = new THREE.WebGLRenderer({ antialias: true });
+            rendererSlide.setSize(slideContainer.clientWidth, slideContainer.clientHeight);
+            slideContainer.appendChild(rendererSlide.domElement);
+            sceneSlide = new THREE.Scene();
+            sceneSlide.background = new THREE.Color(0xf0f0f0); 
+            camSlide = new THREE.PerspectiveCamera(30, slideContainer.clientWidth / slideContainer.clientHeight, 0.1, 100);
+            camSlide.position.set(0, 0, 10); 
+            
+            const ambientLightMicro = new THREE.AmbientLight(0xffffff, 0.7);
+            sceneMicroscope.add(ambientLightMicro);
+            const dirLightMicro = new THREE.DirectionalLight(0xffffff, 0.9);
+            dirLightMicro.position.set(5, 10, 7);
+            sceneMicroscope.add(dirLightMicro);
+
+            const ambientLightSlide = new THREE.AmbientLight(0xffffff, 0.8);
+            ambientLightSlide.name = "ambientLightSlide"; // Name for checking
+            sceneSlide.add(ambientLightSlide);
+            const dirLightSlide = new THREE.DirectionalLight(0xffffff, 1.0);
+            dirLightSlide.name = "dirLightSlide"; // Name for checking
+            dirLightSlide.position.set(3, 5, 5);
+            sceneSlide.add(dirLightSlide);
+        }
+
+        function createMicroscopeModel() {
+            microscopeModel = new THREE.Group();
+            const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x777788, shininess: 50 });
+            const metalMaterial = new THREE.MeshPhongMaterial({ color: 0xcccccc, shininess: 100 });
+            const lensMaterial = new THREE.MeshPhongMaterial({ color: 0x66ccff, transparent: true, opacity: 0.5 });
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(1, 1.2, 0.3, 32), bodyMaterial);
+            base.position.y = 0.15; microscopeModel.add(base);
+            const arm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.5, 0.5), bodyMaterial);
+            arm.position.set(0, 1.4, -0.3); microscopeModel.add(arm);
+            stagePlatform = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.2, 1.4), metalMaterial);
+            stagePlatform.position.set(0, 1.2, 0.5); microscopeModel.add(stagePlatform);
+            const eyepieceTube = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.8, 32), metalMaterial);
+            eyepieceTube.position.set(0, 2.8, -0.3); eyepieceTube.rotation.x = -Math.PI / 12; microscopeModel.add(eyepieceTube);
+            const eyepieceLens = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.1, 32), lensMaterial);
+            eyepieceLens.position.y = 0.4; eyepieceTube.add(eyepieceLens);
+            objectiveLens = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.25, 0.7, 32), metalMaterial);
+            objectiveLens.position.set(0, 2.0, 0.5); 
+            const actualLens = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.05, 32), lensMaterial);
+            actualLens.position.y = -0.32; objectiveLens.add(actualLens); microscopeModel.add(objectiveLens);
+            focusKnob = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.15, 32), bodyMaterial);
+            focusKnob.position.set(0.35, 1.0, -0.3); focusKnob.rotation.z = Math.PI / 2; microscopeModel.add(focusKnob);
+            const focusKnobInner = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.17, 32), metalMaterial);
+            focusKnob.add(focusKnobInner);
+            sceneMicroscope.add(microscopeModel);
+        }
+        
+        function populatePathologyMenu() {
+            patientCases.forEach(caseData => {
+                const option = document.createElement('option');
+                option.value = caseData.id;
+                option.textContent = caseData.name;
+                pathologySelect.appendChild(option);
+            });
+            pathologySelect.addEventListener('change', (event) => {
+                loadPathology(event.target.value);
+                setupOverviewMap(); 
+            });
+        }
+
+        function clearSceneSlideContents() {
+            const objectsToRemove = [];
+            sceneSlide.traverse(child => {
+                if (child.userData && (child.userData.type || child.userData.isPathologyElement)) {
+                     objectsToRemove.push(child);
+                }
+            });
+            objectsToRemove.forEach(obj => {
+                if (obj.isGroup) {
+                    obj.traverse(subChild => {
+                        if (subChild.isMesh) {
+                            if (subChild.geometry) subChild.geometry.dispose();
+                            if (subChild.material) {
+                                if (Array.isArray(subChild.material)) subChild.material.forEach(mat => mat.dispose());
+                                else subChild.material.dispose();
+                            }
+                        }
+                    });
+                } else if (obj.isMesh) { 
+                    if (obj.geometry) obj.geometry.dispose();
+                    if (obj.material) {
+                         if (Array.isArray(obj.material)) obj.material.forEach(mat => mat.dispose());
+                         else obj.material.dispose();
+                    }
+                }
+                sceneSlide.remove(obj);
+            });
+            allInteractiveObjects = [];
+            highGradeMalignantCells = [];
+        }
+
+        function loadPathology(caseId) {
+            console.log("Loading pathology:", caseId);
+            clearSceneSlideContents();
+            objectivesState = { foundHighGrade: false, foundMetastaticLymphNode: false }; 
+
+            if (!sceneSlide.getObjectByName("ambientLightSlide")) {
+                 const ambientLightSlide = new THREE.AmbientLight(0xffffff, 0.8);
+                 ambientLightSlide.name = "ambientLightSlide"; sceneSlide.add(ambientLightSlide);
+            }
+            if (!sceneSlide.getObjectByName("dirLightSlide")) {
+                 const dirLightSlide = new THREE.DirectionalLight(0xffffff, 1.0);
+                 dirLightSlide.name = "dirLightSlide"; dirLightSlide.position.set(3, 5, 5); sceneSlide.add(dirLightSlide);
+            }
+
+            switch (caseId) {
+                case "glioblastoma_js": setupGlioblastomaView(); break;
+                case "lung_dg": setupLungCancerView(); break;
+                case "breast_mp": setupBreastCancerView(); break;
+                case "lymphoma_mr": setupLymphomaView(); break;
+                default: setupDefaultView(); break;
+            }
+        }
+        
+        function createGenericStructure(color = COLORS.STRUCTURE_DEFAULT, count = 2) {
+            for (let i = 0; i < count; i++) {
+                const path = new THREE.CatmullRomCurve3([
+                    new THREE.Vector3(-2.5 + i * 2.5, Math.random() * 2 - 1, Math.random() * 1 - 0.5),
+                    new THREE.Vector3(-1 + i * 2, Math.random() * 2 - 1, Math.random() * 1 - 0.5),
+                    new THREE.Vector3(0.5 + i * 1.5, Math.random() * 2 - 1, Math.random() * 1 - 0.5)
+                ]);
+                const geometry = new THREE.TubeGeometry(path, 16, 0.1 + Math.random()*0.05, 8, false);
+                const material = new THREE.MeshPhongMaterial({ color: color, shininess: 20, transparent: true, opacity: 0.7 });
+                const structure = new THREE.Mesh(geometry, material);
+                structure.userData = { type: CELL_TYPES.STRUCTURE, name: `Tissue Structure ${i+1}`, info: 'General background tissue element.', isPathologyElement: true };
+                sceneSlide.add(structure); allInteractiveObjects.push(structure);
+            }
+        }
+
+        function setupDefaultView() {
+            createGenericStructure(COLORS.STRUCTURE_DEFAULT, 3); // Using NUM_STRUCTURES
+            const lymphNodes = [];
+            for (let i = 0; i < 2; i++) { // Using NUM_LYMPH_NODES
+                const node = createLymphNode();
+                node.position.set((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 3, (Math.random() - 0.5) * 1 -1);
+                lymphNodes.push(node); sceneSlide.add(node); allInteractiveObjects.push(node);
+                const vesselStart = new THREE.Vector3((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 0.5);
+                const vesselPath = new THREE.LineCurve3(vesselStart, node.position);
+                const vessel = createLymphaticVessel(vesselPath); sceneSlide.add(vessel); allInteractiveObjects.push(vessel);
+            }
+             if (lymphNodes.length > 0) { 
+                const metastaticNode = lymphNodes[0];
+                metastaticNode.userData.type = CELL_TYPES.LYMPH_NODE_METASTATIC;
+                metastaticNode.userData.name = 'Lymph Node (Metastasis)';
+                metastaticNode.userData.info = 'Contains malignant cells that have spread.';
+                metastaticNode.material.color.set(0xffaaaa);
+                for (let i = 0; i < 3; i++) { 
+                    const metaCell = createMalignantCell('HIGH'); metaCell.scale.set(0.3,0.3,0.3);
+                    metaCell.position.set((Math.random()-0.5)*0.2, (Math.random()-0.5)*0.2, (Math.random()-0.5)*0.2);
+                    metastaticNode.add(metaCell); 
+                }
+            }
+            for (let i = 0; i < 15; i++) addCellToSlide(createNormalCell());
+            for (let i = 0; i < 4; i++) addCellToSlide(createBenignCell());
+            for (let i = 0; i < 3; i++) addCellToSlide(createMalignantCell('LOW'));
+            for (let i = 0; i < 3; i++) { const cell = createMalignantCell('HIGH'); addCellToSlide(cell); highGradeMalignantCells.push(cell); }
+        }
+
+        function setupGlioblastomaView() {
+            createGenericStructure(COLORS.STRUCTURE_BRAIN, 3); 
+            for (let i = 0; i < 5; i++) addCellToSlide(createNormalCell()); 
+            for (let i = 0; i < 15; i++) { 
+                const cell = createMalignantCell('HIGH'); addCellToSlide(cell); highGradeMalignantCells.push(cell);
+            }
+            for (let i = 0; i < 10; i++) { 
+                const debrisGeom = new THREE.SphereGeometry(0.02 + Math.random() * 0.03, 8, 8);
+                const debrisMat = new THREE.MeshBasicMaterial({ color: COLORS.NECROTIC_DEBRIS });
+                const debris = new THREE.Mesh(debrisGeom, debrisMat);
+                debris.userData = { type: CELL_TYPES.NECROTIC_DEBRIS, name: 'Necrotic Debris', info: 'Cellular remnants.', isPathologyElement: true };
+                addCellToSlide(debris);
+            }
+            const node1 = createLymphNode(); node1.position.set(2, -1, -0.5); sceneSlide.add(node1); allInteractiveObjects.push(node1);
+        }
+
+        function setupLungCancerView() {
+            createGenericStructure(COLORS.STRUCTURE_LUNG, 4); 
+            for (let i = 0; i < 10; i++) addCellToSlide(createNormalCell());
+            for (let i = 0; i < 3; i++) { 
+                const clusterCenter = new THREE.Vector3((Math.random()-0.5)*3, (Math.random()-0.5)*2, (Math.random()-0.5)*1);
+                for(let j=0; j<3; j++) {
+                    const cell = createMalignantCell('LOW');
+                    cell.position.copy(clusterCenter).add(new THREE.Vector3((Math.random()-0.5)*0.5, (Math.random()-0.5)*0.5, (Math.random()-0.5)*0.2));
+                    addCellToSlide(cell, false); 
+                }
+            }
+            for (let i = 0; i < 2; i++) { 
+                 const cell = createMalignantCell('HIGH'); addCellToSlide(cell); highGradeMalignantCells.push(cell);
+            }
+            const node1 = createLymphNode(); node1.position.set(-2, 1, -0.8); sceneSlide.add(node1); allInteractiveObjects.push(node1);
+        }
+
+        function setupBreastCancerView() {
+            createGenericStructure(COLORS.STRUCTURE_BREAST, 3); 
+            for (let i = 0; i < 8; i++) addCellToSlide(createNormalCell());
+            for (let i = 0; i < 5; i++) addCellToSlide(createBenignCell()); 
+             for (let i = 0; i < 2; i++) { 
+                const clusterCenter = new THREE.Vector3((Math.random()-0.5)*4, (Math.random()-0.5)*2.5, (Math.random()-0.5)*0.5);
+                for(let j=0; j<4; j++) {
+                    const cell = createMalignantCell('LOW');
+                    cell.position.copy(clusterCenter).add(new THREE.Vector3((Math.random()-0.5)*0.6, (Math.random()-0.5)*0.6, (Math.random()-0.5)*0.3));
+                    addCellToSlide(cell, false);
+                }
+            }
+            const node1 = createLymphNode(); node1.position.set(1, 1.5, -0.6); sceneSlide.add(node1); allInteractiveObjects.push(node1);
+        }
+
+        function setupLymphomaView() {
+            createGenericStructure(0xdddddd, 1); 
+            for (let i = 0; i < 25; i++) {
+                const size = 0.12 + Math.random() * 0.06;
+                const geometry = new THREE.SphereGeometry(size, 16, 16);
+                const material = new THREE.MeshPhongMaterial({ color: COLORS.ABNORMAL_LYMPHOCYTE, shininess: 40 });
+                const cell = new THREE.Mesh(geometry, material);
+                cell.userData = { type: CELL_TYPES.ABNORMAL_LYMPHOCYTE, name: 'Abnormal Lymphocyte', info: 'Likely malignant lymphocyte.', isPathologyElement: true };
+                addCellToSlide(cell);
+            }
+            for (let i = 0; i < 3; i++) {
+                const cell = createMalignantCell('LOW'); 
+                cell.material.color.set(0xff6347); 
+                cell.userData.name = "Large Atypical Cell (e.g., Reed-Sternberg type)";
+                cell.userData.info = "A large, often multi-nucleated cell characteristic of some lymphomas.";
+                addCellToSlide(cell);
+            }
+            for(let i = 0; i < 2; i++) {
+                const node = createLymphNode();
+                node.scale.set(1.5, 1.5, 1.5); 
+                node.material.color.set(0xDDA0DD); // Changed color slightly
+                node.position.set((Math.random()-0.5)*5, (Math.random()-0.5)*3, (Math.random()-0.5)*1);
+                sceneSlide.add(node); allInteractiveObjects.push(node);
+                if(i===0) { 
+                    node.userData.type = CELL_TYPES.LYMPH_NODE_METASTATIC;
+                    node.userData.name = 'Lymph Node (Involved)';
+                    for (let k = 0; k < 5; k++) { 
+                        const metaCell = createMalignantCell('LOW'); metaCell.scale.set(0.3,0.3,0.3);
+                        metaCell.material.color.set(COLORS.ABNORMAL_LYMPHOCYTE);
+                        metaCell.position.set((Math.random()-0.5)*0.3, (Math.random()-0.5)*0.3, (Math.random()-0.5)*0.3);
+                        node.add(metaCell); 
+                    }
+                }
+            }
+        }
+
+        function addCellToSlide(cell, randomizePosition = true) {
+            if (randomizePosition) {
+                cell.position.set( (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 2 );
+            }
+            if (cell.userData.type === CELL_TYPES.MALIGNANT_LOW || cell.userData.type === CELL_TYPES.MALIGNANT_HIGH) {
+                const structuresOnly = allInteractiveObjects.filter(o => o.userData.type === CELL_TYPES.STRUCTURE);
+                if (structuresOnly.length > 0) {
+                    const randomStructure = structuresOnly[Math.floor(Math.random() * structuresOnly.length)];
+                    if (randomStructure.geometry.boundingSphere === null) randomStructure.geometry.computeBoundingSphere();
+                    const structCenter = randomStructure.geometry.boundingSphere.center.clone().applyMatrix4(randomStructure.matrixWorld);
+                    cell.position.lerp(structCenter, 0.7); 
+                    cell.position.z += (Math.random() - 0.5) * 0.2; 
+                }
+            }
+            cell.userData.isPathologyElement = true; 
+            sceneSlide.add(cell);
+            allInteractiveObjects.push(cell);
+        }
+
+        function createNormalCell() {
+            const size = 0.1 + Math.random() * 0.05;
+            const geometry = new THREE.SphereGeometry(size, 16, 16);
+            const colorIndex = Math.floor(Math.random() * 3) + 1;
+            const material = new THREE.MeshPhongMaterial({ color: COLORS[`NORMAL_${colorIndex}`], shininess: 60 });
+            const cell = new THREE.Mesh(geometry, material);
+            cell.userData = { type: CELL_TYPES.NORMAL, name: 'Normal Cell', info: 'A healthy, regular cell.' , isPathologyElement: true};
+            return cell;
+        }
+
+        function createBenignCell() {
+            const size = 0.2 + Math.random() * 0.05;
+            const geometry = new THREE.SphereGeometry(size, 20, 20);
+            const material = new THREE.MeshPhongMaterial({ color: COLORS.BENIGN_TUMOR, shininess: 50 });
+            const cell = new THREE.Mesh(geometry, material);
+            cell.userData = { type: CELL_TYPES.BENIGN_TUMOR, name: 'Benign Tumor Cell', info: 'Non-cancerous, grows slowly, does not spread.', isPathologyElement: true };
+            return cell;
+        }
+
+        function createMalignantCell(grade) {
+            const cellGroup = new THREE.Group(); 
+            let size, geometry, material;
+            let name, info;
+            if (grade === 'LOW') {
+                size = 0.25 + Math.random() * 0.08;
+                geometry = new THREE.SphereGeometry(size, 24, 24);
+                for (let i = 0; i < geometry.attributes.position.count; i++) {
+                    const v = new THREE.Vector3().fromBufferAttribute(geometry.attributes.position, i);
+                    v.multiplyScalar(1 + (Math.random() - 0.5) * 0.15); 
+                    geometry.attributes.position.setXYZ(i, v.x, v.y, v.z);
+                }
+                geometry.computeVertexNormals(); 
+                material = new THREE.MeshPhongMaterial({ color: COLORS.MALIGNANT_LOW, shininess: 40 });
+                name = CELL_TYPES.MALIGNANT_LOW; info = 'Cancerous, less aggressive, somewhat irregular.';
+                const nucleusGeom = new THREE.SphereGeometry(size * 0.35, 12, 12); 
+                const nucleusMat = new THREE.MeshPhongMaterial({ color: COLORS.NUCLEUS });
+                const nucleus = new THREE.Mesh(nucleusGeom, nucleusMat); cellGroup.add(nucleus);
+            } else { 
+                size = 0.3 + Math.random() * 0.1;
+                geometry = new THREE.SphereGeometry(size, 32, 32); 
+                 for (let i = 0; i < geometry.attributes.position.count; i++) {
+                    const v = new THREE.Vector3().fromBufferAttribute(geometry.attributes.position, i);
+                    const noise = (Math.random() - 0.5) * 0.6; 
+                    const spikeFactor = Math.random() < 0.2 ? 1.6 + Math.random() * 0.7 : 1.0; 
+                    v.multiplyScalar((1 + noise) * spikeFactor);
+                    geometry.attributes.position.setXYZ(i, v.x, v.y, v.z);
+                }
+                geometry.attributes.position.needsUpdate = true; geometry.computeVertexNormals(); 
+                material = new THREE.MeshPhongMaterial({ color: COLORS.MALIGNANT_HIGH, shininess: 70, emissive: COLORS.MALIGNANT_HIGH_EMISSIVE, emissiveIntensity: 0.6 });
+                name = CELL_TYPES.MALIGNANT_HIGH; info = 'Highly cancerous, aggressive, very irregular, may invade and spread.';
+                const nucleusSize = size * 0.5; 
+                const nucleusGeom = new THREE.SphereGeometry(nucleusSize, 16, 16); 
+                 for (let i = 0; i < nucleusGeom.attributes.position.count; i++) {
+                    const v = new THREE.Vector3().fromBufferAttribute(nucleusGeom.attributes.position, i);
+                    v.multiplyScalar(1 + (Math.random() - 0.5) * 0.25); 
+                    nucleusGeom.attributes.position.setXYZ(i, v.x, v.y, v.z);
+                }
+                nucleusGeom.computeVertexNormals();
+                const nucleusMat = new THREE.MeshPhongMaterial({ color: COLORS.NUCLEUS, emissive:0x111111 });
+                const nucleus = new THREE.Mesh(nucleusGeom, nucleusMat); cellGroup.add(nucleus);
+            }
+            const cellBody = new THREE.Mesh(geometry, material); cellGroup.add(cellBody);
+            cellGroup.userData = { type: name, name: name, info: info, grade: grade, isPathologyElement: true };
+            return cellGroup;
+        }
+
+        function createLymphNode() {
+            const geometry = new THREE.SphereGeometry(0.4, 20, 20); 
+            geometry.scale(1, 0.7, 0.6); 
+            const material = new THREE.MeshPhongMaterial({ color: COLORS.LYMPH_NODE, shininess: 20 });
+            const node = new THREE.Mesh(geometry, material);
+            node.userData = { type: CELL_TYPES.LYMPH_NODE, name: 'Lymph Node', info: 'Filters lymph fluid.', isPathologyElement: true };
+            return node;
+        }
+
+        function createLymphaticVessel(path) {
+            const geometry = new THREE.TubeGeometry(path, 8, 0.03, 6, false);
+            const material = new THREE.MeshPhongMaterial({ color: COLORS.LYMPHATIC_VESSEL, transparent: true, opacity: 0.6 });
+            const vessel = new THREE.Mesh(geometry, material);
+            vessel.userData = { type: CELL_TYPES.LYMPHATIC_VESSEL, name: 'Lymphatic Vessel', info: 'Carries lymph fluid.', isPathologyElement: true };
+            return vessel;
+        }
+
+        function setupOverviewMap() {
+            if (rendererOverview) { rendererOverview.dispose(); }
+            const mapContainer = document.getElementById('overview-map-container');
+            rendererOverview = new THREE.WebGLRenderer({ canvas: overviewMapCanvas, antialias: true });
+            rendererOverview.setSize(mapContainer.clientWidth, mapContainer.clientHeight);
+            sceneOverview = new THREE.Scene();
+            sceneOverview.background = new THREE.Color(0x323246); 
+            camOverview = new THREE.OrthographicCamera( -5, 5, 3.75, -3.75, 0.1, 100 );
+            camOverview.position.set(0, 0, 10); camOverview.lookAt(0,0,0);
+            sceneOverview.clear(); 
+            allInteractiveObjects.forEach(obj => {
+                if (obj.userData.type && obj.userData.type !== CELL_TYPES.LYMPHATIC_VESSEL && obj.userData.type !== CELL_TYPES.STRUCTURE && obj.userData.type !== CELL_TYPES.NECROTIC_DEBRIS) {
+                    let color = 0xaaaaaa; let markerSize = 0.1;
+                    switch(obj.userData.type) {
+                        case CELL_TYPES.NORMAL: color = COLORS.NORMAL_1; markerSize = 0.05; break;
+                        case CELL_TYPES.BENIGN_TUMOR: color = COLORS.BENIGN_TUMOR; markerSize = 0.08; break;
+                        case CELL_TYPES.MALIGNANT_LOW: color = COLORS.MALIGNANT_LOW; markerSize = 0.1; break;
+                        case CELL_TYPES.MALIGNANT_HIGH: color = COLORS.MALIGNANT_HIGH; markerSize = 0.12; break;
+                        case CELL_TYPES.LYMPH_NODE: color = COLORS.LYMPH_NODE; markerSize = 0.2; break;
+                        case CELL_TYPES.LYMPH_NODE_METASTATIC: color = 0xff0000; markerSize = 0.25; break; 
+                        case CELL_TYPES.ABNORMAL_LYMPHOCYTE: color = COLORS.ABNORMAL_LYMPHOCYTE; markerSize = 0.06; break;
+                    }
+                    const markerGeom = new THREE.CircleGeometry(markerSize, 16);
+                    const markerMat = new THREE.MeshBasicMaterial({ color: color });
+                    const marker = new THREE.Mesh(markerGeom, markerMat);
+                    let worldPosition = new THREE.Vector3(); obj.getWorldPosition(worldPosition);
+                    marker.position.copy(worldPosition); marker.position.z = 0; 
+                    sceneOverview.add(marker);
+                }
+            });
+            if (!overviewMapCanvas.getAttribute('listener')) { 
+                 overviewMapCanvas.addEventListener('click', onOverviewMapClick);
+                 overviewMapCanvas.setAttribute('listener', 'true');
+            }
+        }
+
+        function onOverviewMapClick(event) {
+            const rect = overviewMapCanvas.getBoundingClientRect();
+            const clickX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            const clickY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            const clickVector = new THREE.Vector3(clickX, clickY, 0.5);
+            clickVector.unproject(camOverview);
+            camSlide.position.x = clickVector.x; camSlide.position.y = clickVector.y;
+            stageXSlider.value = clickVector.x * (2 / 5); stageYSlider.value = clickVector.y * (2 / 3.75);
+        }
+        
+        function updateOverviewMapIndicator() {
+            if (!camSlide || !camOverview) return;
+            const halfFovV = THREE.MathUtils.degToRad(camSlide.fov * 0.5);
+            const viewHeightWorld = 2 * Math.tan(halfFovV) * Math.abs(camSlide.position.z - 0); 
+            const viewWidthWorld = viewHeightWorld * camSlide.aspect;
+            const mainCamPosNDC = camSlide.position.clone().project(camOverview);
+            const indicatorXPercent = (mainCamPosNDC.x + 1) / 2 * 100;
+            const indicatorYPercent = (-mainCamPosNDC.y + 1) / 2 * 100;
+            const overviewWorldWidth = camOverview.right - camOverview.left;
+            const overviewWorldHeight = camOverview.top - camOverview.bottom;
+            const indicatorWidthPercent = (viewWidthWorld / overviewWorldWidth) * 100;
+            const indicatorHeightPercent = (viewHeightWorld / overviewWorldHeight) * 100;
+            overviewMapIndicator.style.left = `${indicatorXPercent - indicatorWidthPercent / 2}%`;
+            overviewMapIndicator.style.top = `${indicatorYPercent - indicatorHeightPercent / 2}%`;
+            overviewMapIndicator.style.width = `${indicatorWidthPercent}%`;
+            overviewMapIndicator.style.height = `${indicatorHeightPercent}%`;
+        }
+
+        function toggleInstructions(show) {
+            if (show === undefined) { instructionsPanel.classList.toggle('hidden-instructions'); }
+            else if (show) { instructionsPanel.classList.remove('hidden-instructions'); }
+            else { instructionsPanel.classList.add('hidden-instructions'); }
+        }
+
+        function setupEventListeners() {
+            window.addEventListener('resize', onWindowResize);
+            const slideContainer = document.getElementById('slide-view-container'); 
+            slideContainer.addEventListener('mousemove', onSlideMouseMove);
+            slideContainer.addEventListener('click', onSlideMouseClick);
+            resetViewButton.addEventListener('click', () => {
+                focusSlider.value = 0; stageYSlider.value = 0; stageXSlider.value = 0;
+                objectiveSlider.value = 1.5; camSlide.position.set(0,0,10); 
+                objectivesState = { foundHighGrade: false, foundMetastaticLymphNode: false };
+                objectiveMessage.style.display = 'none';
+                pathologySelect.value = "default"; 
+                loadPathology("default"); 
+                setupOverviewMap();
+            });
+            toggleInstructionsButton.addEventListener('click', () => toggleInstructions());
+        }
+
+        function onWindowResize() {
+            const microContainer = document.getElementById('microscope-view-container');
+            const slideContainer = document.getElementById('slide-view-container');
+            const overviewContainer = document.getElementById('overview-map-container');
+            rendererMicroscope.setSize(microContainer.clientWidth, microContainer.clientHeight);
+            camMicroscope.aspect = microContainer.clientWidth / microContainer.clientHeight;
+            camMicroscope.updateProjectionMatrix();
+            rendererSlide.setSize(slideContainer.clientWidth, slideContainer.clientHeight);
+            camSlide.aspect = slideContainer.clientWidth / slideContainer.clientHeight;
+            camSlide.updateProjectionMatrix();
+            rendererOverview.setSize(overviewContainer.clientWidth, overviewContainer.clientHeight);
+            camOverview.updateProjectionMatrix();
+        }
+
+        function onSlideMouseMove(event) {
+            const rect = rendererSlide.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camSlide);
+            const intersects = raycaster.intersectObjects(allInteractiveObjects, true); 
+            if (intersects.length > 0) {
+                let intersectedObj = intersects[0].object;
+                while(intersectedObj.parent && intersectedObj.parent.userData && intersectedObj.parent.userData.type) { 
+                    intersectedObj = intersectedObj.parent;
+                }
+                if (intersectedObj !== lastHoveredObject) {
+                    if (intersectedObj.userData && intersectedObj.userData.name) { 
+                        infoPanel.style.display = 'block';
+                        infoTitle.textContent = intersectedObj.userData.name;
+                        infoDescription.textContent = intersectedObj.userData.info || '';
+                        infoDetails.textContent = `Type: ${intersectedObj.userData.type}`;
+                        if (intersectedObj.userData.grade) {
+                            infoDetails.textContent += ` | Grade: ${intersectedObj.userData.grade}`;
+                        }
+                    } else { infoPanel.style.display = 'none'; }
+                    lastHoveredObject = intersectedObj;
+                }
+            } else { infoPanel.style.display = 'none'; lastHoveredObject = null; }
+        }
+        
+        function onSlideMouseClick(event) {
+            const centerMouse = new THREE.Vector2(0,0); 
+            raycaster.setFromCamera(centerMouse, camSlide);
+            const intersects = raycaster.intersectObjects(allInteractiveObjects, true);
+            if (intersects.length > 0) {
+                let centeredObj = intersects[0].object;
+                while(centeredObj.parent && centeredObj.parent.userData && centeredObj.parent.userData.type) {
+                    centeredObj = centeredObj.parent;
+                }
+                if (!centeredObj.userData || !centeredObj.userData.type) return; 
+                if (centeredObj.userData.type === CELL_TYPES.MALIGNANT_HIGH && !objectivesState.foundHighGrade) {
+                    objectivesState.foundHighGrade = true;
+                    showObjectiveMessage("High-Grade Malignant Cell Identified!");
+                } else if (centeredObj.userData.type === CELL_TYPES.LYMPH_NODE_METASTATIC && !objectivesState.foundMetastaticLymphNode) {
+                    objectivesState.foundMetastaticLymphNode = true;
+                    showObjectiveMessage("Metastatic Lymph Node Identified!");
+                }
+                if (objectivesState.foundHighGrade && objectivesState.foundMetastaticLymphNode) {
+                     showObjectiveMessage("All Objectives Complete! Excellent Work, Pathologist!");
+                }
+            }
+        }
+        
+        function showObjectiveMessage(message) {
+            objectiveMessage.textContent = message;
+            objectiveMessage.style.display = 'block';
+            setTimeout(() => { objectiveMessage.style.display = 'none'; }, 4000);
+        }
+
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            objectiveLens.position.y = 2.0 - parseFloat(focusSlider.value) * 0.5;
+            stagePlatform.position.y = 1.2 + parseFloat(stageYSlider.value) * 0.2; 
+            stagePlatform.position.x = parseFloat(stageXSlider.value) * 0.2; 
+            focusKnob.rotation.y = parseFloat(focusSlider.value) * Math.PI;
+
+            const zoomFactor = parseFloat(objectiveSlider.value);
+            camSlide.fov = 40 / zoomFactor; 
+            let baseZ = 10 - zoomFactor * 1.5; 
+            const focusOffset = parseFloat(focusSlider.value) * 0.5;
+            camSlide.position.z = baseZ + focusOffset; 
+            camSlide.position.x = -parseFloat(stageXSlider.value); 
+            camSlide.position.y = -parseFloat(stageYSlider.value); 
+            camSlide.updateProjectionMatrix();
+            camSlide.lookAt(camSlide.position.x, camSlide.position.y, 0); 
+
+            highGradeMalignantCells.forEach(cell => {
+                const phaseOffset = cell.uuid.charCodeAt(0) % 10; 
+                const pulseScale = 1 + Math.sin(elapsedTime * 3 + phaseOffset) * 0.03; 
+                cell.scale.set(pulseScale, pulseScale, pulseScale);
+            });
+
+            rendererMicroscope.render(sceneMicroscope, camMicroscope);
+            rendererSlide.render(sceneSlide, camSlide);
+            if(rendererOverview && sceneOverview && camOverview) {
+                 rendererOverview.render(sceneOverview, camOverview);
+            }
+            updateOverviewMapIndicator();
+        } // End of animate function
+        
+        // Simplified startup
+        if (typeof THREE !== 'undefined') {
+            console.log("THREE object loaded. Starting app.");
+            init();
+        } else {
+            console.error("THREE object not loaded. Application cannot start.");
+            const errorDisplay = document.createElement('div');
+            errorDisplay.textContent = 'Error: Required 3D library (THREE) failed to load. Please check your connection or try refreshing.';
+            errorDisplay.style.cssText = 'position:fixed; top:0; left:0; width:100%; padding:10px; background:red; color:white; text-align:center; z-index:9999;';
+            document.body.prepend(errorDisplay);
+        }
+    }); // End of DOMContentLoaded listener
+  </script>
+</body>
+</html>

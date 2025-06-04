@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radiation Therapy Jeopardy</title>
+    <style>
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background-color: #000080; /* Dark blue background */
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr); /* 6 categories */
+            gap: 10px;
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 20px;
+            border: 5px solid gold;
+            border-radius: 10px;
+            padding: 10px;
+            background-color: #1a1a72;
+        }
+
+        .category-title {
+            background-color: #800080; /* Purple */
+            padding: 10px 5px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            text-shadow: 1px 1px 2px black;
+        }
+
+        .card {
+            background-color: #0000CD; /* Medium Blue */
+            padding: 20px 10px;
+            text-align: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.7);
+            transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
+            color: yellow;
+            text-shadow: 2px 2px 3px black;
+        }
+
+        .card:hover {
+            transform: scale(1.03);
+            background-color: #0000FF; /* Brighter blue on hover */
+        }
+
+        .card.answered {
+            background-color: #333; /* Grey out answered cards */
+            color: #777;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: inset 1px 1px 3px rgba(0,0,0,0.5);
+        }
+
+        #question-display, #answer-display {
+            background-color: #1a1a72;
+            border: 5px solid gold;
+            border-radius: 10px;
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            min-height: 200px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            word-wrap: break-word;
+            hyphens: auto;
+            margin-bottom: 20px;
+        }
+
+        #question-display h2, #answer-display h2 {
+            margin-top: 0;
+            color: yellow;
+            font-size: 2em;
+            text-shadow: 2px 2px 3px black;
+        }
+
+        #question-text, #correct-answer-text {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        #answer-input-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        #user-answer-input {
+            width: 80%;
+            padding: 10px;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-red {
+            background-color: #f44336; /* Red */
+        }
+        .btn-red:hover {
+            background-color: #da190b;
+        }
+
+        .btn-blue {
+            background-color: #008CBA; /* Blue */
+        }
+        .btn-blue:hover {
+            background-color: #007bb5;
+        }
+
+        .player-score {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: yellow;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        #player-scores {
+            display: flex;
+            gap: 40px;
+            margin-top: 20px;
+            justify-content: center;
+            width: 100%;
+            max-width: 800px;
+            flex-wrap: wrap;
+        }
+
+        .player-score span {
+            color: white;
+            font-size: 1.2em;
+        }
+
+        #final-jeopardy-setup, #final-jeopardy-question, #final-jeopardy-wager, #final-jeopardy-answer, #final-jeopardy-reveal {
+            background-color: #1a1a72;
+            border: 5px solid gold;
+            border-radius: 10px;
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            min-height: 200px;
+            text-align: center;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+        }
+
+        #final-jeopardy-setup input, #final-jeopardy-wager input, #final-jeopardy-answer input {
+            width: 50%;
+            padding: 10px;
+            font-size: 1.5em;
+            margin: 15px 0;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            color: #333;
+            text-align: center;
+        }
+
+        #final-jeopardy-reveal .final-answer-box {
+            background-color: #333;
+            padding: 20px;
+            margin: 10px;
+            border-radius: 8px;
+            color: white;
+            width: 90%;
+            font-size: 1.1em;
+            text-align: left;
+        }
+
+        #final-jeopardy-reveal .final-answer-box strong {
+            color: yellow;
+        }
+
+        #final-jeopardy-reveal .final-outcome {
+            font-size: 1.8em;
+            margin-top: 20px;
+            color: lightgreen;
+        }
+
+        #final-jeopardy-reveal .final-correct-answer {
+            font-size: 1.5em;
+            color: yellow;
+            margin-top: 20px;
+        }
+
+        /* Utility classes */
+        .hidden {
+            display: none !important;
+        }
+
+        #round-indicator {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: gold;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 3px black;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Radiation Therapy Jeopardy!</h1>
+    <div id="round-indicator">Jeopardy Round</div>
+
+    <div id="game-board"></div>
+
+    <div id="question-display" class="hidden">
+        <h2>For <span id="current-points"></span> points:</h2>
+        <p id="question-text"></p>
+        <div id="answer-input-section">
+            <input type="text" id="user-answer-input" placeholder="Type your answer here">
+            <div class="button-group">
+                <button class="btn btn-blue" onclick="checkAnswer()">Submit Answer</button>
+                <button class="btn btn-red" onclick="passQuestion()">Pass</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="answer-display" class="hidden">
+        <h2 id="answer-result-text"></h2>
+        <p id="correct-answer-text"></p>
+        <div class="button-group">
+            <button class="btn btn-green" onclick="nextQuestion()">Continue</button>
+        </div>
+    </div>
+
+    <div id="player-scores">
+        <div class="player-score">
+            <p>Player 1 (You): <span id="score-player1">0</span></p>
+        </div>
+        <div class="player-score">
+            <p>Computer 1: <span id="score-computer1">0</span></p>
+        </div>
+        <div class="player-score">
+            <p>Computer 2: <span id="score-computer2">0</span></p>
+        </div>
+    </div>
+
+    <button class="btn hidden" id="next-round-button" onclick="startDoubleJeopardy()">Start Double Jeopardy</button>
+    <button class="btn hidden" id="final-jeopardy-button" onclick="startFinalJeopardySetup()">Final Jeopardy!</button>
+
+    <div id="final-jeopardy-setup" class="hidden">
+        <h2>Final Jeopardy!</h2>
+        <p>Please enter your wager for Final Jeopardy. You can wager up to your current score, or as little as 0.</p>
+        <p>Your current score: <span id="final-jeopardy-player-score">0</span></p>
+        <input type="number" id="player-wager-input" placeholder="Enter your wager">
+        <button class="btn btn-blue" onclick="submitPlayerWager()">Submit Wager</button>
+    </div>
+
+    <div id="final-jeopardy-question" class="hidden">
+        <h2>Final Jeopardy Category: <span id="final-jeopardy-category"></span></h2>
+        <p id="final-jeopardy-q-text"></p>
+        <p>Take some time to think. When you're ready, type your answer below.</p>
+        <input type="text" id="final-user-answer-input" placeholder="Type your Final Jeopardy answer">
+        <button class="btn btn-blue" onclick="submitFinalAnswer()">Submit Final Answer</button>
+    </div>
+
+    <div id="final-jeopardy-reveal" class="hidden">
+        <h2>Final Jeopardy Results</h2>
+        <div class="final-answer-box">
+            <h3>Player 1 (You):</h3>
+            <p>Wager: $<span id="reveal-player-wager"></span></p>
+            <p>Your Answer: "<span id="reveal-player-answer"></span>"</p>
+            <p>Outcome: <span id="reveal-player-outcome"></span></p>
+        </div>
+        <div class="final-answer-box">
+            <h3>Computer 1:</h3>
+            <p>Wager: $<span id="reveal-comp1-wager"></span></p>
+            <p>Computer's Answer: "<span id="reveal-comp1-answer"></span>"</p>
+            <p>Outcome: <span id="reveal-comp1-outcome"></span></p>
+        </div>
+        <div class="final-answer-box">
+            <h3>Computer 2:</h3>
+            <p>Wager: $<span id="reveal-comp2-wager"></span></p>
+            <p>Computer's Answer: "<span id="reveal-comp2-answer"></span>"</p>
+            <p>Outcome: <span id="reveal-comp2-outcome"></span></p>
+        </div>
+        <p class="final-correct-answer">The Correct Answer Was: "<span id="final-correct-answer-text"></span>"</p>
+        <p class="final-outcome" id="game-winner"></p>
+        <button class="btn btn-green" onclick="resetGame()">Play Again</button>
+    </div>
+
+
+    <script>
+        const allQuestions = {
+            "Patient Care: Interactions & Management": [
+                { points: 100, question: "What is the primary purpose of the Health Insurance Portability and Accountability Act (HIPAA)?", answer: "To protect patient privacy and safeguard Protected Health Information (PHI).", keywords: ["patient privacy", "phi", "health information portability and accountability act"] },
+                { points: 200, question: "Besides name and date of birth, what is another crucial patient identifier commonly used before treatment?", answer: "Patient photo or medical record number.", keywords: ["patient photo", "medical record number", "mrn", "id number"] },
+                { points: 300, question: "Describe the difference between 'implied consent' and 'informed consent' in a medical setting.", answer: "Informed consent requires explaining risks, benefits, and alternatives, usually documented. Implied consent is inferred from actions or assumed in emergencies.", keywords: ["informed consent risks benefits alternatives documented", "implied consent inferred actions emergencies"] },
+                { points: 400, question: "What is the ethical principle of 'beneficence,' and how does it apply in radiation therapy?", answer: "Beneficence is acting in the patient's best interest, such as optimizing treatment for maximum benefit with minimal harm.", keywords: ["beneficence", "patient best interest", "maximum benefit minimal harm"] },
+                { points: 500, question: "A patient becomes dizzy and disoriented during treatment. What are two immediate steps a radiation therapist should take?", answer: "Stop the beam immediately and call for help/assess the situation.", keywords: ["stop beam", "call for help", "assess situation", "patient distress"] },
+                { points: 600, question: "What are 'advanced directives,' and how do they relate to a patient's right to determine the extent of their care?", answer: "Advanced directives are legal documents (like living wills or healthcare proxies) specifying care wishes if incapacitated, ensuring the patient's right to make decisions about their care.", keywords: ["advanced directives", "living will", "healthcare proxy", "patient wishes", "incapacitated"] },
+                { points: 700, question: "Name and explain two modes of communication that radiation therapists utilize, beyond just verbal or written.", answer: "Nonverbal communication (e.g., eye contact, body language, facial expressions, tone of voice) and appropriate use of touch to convey empathy and understanding.", keywords: ["nonverbal", "body language", "eye contact", "facial expressions", "tone of voice", "touch empathy"] },
+                { points: 800, question: "When dealing with language barriers, what is the recommended method for effective communication?", answer: "Use certified interpreters (in-person or phone/video); avoid using family members.", keywords: ["certified interpreters", "avoid family"] },
+                { points: 900, question: "What is the 'teach-back method,' and how does it improve patient understanding?", answer: "The teach-back method is a communication strategy where the patient explains in their own words what they need to know or do, ensuring they have understood the information given.", keywords: ["teach-back", "patient explains in own words", "verify understanding"] },
+                { points: 1000, question: "List at least four general skin care instructions for patients undergoing radiation therapy.", answer: "Wash treated area gently with lukewarm water and mild soap; pat dry; avoid lotions/powders/perfumes unless approved; wear loose, soft clothing; protect skin from sun; avoid heating pads/ice packs.", keywords: ["wash gently", "pat dry", "avoid lotions", "loose clothing", "sun protection", "no heating pads"] }
+            ],
+            "Patient Care: Records & Evaluation": [
+                { points: 100, question: "What is the primary purpose of 'cancer screening'?", answer: "To detect cancer early in asymptomatic individuals.", keywords: ["detect cancer early", "asymptomatic"] },
+                { points: 200, question: "What does the term 'nadir' refer to in the context of blood counts after radiation therapy?", answer: "The lowest blood count after treatment.", keywords: ["lowest blood count", "post treatment blood count"] },
+                { points: 300, question: "What are two common side effects of radiation therapy that can lead to weight loss, and what general dietary advice can be given?", answer: "Anorexia, nausea, mucositis, or taste changes. Dietary advice includes high calorie/protein intake, small frequent meals, hydration, and supplements.", keywords: ["anorexia", "nausea", "mucositis", "taste changes", "high calorie", "high protein", "small frequent meals", "hydration", "supplements"] },
+                { points: 400, question: "Name four pieces of information that must be included in a complete radiation therapy treatment record.", answer: "Prescription details (site, total dose, fractionation, energy), daily and accumulated target dose, date, fraction number, elapsed days, field number/description, setup instructions, imaging orders, monitor units.", keywords: ["prescription", "daily dose", "accumulated dose", "date", "fraction", "elapsed days", "field description", "setup instructions", "imaging orders", "monitor units"] },
+                { points: 500, question: "What are 'medical events' in documentation, and why are they important to report?", answer: "Medical events are reportable incidents (e.g., dose error beyond tolerance) per regulatory bodies. They are important for patient safety, quality assurance, and compliance.", keywords: ["medical events", "reportable incidents", "dose error", "patient safety", "qa", "compliance"] },
+                { points: 600, question: "Explain the difference between 'signs' and 'symptoms' in medical evaluation.", answer: "Signs are objective indications of disease observed by others (e.g., rash), while symptoms are subjective indications reported by the patient (e.g., pain).", keywords: ["signs objective", "symptoms subjective"] },
+                { points: 700, question: "What is the critical safety step 'verification,' and what three specific things should be confirmed?", answer: "Verification is a critical safety step that requires confirming patient identification (at least two identifiers), treatment site matches plan, and prescription details (dose, site, fractionation).", keywords: ["verification", "patient id", "treatment site", "prescription details"] },
+                { points: 800, question: "What is the main distinction between 'restraints' and 'immobilization devices' in patient management?", answer: "Restraints limit freedom and require a physician's order and monitoring. Immobilization devices maintain treatment position and prevent involuntary motion, which is standard practice in RT.", keywords: ["restraints limit freedom physician order", "immobilization maintain position prevent motion"] },
+                { points: 900, question: "What are 'vital signs,' and why are they important for patient monitoring?", answer: "Vital signs include temperature, pulse, respirations, blood pressure, oxygen saturation, and pain. They are crucial for monitoring a patient's physiological status and detecting abnormalities.", keywords: ["vital signs", "temperature", "pulse", "respirations", "blood pressure", "oxygen saturation", "pain", "physiological status"] },
+                { points: 1000, question: "Name and briefly describe three legal doctrines mentioned in patient care.", answer: "Respondeat Superior (employer responsible for employee actions); Res Ipsa Loquitur (negligence inferred from accident nature); Borrowed Servant Doctrine (facility liable for temporary employee if they control work).", keywords: ["respondeat superior", "res ipsa loquitur", "borrowed servant doctrine", "captain of the ship doctrine", "corporate negligence", "ostensible agency", "doctrine of foreseeability", "primum non nocere", "doctrine of informed consent", "doctrine of personal liability"] }
+            ],
+            "Safety: Physics & Radiobiology": [
+                { points: 100, question: "What are the two primary machine-produced radiation interactions with a high-Z target in a linear accelerator?", answer: "Bremsstrahlung and Characteristic X-ray production.", keywords: ["bremsstrahlung", "characteristic x-ray", "target interactions"] },
+                { points: 200, question: "Which unit of radiation measurement describes the energy deposited per unit mass, and what is its standard unit?", answer: "Absorbed dose, measured in Gray (Gy).", keywords: ["absorbed dose", "gray", "gy"] },
+                { points: 300, question: "Explain the concept of 'Half-Value Layer (HVL)' in radiation physics.", answer: "HVL is the thickness of material required to reduce the intensity of a radiation beam by 50%.", keywords: ["half-value layer", "hvl", "reduce intensity 50%"] },
+                { points: 400, question: "What is the 'oxygen effect' in radiobiology, and how does it relate to tumor control?", answer: "Oxygen enhances radiation damage by fixing free radical damage. Hypoxic (low oxygen) cells are more radioresistant, making tumor control more difficult in areas with poor oxygenation.", keywords: ["oxygen effect", "hypoxic", "radioresistant", "enhances damage"] },
+                { points: 500, question: "Differentiate between 'deterministic' and 'stochastic' effects of radiation exposure, providing an example for each.", answer: "Deterministic effects have a threshold dose and severity increases with dose (e.g., skin erythema, cataracts). Stochastic effects have no known threshold and probability increases with dose, but severity is independent of dose (e.g., cancer induction, genetic effects).", keywords: ["deterministic threshold severity", "stochastic no threshold probability", "skin erythema", "cancer induction"] },
+                { points: 600, question: "State the 'inverse-square law' and explain its implication for radiation intensity.", answer: "The inverse-square law states that radiation intensity varies inversely with the square of the distance from a point source. This means intensity decreases rapidly as distance from the source increases.", keywords: ["inverse square law", "intensity distance", "decreases rapidly"] },
+                { points: 700, question: "What are the three main photon interactions with matter relevant to radiation therapy, and at what energy ranges do they typically dominate?", answer: "Photoelectric effect (lower/diagnostic energies), Compton scattering (therapy energies in soft tissue), and Pair Production (above 1.022 MeV, significant >10 MV).", keywords: ["photoelectric effect", "compton scattering", "pair production", "photon interactions"] },
+                { points: 800, question: "What are the '4 R's of Radiobiology'?", answer: "Repair (of sublethal damage), Repopulation (of cells between fractions), Reoxygenation (of hypoxic cells), and Redistribution (of cells into sensitive phases of cell cycle).", keywords: ["repair", "repopulation", "reoxygenation", "redistribution"] },
+                { points: 900, question: "Define 'Relative Biological Effectiveness (RBE)' and how it relates to Linear Energy Transfer (LET).", answer: "RBE is the ratio of dose of reference radiation (250 kVp X-rays) to dose of test radiation needed for the same biological effect. RBE generally increases with LET (rate of energy loss along particle track), as high LET radiation causes more dense ionization and damage.", keywords: ["rbe", "relative biological effectiveness", "let", "linear energy transfer"] },
+                { points: 1000, question: "What is 'TD5/5' in radiation tissue tolerance, and give an example for a specific organ?", answer: "TD5/5 is the dose that causes a 5% severe complication rate in 5 years for a specific organ/endpoint under standard fractionation. Example: Spinal Cord ~47 Gy (myelopathy), Lung (mean) ~20 Gy (pneumonitis).", keywords: ["td5/5", "tolerance dose", "spinal cord myelopathy", "lung pneumonitis"] }
+            ],
+            "Safety: Protection & QA": [
+                { points: 100, question: "What are the three basic methods of radiation protection for personnel?", answer: "Time, Distance, and Shielding.", keywords: ["time", "distance", "shielding"] },
+                { points: 200, question: "What is the occupational effective dose limit for a radiation worker in one year?", answer: "50 mSv (5 rem).", keywords: ["50 msv", "5 rem", "occupational limit"] },
+                { points: 300, question: "A 'Caution, High Radiation Area' sign indicates what range of radiation levels?", answer: "Radiation levels exceeding 1 mSv in 1 hour but less than 5 Sv in 1 hour.", keywords: ["caution high radiation area", "1 msv", "5 sv"] },
+                { points: 400, question: "Name two items that are critical to screen for before an MRI procedure and explain why.", answer: "Biomedical implants (e.g., pacemakers, aneurysm clips) can be contraindicated or malfunction. Ferrous foreign bodies (e.g., metal fragments) can move or heat up, causing injury.", keywords: ["biomedical implants", "pacemakers", "ferrous foreign bodies", "metal fragments", "mri screening"] },
+                { points: 500, question: "During daily linear accelerator warm-up, what is the typical tolerance for laser alignment at isocenter?", answer: "± 2 mm (non-IMRT), ± 1.5 mm (IMRT), or ± 1 mm (SRS/SBRT).", keywords: ["laser alignment tolerance", "2mm", "1.5mm", "1mm", "isocenter"] },
+                { points: 600, question: "What are the two main types of radiation shielding barriers in a treatment vault, and which one protects against the primary beam?", answer: "Primary barriers (protect against direct beam) and Secondary barriers (protect against scatter and leakage radiation). Primary barriers protect against the primary beam.", keywords: ["primary barriers", "secondary barriers", "direct beam"] },
+                { points: 700, question: "What is the purpose of a 'Material Safety Data Sheet (MSDS),' and where should it be located?", answer: "An MSDS provides detailed information on chemical hazards, safe handling, PPE, first aid, and spill procedures. It must be readily accessible.", keywords: ["msds", "material safety data sheet", "chemical hazards", "readily accessible"] },
+                { points: 800, question: "Name two common types of personnel monitoring devices.", answer: "TLD (Thermoluminescent Dosimeter) and OSL (Optically Stimulated Luminescence) dosimeters.", keywords: ["tld", "osl", "dosimeters"] },
+                { points: 900, question: "What are the NRC Regulations 10 CFR Part 20 and Part 35 primarily concerned with?", answer: "10 CFR Part 20 governs standards for protection against radiation from all licensed radioactive materials, defining dose limits and requirements. 10 CFR Part 35 regulates medical use of byproduct material, including brachytherapy sources and radiopharmaceuticals.", keywords: ["nrc 10 cfr part 20", "nrc 10 cfr part 35", "radiation protection standards", "medical byproduct material"] },
+                { points: 1000, question: "What is the typical daily output constancy tolerance for a linear accelerator?", answer: "±3%.", keywords: ["output constancy tolerance", "linear accelerator qa", "3%"] }
+            ],
+            "Procedures: Treatment Sites & Tumors": [
+                { points: 100, question: "What is the most common distant metastatic site for breast cancer?", answer: "Bone.", keywords: ["bone", "breast cancer mets"] },
+                { points: 200, question: "For which head and neck cancer site is HPV status often an important prognostic factor?", answer: "Oropharynx (especially tonsil, base of tongue).", keywords: ["oropharynx", "hpv", "tonsil", "base of tongue"] },
+                { points: 300, question: "What are the 'B symptoms' commonly associated with lymphoma?", answer: "Fever, night sweats, and unexplained weight loss (>10% in 6 months).", keywords: ["b symptoms", "fever", "night sweats", "weight loss"] },
+                { points: 400, question: "Which staging system is commonly used for lymphoma, and what are its general stages?", answer: "Ann Arbor Staging system (Stages I-IV), based on nodal sites, diaphragm involvement, extranodal spread, and B symptoms.", keywords: ["ann arbor staging", "lymphoma stages"] },
+                { points: 500, question: "A patient presents with sudden onset back pain, leg weakness, and changes in bowel/bladder function. What oncologic emergency should be suspected, and what is the typical urgent management?", answer: "Spinal Cord Compression. Urgent steroids + radiation therapy (+/- surgery).", keywords: ["spinal cord compression", "steroids", "radiation therapy"] },
+                { points: 600, question: "What is the most common histological type of head and neck cancer?", answer: "Squamous Cell Carcinoma (SCC).", keywords: ["squamous cell carcinoma", "scc", "head and neck cancer"] },
+                { points: 700, question: "What is the standard definitive treatment for muscle-invasive bladder cancer for patients who cannot undergo cystectomy?", answer: "Part of bladder preservation therapy with chemoradiation.", keywords: ["bladder cancer", "chemoradiation", "bladder preservation"] },
+                { points: 800, question: "For which tumor type is 'Total Skin Electron Beam Therapy (TSEBT)' a primary radiation treatment option?", answer: "Mycosis Fungoides (Cutaneous T-cell lymphoma).", keywords: ["mycosis fungoides", "tsebt", "total skin electron beam therapy"] },
+                { points: 900, question: "What is the primary role of radiation therapy in the management of metastatic bone disease?", answer: "Primarily palliative for pain relief, and to prevent/treat fracture or spinal cord compression.", keywords: ["metastatic bone disease", "palliation", "pain relief", "fracture prevention"] },
+                { points: 1000, question: "For what benign conditions might prophylactic low-dose radiation therapy be used post-surgery?", answer: "Heterotopic Ossification (HO) and Keloids.", keywords: ["heterotopic ossification", "keloids", "prophylactic rt"] }
+            ],
+            "Procedures: Planning & Delivery": [
+                { points: 100, question: "What is the standard file format for transmitting medical images and radiation therapy objects?", answer: "DICOM (Digital Imaging and Communications in Medicine).", keywords: ["dicom", "digital imaging communications in medicine"] },
+                { points: 200, question: "What is the purpose of 'bolus' in radiation therapy?", answer: "Tissue-equivalent material placed on the skin to increase surface dose and/or decrease the depth of maximum dose (dmax).", keywords: ["bolus", "surface dose", "dmax"] },
+                { points: 300, question: "In CT simulation, what do 'Window Level (WL)' and 'Window Width (WW)' control, respectively?", answer: "Window Level (WL) controls the brightness of the image, while Window Width (WW) controls the contrast.", keywords: ["window level", "window width", "brightness", "contrast"] },
+                { points: 400, question: "Describe the difference between 'SSD' and 'SAD' setups in radiation therapy.", answer: "SSD (Source-Skin Distance) setup means the patient's skin is at a fixed distance from the source. SAD (Source-Axis Distance) setup means the isocenter (target) is at a fixed distance from the source, typically 100 cm for linacs.", keywords: ["ssd", "sad", "source skin distance", "source axis distance", "isocenter"] },
+                { points: 500, question: "What is the purpose of a 'Record and Verify (R&V) system' in treatment administration, and name two parameters that cannot be checked by the R&V system and must be manually verified by the therapist.", answer: "R&V systems compare planned parameters to machine settings to prevent incorrect setup. Parameters not checked by R&V include: patient identity, patient's physical position/setup, use/placement of immobilization, bolus/shielding/trays/blocks, skin marks/tattoos alignment, bladder/rectal prep, physical/clinical status, consent.", keywords: ["record and verify", "r&v", "patient identity", "physical position", "immobilization", "bolus", "skin marks"] },
+                { points: 600, question: "What is 'CT Number (Hounsfield Unit, HU),' and what is its value for water?", answer: "CT Number (Hounsfield Unit) is a quantitative value representing tissue density relative to water. Water is 0 HU.", keywords: ["ct number", "hounsfield unit", "hu", "tissue density", "water 0 hu"] },
+                { points: 700, question: "Differentiate between 'GTV,' 'CTV,' and 'PTV' in treatment volume definition.", answer: "GTV (Gross Tumor Volume) is the visible tumor; CTV (Clinical Target Volume) includes GTV plus microscopic disease; PTV (Planning Target Volume) adds a margin to CTV for patient/organ motion and setup variability.", keywords: ["gtv", "ctv", "ptv", "gross tumor volume", "clinical target volume", "planning target volume", "tumor volume definition"] },
+                { points: 800, question: "What are two common methods of Image-Guided Radiation Therapy (IGRT) used to verify patient setup?", answer: "kV imaging (e.g., On-Board Imager/OBI, Cone Beam CT) and MV imaging (e.g., Electronic Portal Imaging Device/EPID).", keywords: ["igrt", "image guided radiation therapy", "kv imaging", "mv imaging", "obi", "cbct", "epid"] },
+                { points: 900, question: "What is the main difference between 'IMRT' and 'VMAT'?", answer: "IMRT delivers radiation with non-uniform beam intensities using multiple static fields (or step-and-shoot). VMAT is a type of IMRT where the gantry rotates continuously while MLCs, dose rate, and gantry speed vary, allowing for more efficient delivery.", keywords: ["imrt", "vmat", "intensity modulated radiation therapy", "volumetric arc therapy", "static fields", "gantry rotation"] },
+                { points: 1000, question: "Explain the concept of 'abutting fields' and why 'gap calculations' are necessary.", answer: "Abutting fields are adjacent treatment fields that meet. Gap calculations are necessary to ensure a smooth dose transition at depth, avoiding hot or cold spots due to beam divergence at the junction.", keywords: ["abutting fields", "gap calculations", "dose transition", "hot spots", "cold spots"] }
+            ]
+        };
+
+        const gameBoard = document.getElementById('game-board');
+        const questionDisplay = document.getElementById('question-display');
+        const answerDisplay = document.getElementById('answer-display');
+        const currentPointsSpan = document.getElementById('current-points');
+        const questionText = document.getElementById('question-text');
+        const userAnswerInput = document.getElementById('user-answer-input');
+        const answerResultText = document.getElementById('answer-result-text');
+        const correctAnswerText = document.getElementById('correct-answer-text');
+        const nextRoundButton = document.getElementById('next-round-button');
+        const finalJeopardyButton = document.getElementById('final-jeopardy-button');
+        const roundIndicator = document.getElementById('round-indicator');
+
+
+        const scorePlayer1 = document.getElementById('score-player1');
+        const scoreComputer1 = document.getElementById('score-computer1');
+        const scoreComputer2 = document.getElementById('score-computer2');
+
+        let currentQuestion = null;
+        let currentCardElement = null;
+        let scores = {
+            player1: 0,
+            computer1: 0,
+            computer2: 0
+        };
+        let questionsAnsweredInRound = 0;
+        let currentRound = 1; // 1 for Jeopardy, 2 for Double Jeopardy
+        const questionsPerRoundPerCategory = 5;
+        const totalQuestionsPerRound = Object.keys(allQuestions).length * questionsPerRoundPerCategory;
+
+        let availableQuestions = {}; // Store questions not yet used
+        let usedQuestions = {}; // Store questions used in the current round
+        let masterUsedQuestions = {}; // Store questions used across all rounds to prevent repeats
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function prepareQuestionsForRound() {
+            availableQuestions = {};
+            // Deep copy allQuestions to availableQuestions and initialize masterUsedQuestions
+            for (const categoryName in allQuestions) {
+                availableQuestions[categoryName] = JSON.parse(JSON.stringify(allQuestions[categoryName]));
+                if (!masterUsedQuestions[categoryName]) {
+                    masterUsedQuestions[categoryName] = new Set();
+                }
+            }
+
+            // Filter out master used questions
+            for (const categoryName in availableQuestions) {
+                availableQuestions[categoryName] = availableQuestions[categoryName].filter(q => !masterUsedQuestions[categoryName].has(q.question));
+                shuffleArray(availableQuestions[categoryName]);
+            }
+
+            usedQuestions = {}; // Reset for the current round
+            questionsAnsweredInRound = 0;
+        }
+
+
+        function initializeBoard() {
+            prepareQuestionsForRound(); // Populate availableQuestions and clear usedQuestions for the round
+
+            gameBoard.innerHTML = '';
+            for (const categoryName in allQuestions) { // Use allQuestions for category titles
+                const categoryTitle = document.createElement('div');
+                categoryTitle.className = 'category-title';
+                categoryTitle.textContent = categoryName;
+                gameBoard.appendChild(categoryTitle);
+            }
+
+            const pointValues = [100, 200, 300, 400, 500];
+            const displayPointValues = currentRound === 1 ? pointValues : pointValues.map(p => p * 2);
+
+            for (let i = 0; i < questionsPerRoundPerCategory; i++) {
+                for (const categoryName in allQuestions) {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+
+                    // Select a question that hasn't been used in this round (or any previous round)
+                    const questionIndex = i; // Map the card position to an index in the shuffled available questions
+                    const questionData = availableQuestions[categoryName] ? availableQuestions[categoryName][questionIndex] : null;
+
+                    if (questionData) {
+                        card.textContent = displayPointValues[i]; // Use doubled points for Double Jeopardy
+                        card.dataset.category = categoryName;
+                        card.dataset.originalPoints = pointValues[i]; // Store original for currentQuestion logic
+                        card.dataset.points = displayPointValues[i]; // Store displayed points
+                        card.onclick = () => selectQuestion(card, questionData);
+
+                        // Store the question data for this specific card
+                        if (!usedQuestions[categoryName]) {
+                            usedQuestions[categoryName] = {};
+                        }
+                        usedQuestions[categoryName][displayPointValues[i]] = questionData;
+
+                    } else {
+                        card.textContent = 'N/A';
+                        card.classList.add('answered');
+                        card.style.cursor = 'not-allowed';
+                    }
+                    gameBoard.appendChild(card);
+                }
+            }
+            updateScoresDisplay();
+            updateRoundIndicator();
+            nextRoundButton.classList.add('hidden');
+            finalJeopardyButton.classList.add('hidden');
+        }
+
+        function updateRoundIndicator() {
+            roundIndicator.textContent = currentRound === 1 ? "Jeopardy Round" : "Double Jeopardy Round";
+        }
+
+
+        function selectQuestion(cardElement, questionDataFromAvailable) {
+            if (cardElement.classList.contains('answered')) {
+                return;
+            }
+
+            currentCardElement = cardElement;
+            // Get the actual question data based on category and points, which was stored during board creation
+            const categoryName = cardElement.dataset.category;
+            const pointsValue = cardElement.dataset.points; // This is the displayed points, already doubled if in DJ round
+            currentQuestion = usedQuestions[categoryName][pointsValue];
+
+
+            gameBoard.classList.add('hidden');
+            questionDisplay.classList.remove('hidden');
+
+            currentPointsSpan.textContent = currentQuestion.points * (currentRound === 2 ? 2 : 1);
+            questionText.textContent = currentQuestion.question;
+            userAnswerInput.value = '';
+            userAnswerInput.focus();
+        }
+
+        function checkAnswer() {
+            const userAnswer = userAnswerInput.value.trim().toLowerCase();
+            const correctKeywords = currentQuestion.keywords;
+
+            let isCorrect = false;
+            // Check if any of the keywords are present in the user's answer
+            if (correctKeywords && correctKeywords.length > 0) {
+                for (const keyword of correctKeywords) {
+                    if (userAnswer.includes(keyword.toLowerCase())) {
+                        isCorrect = true;
+                        break;
+                    }
+                }
+            } else { // Fallback for direct match if no keywords
+                if (userAnswer === currentQuestion.answer.trim().toLowerCase()) {
+                    isCorrect = true;
+                }
+            }
+
+            questionDisplay.classList.add('hidden');
+            answerDisplay.classList.remove('hidden');
+
+            correctAnswerText.innerHTML = `The correct answer was: <strong>${currentQuestion.answer}</strong>`;
+
+            const pointsAwarded = currentQuestion.points * (currentRound === 2 ? 2 : 1);
+
+            if (isCorrect) {
+                answerResultText.textContent = "Correct!";
+                answerResultText.style.color = "lightgreen";
+                scores.player1 += pointsAwarded;
+            } else {
+                answerResultText.textContent = "Incorrect.";
+                answerResultText.style.color = "red";
+                scores.player1 -= pointsAwarded;
+            }
+            questionsAnsweredInRound++;
+
+            // Mark question as used in master list
+            masterUsedQuestions[currentQuestion.category || currentCardElement.dataset.category].add(currentQuestion.question);
+
+            updateScoresDisplay();
+        }
+
+        function passQuestion() {
+            questionDisplay.classList.add('hidden');
+            answerDisplay.classList.remove('hidden');
+
+            answerResultText.textContent = "You passed on this question.";
+            answerResultText.style.color = "orange";
+            correctAnswerText.innerHTML = `The correct answer was: <strong>${currentQuestion.answer}</strong>`;
+            questionsAnsweredInRound++;
+
+            // Mark question as used in master list
+            masterUsedQuestions[currentQuestion.category || currentCardElement.dataset.category].add(currentQuestion.question);
+
+            updateScoresDisplay();
+        }
+
+        function nextQuestion() {
+            currentCardElement.classList.add('answered');
+            answerDisplay.classList.add('hidden');
+            gameBoard.classList.remove('hidden');
+
+            computerTurn(); // Let computers try to answer if they want
+
+            if (questionsAnsweredInRound === totalQuestionsPerRound) {
+                if (currentRound === 1) {
+                    nextRoundButton.classList.remove('hidden');
+                } else if (currentRound === 2) {
+                    finalJeopardyButton.classList.remove('hidden');
+                }
+            }
+        }
+
+        function updateScoresDisplay() {
+            scorePlayer1.textContent = scores.player1;
+            scoreComputer1.textContent = scores.computer1;
+            scoreComputer2.textContent = scores.computer2;
+        }
+
+        function computerTurn() {
+            // For a solo game, computers only get points if the player passes/is wrong.
+            // This is a simple logic: if player was wrong or passed, computers have a chance to get points.
+            const computerChance = 0.5; // 50% chance for each computer
+            if (Math.random() < computerChance) {
+                const compIndex = Math.floor(Math.random() * 2) + 1; // 1 or 2
+                const compScoreKey = `computer${compIndex}`;
+                const pointsAwarded = currentQuestion.points * (currentRound === 2 ? 2 : 1);
+
+                if (Math.random() < 0.7) { // 70% chance to get it right
+                    scores[compScoreKey] += pointsAwarded;
+                } else {
+                    scores[compScoreKey] -= pointsAwarded;
+                }
+            }
+            updateScoresDisplay();
+        }
+
+        function startDoubleJeopardy() {
+            currentRound = 2;
+            nextRoundButton.classList.add('hidden');
+            initializeBoard(); // This will regenerate the board with new questions and doubled points
+            gameBoard.classList.remove('hidden'); // Ensure the board is visible for the new round
+        }
+
+        // --- Final Jeopardy Logic ---
+        const finalJeopardySetup = document.getElementById('final-jeopardy-setup');
+        const finalJeopardyQuestionDiv = document.getElementById('final-jeopardy-question');
+        const finalJeopardyReveal = document.getElementById('final-jeopardy-reveal');
+
+        const finalJeopardyPlayerScoreSpan = document.getElementById('final-jeopardy-player-score');
+        const playerWagerInput = document.getElementById('player-wager-input');
+
+        const finalJeopardyCategorySpan = document.getElementById('final-jeopardy-category');
+        const finalJeopardyQText = document.getElementById('final-jeopardy-q-text');
+        const finalUserAnswerInput = document.getElementById('final-user-answer-input');
+
+        const revealPlayerWager = document.getElementById('reveal-player-wager');
+        const revealPlayerAnswer = document.getElementById('reveal-player-answer');
+        const revealPlayerOutcome = document.getElementById('reveal-player-outcome');
+
+        const revealComp1Wager = document.getElementById('reveal-comp1-wager');
+        const revealComp1Answer = document.getElementById('reveal-comp1-answer');
+        const revealComp1Outcome = document='reveal-comp1-outcome';
+
+        const revealComp2Wager = document.getElementById('reveal-comp2-wager');
+        const revealComp2Answer = document.getElementById('reveal-comp2-answer');
+        const revealComp2Outcome = document.getElementById('reveal-comp2-outcome');
+
+        const finalCorrectAnswerText = document.getElementById('final-correct-answer-text');
+        const gameWinner = document.getElementById('game-winner');
+
+        let playerWager = 0;
+        let comp1Wager = 0;
+        let comp2Wager = 0;
+        let finalJeopardyCorrectAnswer = '';
+        let finalJeopardyUserAnswer = '';
+        let finalJeopardyComp1Answer = '';
+        let finalJeopardyComp2Answer = '';
+
+        const finalJeopardyData = {
+            category: "Radiation Physics & Safety Principles",
+            question: "This NRC regulation part governs standards for protection against radiation from all licensed radioactive materials, defining dose limits for occupational workers, the public, and embryo/fetus.",
+            answer: "10 CFR Part 20",
+            keywords: ["10 cfr part 20", "nrc regulation part 20"]
+        };
+
+
+        function startFinalJeopardySetup() {
+            gameBoard.classList.add('hidden');
+            finalJeopardyButton.classList.add('hidden');
+            finalJeopardySetup.classList.remove('hidden');
+            finalJeopardyPlayerScoreSpan.textContent = scores.player1;
+            playerWagerInput.value = '';
+
+            // Computer wagers (simple logic)
+            comp1Wager = Math.max(0, Math.min(scores.computer1, Math.floor(Math.random() * scores.computer1)));
+            comp2Wager = Math.max(0, Math.min(scores.computer2, Math.floor(Math.random() * scores.computer2)));
+        }
+
+        function submitPlayerWager() {
+            playerWager = parseInt(playerWagerInput.value);
+            if (isNaN(playerWager) || playerWager < 0 || playerWager > scores.player1) {
+                alert(`Please enter a valid wager between 0 and ${scores.player1}.`);
+                return;
+            }
+
+            finalJeopardySetup.classList.add('hidden');
+            finalJeopardyQuestionDiv.classList.remove('hidden');
+            finalJeopardyCategorySpan.textContent = finalJeopardyData.category;
+            finalJeopardyQText.textContent = finalJeopardyData.question;
+            finalJeopardyCorrectAnswer = finalJeopardyData.answer;
+            finalUserAnswerInput.value = '';
+
+             // Computer answers (simple logic for now)
+            finalJeopardyComp1Answer = Math.random() < 0.6 ? finalJeopardyData.answer : "Incorrect Answer 1"; // 60% correct
+            finalJeopardyComp2Answer = Math.random() < 0.5 ? finalJeopardyData.answer : "Incorrect Answer 2"; // 50% correct
+        }
+
+        function checkFinalAnswer(userAnswer, correctKeywords) {
+            userAnswer = userAnswer.toLowerCase();
+            if (correctKeywords && correctKeywords.length > 0) {
+                for (const keyword of correctKeywords) {
+                    if (userAnswer.includes(keyword.toLowerCase())) {
+                        return true;
+                    }
+                }
+            } else { // Fallback for direct match if no keywords
+                return userAnswer === finalJeopardyData.answer.toLowerCase();
+            }
+            return false;
+        }
+
+        function submitFinalAnswer() {
+            finalJeopardyUserAnswer = finalUserAnswerInput.value.trim();
+
+            finalJeopardyQuestionDiv.classList.add('hidden');
+            finalJeopardyReveal.classList.remove('hidden');
+
+            displayFinalJeopardyResults();
+        }
+
+        function displayFinalJeopardyResults() {
+            revealPlayerWager.textContent = playerWager;
+            revealPlayerAnswer.textContent = finalJeopardyUserAnswer || "[No answer]";
+            revealComp1Wager.textContent = comp1Wager;
+            revealComp1Answer.textContent = finalJeopardyComp1Answer || "[No answer]";
+            revealComp2Wager.textContent = comp2Wager;
+            revealComp2Answer.textContent = finalJeopardyComp2Answer || "[No answer]";
+            finalCorrectAnswerText.textContent = finalJeopardyCorrectAnswer;
+
+            // Player 1
+            if (checkFinalAnswer(finalJeopardyUserAnswer, finalJeopardyData.keywords)) {
+                scores.player1 += playerWager;
+                revealPlayerOutcome.textContent = "Correct! Score increased.";
+                revealPlayerOutcome.style.color = "lightgreen";
+            } else {
+                scores.player1 -= playerWager;
+                revealPlayerOutcome.textContent = "Incorrect! Score decreased.";
+                revealPlayerOutcome.style.color = "red";
+            }
+
+            // Computer 1
+            if (checkFinalAnswer(finalJeopardyComp1Answer, finalJeopardyData.keywords)) {
+                scores.computer1 += comp1Wager;
+                revealComp1Outcome.textContent = "Correct! Score increased.";
+                revealComp1Outcome.style.color = "lightgreen";
+            } else {
+                scores.computer1 -= comp1Wager;
+                revealComp1Outcome.textContent = "Incorrect! Score decreased.";
+                revealComp1Outcome.style.color = "red";
+            }
+
+            // Computer 2
+            if (checkFinalAnswer(finalJeopardyComp2Answer, finalJeopardyData.keywords)) {
+                scores.computer2 += comp2Wager;
+                revealComp2Outcome.textContent = "Correct! Score increased.";
+                revealComp2Outcome.style.color = "lightgreen";
+            } else {
+                scores.computer2 -= comp2Wager;
+                revealComp2Outcome.textContent = "Incorrect! Score decreased.";
+                revealComp2Outcome.style.color = "red";
+            }
+
+            updateScoresDisplay();
+            determineWinner();
+        }
+
+        function determineWinner() {
+            let winner = 'Player 1 (You)';
+            let maxScore = scores.player1;
+
+            if (scores.computer1 > maxScore) {
+                maxScore = scores.computer1;
+                winner = 'Computer 1';
+            } else if (scores.computer1 === maxScore) {
+                winner += ' and Computer 1';
+            }
+
+            if (scores.computer2 > maxScore) {
+                maxScore = scores.computer2;
+                winner = 'Computer 2';
+            } else if (scores.computer2 === maxScore) {
+                winner += ' and Computer 2';
+            }
+
+            gameWinner.textContent = `The winner is: ${winner} with a score of $${maxScore}!`;
+        }
+
+        function resetGame() {
+            scores = {
+                player1: 0,
+                computer1: 0,
+                computer2: 0
+            };
+            currentRound = 1;
+            masterUsedQuestions = {}; // Clear all used questions
+            questionsAnsweredInRound = 0;
+            finalJeopardyReveal.classList.add('hidden');
+            gameBoard.classList.remove('hidden');
+            finalJeopardyButton.classList.add('hidden');
+            initializeBoard();
+        }
+
+        // Initialize the game
+        initializeBoard();
+    </script>
+</body>
+</html>

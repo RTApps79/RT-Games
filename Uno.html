@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Radiation Therapy UNO</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f3f6fa; margin: 0; padding: 20px; }
+    h2 { text-align: center; color: #333; }
+    
+    #start-screen {
+      max-width: 600px; margin: 50px auto; padding: 30px; background: #fff;
+      border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center;
+    }
+    #start-screen h2 { margin-top: 0; }
+    #start-screen p { margin-bottom: 15px; line-height: 1.6; color: #555; }
+    #start-screen label { margin-right: 10px; font-weight: bold; }
+    #start-screen input[type="number"] {
+      width: 60px; padding: 8px; border-radius: 4px; border: 1px solid #ddd;
+      text-align: center; font-size: 16px;
+    }
+    #start-screen button, .game-button {
+      padding: 12px 24px; font-size: 16px; border-radius: 6px; border: none;
+      background: #007bff; color: #fff; cursor: pointer;
+      transition: background-color 0.2s; margin-top: 20px;
+    }
+    #start-screen button:hover, .game-button:hover:not(:disabled) { background: #0056b3; }
+    .game-button:disabled { background: #ccc; cursor: not-allowed; }
+
+    #game-area { max-width: 800px; margin: 30px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0002; padding: 24px; display: none; }
+    #player-hand, #computer-hand { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; min-height: 150px; justify-content: center;}
+    .card {
+      width: 100px; height: 140px; border-radius: 8px;
+      box-shadow: 0 1px 4px #0003; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; font-size: 16px; font-weight: bold; 
+      cursor: pointer; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; user-select: none;
+      border: 2px solid #eee;
+      position: relative; 
+      overflow: hidden; 
+      text-align: center;
+      padding: 5px; box-sizing: border-box;
+    }
+    .card.playing { /* Animation for player playing card */
+        transform: scale(1.15) translateY(-20px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        z-index: 100;
+    }
+    .card.dealing { /* Animation for dealing cards */
+        animation: dealAnimation 0.5s ease-out;
+    }
+    @keyframes dealAnimation {
+        from { transform: scale(0.5) translateY(-100px) rotate(-45deg); opacity: 0; }
+        to { transform: scale(1) translateY(0) rotate(0deg); opacity: 1; }
+    }
+
+    .card:hover:not(.no-hover) { transform: scale(1.07); } /* Add .no-hover to disable hover on discard */
+    .blue { background: #4fa3ff; color: #fff; }
+    .red { background: #ff6b6b; color: #fff; }
+    .yellow { background: #ffe066; color: #333; }
+    .green { background: #51cf66; color: #fff; }
+    .wild { background: linear-gradient(45deg, #6c757d, #343a40); color: #fff; } 
+    
+    .card .card-name { font-size: 0.9em; display: block; margin-bottom: 5px; word-wrap: break-word; }
+    .card .card-color-text { font-size: 0.75em; opacity: 0.8; }
+
+
+    #discard-pile { margin: 0 auto 20px; text-align: center; }
+    #discard-card-container { display: inline-block; min-width: 110px; min-height: 150px; }
+    #discard-card { display: inline-block; } /* This span will contain the card div */
+    
+    .action-buttons { text-align: center; margin-bottom: 20px;}
+    .action-buttons button { margin: 0 5px; }
+    
+    #status { margin: 16px 0; text-align: center; font-size: 18px; min-height: 40px; color: #333;}
+    .uno { color: #d7263d; font-weight: bold; }
+    #educational-fact { 
+      text-align: center; margin: 10px auto; padding: 10px; 
+      background: #e9ecef; border-radius: 4px; color: #495057; 
+      font-size: 0.9em; max-width: 90%; line-height: 1.5;
+      display: none; /* Hidden by default */
+      border: 1px solid #ced4da;
+    }
+    #game-over-screen {
+        display: none; text-align: center; padding: 30px;
+    }
+    #game-over-screen h3 { font-size: 24px; margin-bottom: 20px; color: #007bff; }
+
+  </style>
+</head>
+<body>
+
+  <div id="start-screen">
+    <h2>Welcome to Radiation Therapy UNO!</h2>
+    <p>Match the color or symbol of the card on the discard pile. Special cards (like Machine QA or Extra Imaging) have unique actions that can change the game! Wild cards let you change the color. The first player to empty their hand wins.</p>
+    <p>As you play, look out for educational facts about the Radiation Therapy terms used on the cards!</p>
+    <div>
+      <label for="num-cards-input">Cards per hand (5-10):</label>
+      <input type="number" id="num-cards-input" value="7" min="5" max="10">
+    </div>
+    <button id="start-game-btn" class="game-button">Start Game</button>
+  </div>
+
+  <div id="game-area">
+    <h2>Radiation Therapy UNO</h2>
+    <div id="status"></div>
+    <div id="educational-fact"></div>
+    <div id="discard-pile">
+      <b>Discard Pile:</b>
+      <div id="discard-card-container">
+        <span id="discard-card"></span> 
+      </div>
+    </div>
+    <div class="action-buttons">
+      <button id="draw-btn" class="game-button">Draw Card</button>
+    </div>
+    <div>
+      <b>Your Hand (<span id="player-card-count">0</span>):</b>
+      <div id="player-hand"></div>
+    </div>
+    <div style="margin-top: 20px;">
+      <b>Computer's Hand (<span id="computer-card-count">0</span>):</b>
+      <div id="computer-hand"></div>
+    </div>
+    <div id="game-over-screen">
+        <h3 id="game-over-message"></h3>
+        <button id="play-again-btn" class="game-button">Play Again?</button>
+    </div>
+  </div>
+
+  <script>
+    // --- Card Definitions ---
+    const COLORS = ['blue', 'red', 'yellow', 'green'];
+    const COLOR_NAMES = {
+      blue: 'Linear Accelerator',
+      red: 'CT Simulation',
+      yellow: 'Patient Care',
+      green: 'Dosimetry'
+    };
+    const ACTIONS = [
+      { type: 'skip', name: 'Machine QA', factKey: 'Machine QA' },
+      { type: 'reverse', name: 'Beam Direction Change', factKey: 'Beam Direction Change' },
+      { type: 'draw2', name: 'Extra Imaging', factKey: 'Extra Imaging' }
+    ];
+    const WILDS = [
+      { type: 'wild', name: 'Treatment Plan Review', factKey: 'Treatment Plan Review' },
+      { type: 'wild4', name: 'Emergency Physics Consult', factKey: 'Emergency Physics Consult' }
+    ];
+    const EDUCATIONAL_FACTS = {
+        'Machine QA': "Machine QA: Regular quality assurance tests ensure radiation therapy machines deliver accurate and safe treatments.",
+        'Beam Direction Change': "Beam Direction Change: Beams are often delivered from multiple angles to target tumors precisely while sparing healthy tissue.",
+        'Extra Imaging': "Extra Imaging: Image-Guided Radiation Therapy (IGRT) uses frequent imaging to verify patient and tumor position.",
+        'Treatment Plan Review': "Treatment Plan Review: Radiation oncologists, physicists, and dosimetrists review each treatment plan for safety and effectiveness.",
+        'Emergency Physics Consult': "Emergency Physics Consult: Medical physicists handle urgent issues related to treatment machines or plans."
+    };
+
+    // --- Deck Generation ---
+    function generateDeck() {
+      let deck = [];
+      COLORS.forEach(color => {
+        deck.push({ color, value: 0, name: `${COLOR_NAMES[color]} 0` });
+        for (let n = 1; n <= 9; n++) {
+          deck.push({ color, value: n, name: `${COLOR_NAMES[color]} ${n}` });
+          deck.push({ color, value: n, name: `${COLOR_NAMES[color]} ${n}` });
+        }
+        ACTIONS.forEach(action => {
+          deck.push({ color, type: action.type, name: action.name, factKey: action.factKey });
+          deck.push({ color, type: action.type, name: action.name, factKey: action.factKey });
+        });
+      });
+      WILDS.forEach(wild => {
+        for (let i = 0; i < 4; i++) {
+          deck.push({ color: 'wild', type: wild.type, name: wild.name, factKey: wild.factKey });
+        }
+      });
+      return shuffle(deck);
+    }
+
+    // --- Game State ---
+    let deck, playerHand, computerHand, discardPile, currentColor, currentValue, currentType;
+    let playerTurn = true;
+    let drawCount = 0;
+    let skipNext = false;
+    let gameIsOver = false;
+    let initialCardsCount = 7;
+
+    const startGameBtn = document.getElementById('start-game-btn');
+    const numCardsInput = document.getElementById('num-cards-input');
+    const startScreenDiv = document.getElementById('start-screen');
+    const gameAreaDiv = document.getElementById('game-area');
+    const educationalFactDiv = document.getElementById('educational-fact');
+    const gameOverScreenDiv = document.getElementById('game-over-screen');
+    const gameOverMessageEl = document.getElementById('game-over-message');
+    const playAgainBtn = document.getElementById('play-again-btn');
+
+
+    startGameBtn.onclick = () => {
+      let numCards = parseInt(numCardsInput.value);
+      if (isNaN(numCards) || numCards < 5 || numCards > 10) {
+        numCards = 7; 
+        numCardsInput.value = 7; 
+      }
+      initialCardsCount = numCards;
+      startScreenDiv.style.display = 'none';
+      gameAreaDiv.style.display = 'block';
+      gameOverScreenDiv.style.display = 'none';
+      startGameFlow();
+    };
+
+    playAgainBtn.onclick = () => {
+        gameOverScreenDiv.style.display = 'none';
+        startGameFlow(); 
+    };
+
+
+    async function startGameFlow() {
+      gameIsOver = false;
+      deck = generateDeck();
+      playerHand = [];
+      computerHand = [];
+      discardPile = [];
+      
+      const playerHandDiv = document.getElementById('player-hand');
+      const computerHandDiv = document.getElementById('computer-hand');
+      playerHandDiv.innerHTML = '';
+      computerHandDiv.innerHTML = '';
+
+      for (let i = 0; i < initialCardsCount; i++) {
+        if (deck.length > 0) playerHand.push(deck.pop());
+        else break; 
+        await dealCardAnimation(playerHandDiv, playerHand[playerHand.length-1], true, i);
+        
+        if (deck.length > 0) computerHand.push(deck.pop());
+        else break;
+        await dealCardAnimation(computerHandDiv, computerHand[computerHand.length-1], false, i);
+      }
+      
+      let firstCard;
+      do {
+        if (deck.length === 0) reshuffleDeck();
+        if (deck.length === 0) { 
+            endGame("Error: Not enough cards to start game."); return;
+        }
+        firstCard = deck.pop();
+        discardPile.push(firstCard);
+      } while (firstCard.color === 'wild');
+      
+      currentColor = firstCard.color;
+      currentValue = firstCard.value;
+      currentType = firstCard.type || null;
+      playerTurn = true;
+      drawCount = 0;
+      skipNext = false;
+      educationalFactDiv.style.display = 'none';
+      updateDisplay("Your turn! Play a card or draw.");
+    }
+
+    function dealCardAnimation(handDiv, cardData, isPlayerCard, dealIndex) {
+        return new Promise(resolve => {
+            if (!cardData) { resolve(); return; } 
+            const cardDiv = createCardDiv(cardData, -1, isPlayerCard, true); 
+            cardDiv.style.animationDelay = `${dealIndex * 0.1}s`; 
+            
+            if (isPlayerCard) {
+                // Player card is visible
+            } else {
+                cardDiv.style.background = '#bbb';
+                cardDiv.innerHTML = '<div style="font-size:40px;">🩺</div>';
+            }
+            handDiv.appendChild(cardDiv);
+            setTimeout(resolve, 500 + dealIndex * 100); 
+        });
+    }
+
+
+    // --- Utility Functions ---
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+    function cardMatches(card) {
+      if (gameIsOver) return false;
+      if (card.color === 'wild') return true;
+      if (card.color === currentColor) return true;
+      if (card.value !== undefined && card.value === currentValue) return true;
+      if (card.type && card.type === currentType && card.type !=='wild' && card.type !== 'wild4') return true;
+      return false;
+    }
+    function drawCardFromDeck(hand, count = 1) {
+      for (let i = 0; i < count; i++) {
+        if (deck.length === 0) reshuffleDeck();
+        if (deck.length > 0) hand.push(deck.pop());
+        else {
+            if (playerHand.length > 0 && computerHand.length > 0) {
+                 // Stalemate or other end condition if no cards can be drawn
+            }
+            break; 
+        }
+      }
+    }
+    function reshuffleDeck() {
+      if (discardPile.length <= 1) return; 
+      const last = discardPile.pop();
+      deck = shuffle(discardPile.filter(card => card)); 
+      discardPile = last ? [last] : [];
+      if (deck.length === 0 && discardPile.length === 0 && !last) {
+        updateDisplay("No cards left to reshuffle!");
+      }
+    }
+
+    function createCardDiv(card, idx, isPlayerCard, isDealing = false) {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = `card ${card.color || 'wild'}`;
+        if (isDealing) cardDiv.classList.add('dealing');
+        
+        cardDiv.innerHTML = `<span class="card-name">${card.name}</span>` + 
+                            `${(card.color === 'wild' || !card.color) ? '' : `<span class="card-color-text">${capitalize(COLOR_NAMES[card.color] || card.color)}</span>`}`;
+        
+        if (isPlayerCard && !isDealing) { 
+            cardDiv.onclick = () => { 
+                if (playerTurn && cardMatches(card) && !gameIsOver) {
+                    cardDiv.classList.add('playing');
+                    cardDiv.style.pointerEvents = 'none'; 
+                    setTimeout(() => {
+                        playCard(playerHand, idx, true);
+                    }, 400); 
+                }
+            };
+        }
+        if (!isPlayerCard && !isDealing && card.owner !== 'computer') { 
+             cardDiv.classList.add('no-hover'); 
+        }
+        return cardDiv;
+    }
+
+    function updateDisplay(statusMsg) {
+      if (gameIsOver && !statusMsg.toLowerCase().includes("win") && !statusMsg.toLowerCase().includes("game over")) return; 
+      
+      const playerDiv = document.getElementById('player-hand');
+      playerDiv.innerHTML = '';
+      playerHand.forEach((card, idx) => {
+        playerDiv.appendChild(createCardDiv(card, idx, true));
+      });
+      document.getElementById('player-card-count').textContent = playerHand.length;
+
+      const compDiv = document.getElementById('computer-hand');
+      compDiv.innerHTML = '';
+      for (let i = 0; i < computerHand.length; i++) {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'card no-hover'; 
+        cardDiv.style.background = '#bbb';
+        cardDiv.innerHTML = `<div style="font-size:40px;">🩺</div>`; 
+        compDiv.appendChild(cardDiv);
+      }
+      document.getElementById('computer-card-count').textContent = computerHand.length;
+
+      const discardCardContainer = document.getElementById('discard-card-container');
+      discardCardContainer.innerHTML = ''; 
+      if (discardPile.length > 0) {
+        const top = discardPile[discardPile.length - 1];
+        const topCardDiv = createCardDiv(top, -1, false); 
+        topCardDiv.classList.remove('playing', 'dealing'); 
+        topCardDiv.classList.add('no-hover');
+        if (top.originalColor === 'wild' && top.color !== 'wild') {
+             topCardDiv.className = `card ${top.color} no-hover`;
+             topCardDiv.innerHTML = `<span class="card-name">${top.name} (Chose ${capitalize(COLOR_NAMES[top.color] || top.color)})</span>`;
+        }
+        discardCardContainer.appendChild(topCardDiv);
+      }
+      
+      document.getElementById('status').innerHTML = statusMsg +
+        (playerHand.length === 1 && !gameIsOver ? ' <span class="uno">UNO!</span>' : '') +
+        (computerHand.length === 1 && !gameIsOver ? ' <span class="uno">Computer: UNO!</span>' : '');
+      
+      document.getElementById('draw-btn').disabled = !playerTurn || gameIsOver || drawCount > 0; // Disable draw button if player is forced to draw
+    }
+    function capitalize(str) {
+      return str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+    }
+
+    // --- Gameplay Functions ---
+    function playCard(hand, idx, isPlayer) {
+      if (gameIsOver) return;
+      const card = hand[idx];
+      if (!cardMatches(card)) return; 
+      
+      hand.splice(idx, 1);
+      const playedCardForDiscard = {...card, originalColor: card.color}; 
+      discardPile.push(playedCardForDiscard);
+      
+      if (card.factKey && EDUCATIONAL_FACTS[card.factKey]) {
+        educationalFactDiv.textContent = EDUCATIONAL_FACTS[card.factKey];
+        educationalFactDiv.style.display = 'block';
+      } else {
+        educationalFactDiv.style.display = 'none';
+      }
+
+      const oldColor = currentColor; 
+      currentColor = card.color === 'wild' ? oldColor : card.color; 
+      currentValue = card.value !== undefined ? card.value : null;
+      currentType = card.type || null;
+      
+      if (card.color === 'wild') {
+        if (isPlayer) {
+          chooseColor().then(chosenColor => {
+            currentColor = chosenColor;
+            discardPile[discardPile.length - 1].color = chosenColor; 
+            updateDisplayAfterColorChoice(discardPile[discardPile.length - 1], isPlayer);
+            handleAction(card, isPlayer);
+          });
+          return;
+        } else { 
+          currentColor = COLORS[Math.floor(Math.random() * 4)];
+          discardPile[discardPile.length - 1].color = currentColor; 
+          updateDisplayAfterColorChoice(discardPile[discardPile.length - 1], isPlayer);
+        }
+      }
+      handleAction(card, isPlayer);
+    }
+
+    function updateDisplayAfterColorChoice(playedCardOnDiscard, isPlayer) {
+        const discardCardContainer = document.getElementById('discard-card-container');
+        discardCardContainer.innerHTML = ''; 
+        const topCardDiv = createCardDiv(playedCardOnDiscard, -1, false); 
+        topCardDiv.classList.add('no-hover');
+        topCardDiv.className = `card ${playedCardOnDiscard.color} no-hover`; 
+        topCardDiv.innerHTML = `<span class="card-name">${playedCardOnDiscard.name} (${isPlayer ? "You chose" : "Computer chose"} ${capitalize(COLOR_NAMES[playedCardOnDiscard.color] || playedCardOnDiscard.color)})</span>`;
+        discardCardContainer.appendChild(topCardDiv);
+    }
+
+
+    function handleAction(card, isPlayer) {
+      if (gameIsOver) return;
+      let nextMsg = '';
+      if (card.type === 'skip') {
+        skipNext = true;
+        nextMsg = isPlayer ? "You played Machine QA! Computer's turn is skipped." : "Computer played Machine QA! Your turn is skipped.";
+      } else if (card.type === 'reverse') {
+        skipNext = true; 
+        nextMsg = isPlayer ? "You played Beam Direction Change! Computer's turn is skipped." : "Computer played Beam Direction Change! Your turn is skipped.";
+      } else if (card.type === 'draw2') {
+        drawCount += 2;
+        nextMsg = isPlayer ? "You played Extra Imaging! Computer draws 2 cards." : "Computer played Extra Imaging! You draw 2 cards.";
+      } else if (card.type === 'wild4') {
+        drawCount += 4;
+        nextMsg = isPlayer ? "You played Emergency Physics Consult! Computer draws 4 cards." : "Computer played Emergency Physics Consult! You draw 4 cards.";
+      }
+      
+      if (playerHand.length === 0) {
+        endGame("You win! 🎉");
+        return;
+      }
+      if (computerHand.length === 0) {
+        endGame("Computer wins! 💻");
+        return;
+      }
+      
+      if (isPlayer) { // Player just played
+        playerTurn = false; 
+        updateDisplay(nextMsg + "<br>Computer's turn...");
+        setTimeout(() => computerTurn(nextMsg), 1500); 
+      } else { // Computer just played
+        playerTurn = true; // Tentatively player's turn
+        if (drawCount > 0) {
+            // Player must draw due to computer's card
+            updateDisplay(nextMsg); // Message already says "You draw X cards"
+            // Disable draw button while forced draw is happening
+            document.getElementById('draw-btn').disabled = true;
+            setTimeout(() => {
+                drawCardFromDeck(playerHand, drawCount);
+                let statusAfterPlayerDraw = `You drew ${drawCount} card(s).`;
+                drawCount = 0; 
+                
+                if (playerHand.length === 0) { // Should not happen if drawing makes you win
+                    endGame("You win! 🎉 (by drawing last card - unusual!)");
+                    return;
+                }
+                // Player's turn is now over
+                playerTurn = false; 
+                updateDisplay(statusAfterPlayerDraw + "<br>Computer's turn...");
+                setTimeout(() => computerTurn(statusAfterPlayerDraw), 1200); 
+            }, 1500); 
+        } else {
+            // Normal turn for player
+            updateDisplay(nextMsg + "<br>Your turn! Play a card or draw.");
+        }
+      }
+    }
+
+    function endGame(message) {
+        gameIsOver = true;
+        gameOverMessageEl.textContent = message;
+        gameOverScreenDiv.style.display = 'block';
+        document.getElementById('draw-btn').disabled = true;
+        educationalFactDiv.style.display = 'none';
+        document.getElementById('status').innerHTML = message;
+    }
+
+    function chooseColor() {
+      return new Promise(resolve => {
+        const colorButtonsHTML = COLORS.map(c => 
+          `<button class="game-button" style="background:${c}; color: ${c === 'yellow' ? '#333' : '#fff'}; margin:5px;" onclick="window._unoInternalChooseColor('${c}')">${capitalize(COLOR_NAMES[c])}</button>`
+        ).join('');
+        document.getElementById('status').innerHTML = 'Choose a color for your Wild card:<br>' + colorButtonsHTML;
+        educationalFactDiv.style.display = 'none'; 
+        document.getElementById('draw-btn').disabled = true; // Disable draw while choosing color
+
+        window._unoInternalChooseColor = chosenColor => {
+          delete window._unoInternalChooseColor; 
+          document.getElementById('draw-btn').disabled = gameIsOver || !playerTurn; // Re-evaluate draw button
+          resolve(chosenColor);
+        };
+      });
+    }
+
+    async function computerTurn(statusPrefix = '') {
+      playerTurn = false; 
+      // Ensure draw button is disabled during computer's turn thinking phase
+      document.getElementById('draw-btn').disabled = true;
+      await new Promise(resolve => setTimeout(resolve, 500)); 
+
+      if (gameIsOver) return;
+
+      let currentStatus = statusPrefix;
+
+      if (skipNext) {
+        skipNext = false;
+        playerTurn = true;
+        updateDisplay(currentStatus + "<br>Your turn! Play a card or draw.");
+        return;
+      }
+      if (drawCount > 0) { // Computer is forced to draw
+        drawCardFromDeck(computerHand, drawCount);
+        currentStatus += `<br>Computer draws ${drawCount} card(s).`;
+        drawCount = 0;
+        playerTurn = true; // After computer draws, it's player's turn
+        updateDisplay(currentStatus + "<br>Your turn! Play a card or draw.");
+        return;
+      }
+      
+      const playableCardIndex = computerHand.findIndex(card => cardMatches(card));
+      
+      if (playableCardIndex !== -1) {
+        const cardToPlay = computerHand[playableCardIndex];
+        
+        currentStatus += `<br>Computer is playing ${cardToPlay.name}...`;
+        updateDisplay(currentStatus); 
+
+        await new Promise(resolve => setTimeout(resolve, 1200)); 
+
+        playCard(computerHand, playableCardIndex, false); // This will call handleAction
+      } else {
+        drawCardFromDeck(computerHand, 1);
+        currentStatus += "<br>Computer draws a card.";
+        playerTurn = true; // After computer draws because it couldn't play, it's player's turn
+        updateDisplay(currentStatus + "<br>Your turn! Play a card or draw.");
+      }
+    }
+
+    document.getElementById('draw-btn').onclick = async function() {
+      if (!playerTurn || gameIsOver || drawCount > 0) return; // Prevent drawing if forced to draw by Draw2/4
+      educationalFactDiv.style.display = 'none'; 
+      drawCardFromDeck(playerHand, 1); // Player chooses to draw 1 card
+      playerTurn = false;
+      updateDisplay("You drew a card. Computer's turn...");
+      await new Promise(resolve => setTimeout(resolve, 800));
+      computerTurn("You drew a card."); // Pass context to computerTurn
+    };
+
+  </script>
+</body>
+</html>
