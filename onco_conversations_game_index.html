@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation Conversations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Slab:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto Slab', serif;
+            background-color: #f0f4f8; /* A light, calming blue-gray */
+            color: #333;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        #game-board {
+            width: 900px;
+            height: 700px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            padding: 1.5rem;
+            gap: 1.5rem;
+        }
+        .ui-panel {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            align-items: center;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 1rem;
+        }
+        .ui-element { text-align: center; }
+        .ui-element h3 { color: #4b5563; font-size: 1em; text-transform: uppercase; letter-spacing: 1px; }
+        .ui-element p { font-size: 1.8em; font-family: 'Orbitron', sans-serif; color: #1f2937; }
+        .stat-bar-container { width: 100%; height: 10px; background-color: #e5e7eb; border-radius: 5px; overflow: hidden; }
+        .stat-bar { height: 100%; width: 50%; border-radius: 5px; transition: width 0.5s ease; }
+        #empathy-bar { background-color: #34d399; }
+        #knowledge-bar { background-color: #60a5fa; }
+        #stress-bar { background-color: #f87171; }
+        
+        #dialogue-area {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        #character-avatar {
+            width: 100px;
+            height: 100px;
+            background: #d1d5db;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3em;
+            margin-bottom: 1rem;
+        }
+        .speech-bubble {
+            position: relative;
+            background: #e5e7eb;
+            border-radius: .4em;
+            padding: 1.5rem;
+            max-width: 80%;
+            font-size: 1.2em;
+            line-height: 1.5;
+        }
+        .speech-bubble:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border: 20px solid transparent;
+            border-top-color: #e5e7eb;
+            border-bottom: 0;
+            border-left: 0;
+            margin-left: -10px;
+            margin-bottom: -20px;
+        }
+        #feedback-text {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 1em;
+            min-height: 50px;
+            color: #4b5563;
+        }
+        .feedback-correct { background-color: #d1fae5; color: #065f46; }
+        .feedback-neutral { background-color: #feefc3; color: #92400e; }
+        .feedback-incorrect { background-color: #fee2e2; color: #991b1b; }
+
+        #choice-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+        .choice-button {
+            background: #fff;
+            border: 2px solid #d1d5db;
+            color: #374151;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .choice-button:hover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            transform: scale(1.02);
+        }
+        .choice-button.disabled { pointer-events: none; opacity: 0.6; }
+        .modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 15px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 100; width: 90%; max-width: 600px; }
+        .modal h2 { font-size: 2em; color: #1e3a8a; margin-bottom: 20px; font-family: 'Orbitron', sans-serif; }
+        .modal p { font-size: 1.1em; line-height: 1.6; margin-bottom: 20px; }
+        .modal button { background-color: #3b82f6; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-family: 'Orbitron', sans-serif; font-size: 1.2em; cursor: pointer; transition: all 0.3s ease; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div id="game-board">
+        <div class="ui-panel">
+            <div class="ui-element"><h3>Day</h3><p id="day-counter">1 / 5</p></div>
+            <div class="ui-element"><h3>Empathy</h3><div class="stat-bar-container"><div id="empathy-bar" class="stat-bar"></div></div></div>
+            <div class="ui-element"><h3>Knowledge</h3><div class="stat-bar-container"><div id="knowledge-bar" class="stat-bar"></div></div></div>
+            <div class="ui-element"><h3>Stress</h3><div class="stat-bar-container"><div id="stress-bar" class="stat-bar"></div></div></div>
+        </div>
+
+        <div id="dialogue-area">
+            <div id="character-avatar"><span></span></div>
+            <div class="speech-bubble">
+                <p id="dialogue-text">...</p>
+            </div>
+            <p id="feedback-text"></p>
+        </div>
+
+        <div id="choice-area"></div>
+    </div>
+
+    <div id="startScreen" class="modal">
+        <h2>Consultation Conversations</h2>
+        <p>Welcome to the clinic. Your goal is to navigate a 5-day clinical week. Each day, you will face several conversations with patients and staff. Choose your responses wisely to build Empathy and Knowledge while managing your Stress. Good luck, therapist!</p>
+        <button id="startButton">Begin Shift</button>
+    </div>
+    
+    <div id="endScreen" class="modal hidden">
+        <h2 id="endTitle"></h2>
+        <p id="endMessage"></p>
+        <button id="restartButton">Start New Week</button>
+    </div>
+
+<script>
+// --- Setup ---
+const startButton = document.getElementById('startButton');
+const restartButton = document.getElementById('restartButton');
+const startScreen = document.getElementById('startScreen');
+const endScreen = document.getElementById('endScreen');
+const dialogueEl = document.getElementById('dialogue-text');
+const choiceAreaEl = document.getElementById('choice-area');
+const feedbackTextEl = document.getElementById('feedback-text');
+const empathyBar = document.getElementById('empathy-bar');
+const knowledgeBar = document.getElementById('knowledge-bar');
+const stressBar = document.getElementById('stress-bar');
+const dayCounterEl = document.getElementById('day-counter');
+const avatarEl = document.getElementById('character-avatar');
+
+// --- Game State ---
+let gameRunning = false;
+let availableScenarios = [], usedThisWeek = new Set();
+let currentDay = 1, scenariosThisDay = 0;
+const scenariosPerDay = 3, totalDays = 5;
+let stats = { empathy: 50, knowledge: 50, stress: 20 };
+
+// --- Scenario Data (Expanded & Nuanced) ---
+const allScenarios = [
+    { type: 'patient', avatar: '😟', dialogue: "Will this radiation treatment hurt? I'm really scared of the pain.", choices: [ { text: "You won't feel anything during the treatment itself. It's much like getting a regular X-ray.", outcome: { E: 10, K: 5, S: -5 }, feedback: "Excellent. This is reassuring, accurate, and uses a familiar analogy." }, { text: "That's a very common question. The radiation itself is painless, but some people develop skin soreness over time. We'll watch that closely together.", outcome: { E: 5, K: 10, S: -2 }, feedback: "Good. This is honest and sets realistic expectations while still being reassuring." }, { text: "It's a painless process, so there's nothing to be scared of.", outcome: { E: -5, S: 2 }, feedback: "While true, this dismisses the patient's feeling of being scared. Acknowledging their emotion is important." } ] },
+    { type: 'patient', avatar: '😠', dialogue: "My skin is getting really red and sore! Are you sure you're not burning me?", choices: [ { text: "This skin reaction is a very common and expected side effect. Let's take a look and I'll get the nurse to see if you need some cream.", outcome: { E: 10, K: 5, S: -5 }, feedback: "Perfect. You validated their concern, provided a correct explanation, and outlined an action plan." }, { text: "The oncologist said this would happen. You should have been expecting it.", outcome: { E: -15, S: 10 }, feedback: "This response is blaming and lacks empathy, which can damage trust." }, { text: "Let's check it. I'll also make sure the doctor sees it during your weekly visit. In the meantime, are you using the moisturizer as recommended?", outcome: { E: 5, K: 5, S: -3 }, feedback: "Good. This is proactive and reinforces prior education without being dismissive." } ] },
+    { type: 'preceptor', avatar: '🧐', dialogue: "I see you're taking notes. Do you have any questions about what you're observing?", choices: [ { text: "Yes, I'm a bit confused about why this specific immobilization device was chosen over a standard wingboard.", outcome: { K: 10, S: -5 }, feedback: "Good! Asking specific, relevant questions shows you are engaged and thinking critically." }, { text: "No, everything is clear right now.", outcome: { K: -5, S: 2 }, feedback: "This is a missed opportunity. Preceptors expect questions; not asking any may seem like a lack of interest." }, { text: "Why do we have to use this one? It seems to take longer to set up.", outcome: { E: -5, S: 10 }, feedback: "This question's tone sounds critical rather than curious. Frame questions positively to foster a good relationship." } ] },
+    { type: 'oncologist', avatar: '👩‍⚕️', dialogue: "The patient is ready for their boost. What's the standard total dose for a breast boost after WBRT?", choices: [ { text: "Usually it's an additional 10 Gy in 5 fractions, bringing the total to the tumor bed to around 60 Gy.", outcome: { K: 10, S: -5 }, feedback: "Excellent. A confident and correct answer." }, { text: "I believe it's 10 Gy, but I would always verify in the written prescription before setting up the plan.", outcome: { E: 2, K: 8, S: -8 }, feedback: "Very professional. You answered correctly while also vocalizing a critical safety check." }, { text: "I'm not sure, I would have to look it up.", outcome: { K: -5, S: 5 }, feedback: "While honest, a stronger answer includes how you would find the information and demonstrates some baseline knowledge." } ] },
+    { type: 'patient', avatar: '😨', dialogue: "I'm so nervous about being in that big room all by myself.", choices: [ { text: "That's a very common feeling. Remember, we'll be watching you on camera and can talk to you on the intercom. We're right here.", outcome: { E: 15, S: -10 }, feedback: "Excellent. You've normalized their fear, reminded them of safety systems, and provided strong reassurance." }, { text: "The treatment only takes a few minutes, you'll be out before you know it.", outcome: { E: -5, S: 2 }, feedback: "This minimizes the patient's feelings. While trying to be reassuring, it doesn't directly address their fear of being alone." }, { text: "I understand. Would you like to listen to some music during your treatment? We can put on a favorite radio station or CD for you.", outcome: { E: 10, S: -8 }, feedback: "A great therapeutic response. You've validated their feeling and offered a positive coping mechanism." } ] },
+    { type: 'patient', avatar: '😒', dialogue: "I really don't want to do this today. I don't think it's working anyway.", choices: [ { text: "I understand you're feeling discouraged. It's okay to feel that way. Why don't we have you speak with the doctor before we make any decisions?", outcome: { E: 15, K: 5, S: -10 }, feedback: "Perfect. You acknowledged their feelings, respected their autonomy, and followed the correct protocol by involving the physician." }, { text: "You have to have the treatment, it's on the schedule. We can't get behind.", outcome: { E: -15, S: 10 }, feedback: "This violates patient autonomy and focuses on logistics over patient care, causing stress and damaging trust." }, { text: "I hear you, but it's really important to stick with the plan. Let's just get today over with.", outcome: { E: -5, S: 5 }, feedback: "While well-intentioned, this response pressures the patient instead of exploring their concern. Deferring to the physician is the best course of action." } ] },
+];
+
+// --- Game Logic ---
+function init() {
+    startScreen.classList.add('hidden');
+    endScreen.classList.add('hidden');
+    
+    stats = { empathy: 50, knowledge: 50, stress: 20 };
+    currentDay = 1;
+    scenariosThisDay = 0;
+    usedThisWeek.clear(); // Reset for a new "week"
+    
+    loadScenario();
+    updateUI();
+    gameRunning = true;
+}
+
+function getNextScenario() {
+    let availableScenarios = allScenarios.filter(s => !usedThisWeek.has(s));
+    if (availableScenarios.length === 0) {
+        // This case should not be reached if total scenarios > total needed for 5 days
+        // but as a fallback, we could reset. For now, we assume enough content.
+        console.log("All scenarios used for the week.");
+        return null; 
+    }
+    const scenario = availableScenarios[Math.floor(Math.random() * availableScenarios.length)];
+    usedThisWeek.add(scenario);
+    return scenario;
+}
+
+function loadScenario() {
+    if (scenariosThisDay >= scenariosPerDay) {
+        currentDay++;
+        scenariosThisDay = 0;
+        if (currentDay > totalDays) {
+            endGame();
+            return;
+        }
+        showDayTransition();
+        return;
+    }
+    
+    const scenario = getNextScenario();
+    if (!scenario) {
+        endGame(true, "You've handled all available situations for this week!");
+        return;
+    }
+
+    avatarEl.textContent = scenario.avatar;
+    dialogueEl.textContent = scenario.dialogue;
+    feedbackTextEl.textContent = '';
+    feedbackTextEl.className = 'feedback-text';
+    choiceAreaEl.innerHTML = '';
+
+    // Randomize choices before displaying
+    const shuffledChoices = [...scenario.choices].sort(() => Math.random() - 0.5);
+
+    shuffledChoices.forEach(choice => {
+        const button = document.createElement('button');
+        button.className = 'choice-button';
+        button.textContent = choice.text;
+        button.onclick = () => selectChoice(choice);
+        choiceAreaEl.appendChild(button);
+    });
+}
+
+function selectChoice(choice) {
+    if (!gameRunning) return;
+    
+    document.querySelectorAll('.choice-button').forEach(btn => btn.classList.add('disabled'));
+
+    stats.empathy = Math.max(0, Math.min(100, stats.empathy + (choice.outcome.E || 0)));
+    stats.knowledge = Math.max(0, Math.min(100, stats.knowledge + (choice.outcome.K || 0)));
+    stats.stress = Math.max(0, Math.min(100, stats.stress + (choice.outcome.S || 0)));
+
+    feedbackTextEl.textContent = choice.feedback;
+    if ((choice.outcome.E || 0) >= 10) {
+        feedbackTextEl.classList.add('feedback-correct');
+    } else if ((choice.outcome.E || 0) < 0) {
+        feedbackTextEl.classList.add('feedback-incorrect');
+    } else {
+        feedbackTextEl.classList.add('feedback-neutral');
+    }
+    
+    updateUI();
+    scenariosThisDay++;
+    setTimeout(loadScenario, 4000);
+}
+
+function showDayTransition() {
+    choiceAreaEl.innerHTML = '';
+    avatarEl.textContent = '📅';
+    dialogueEl.textContent = `Day ${currentDay - 1} Complete! Your performance has been noted. Prepare for the next day.`;
+    feedbackTextEl.textContent = '';
+    feedbackTextEl.className = 'feedback-text';
+    setTimeout(loadScenario, 3000);
+}
+
+
+function updateUI() {
+    empathyBar.style.width = `${stats.empathy}%`;
+    knowledgeBar.style.width = `${stats.knowledge}%`;
+    stressBar.style.width = `${stats.stress}%`;
+    dayCounterEl.textContent = `${currentDay} / ${totalDays}`;
+}
+
+function endGame() {
+    gameRunning = false;
+    let title, message;
+    if (stats.empathy > 70 && stats.knowledge > 65 && stats.stress < 45) {
+        title = "Clinical Week Completed!";
+        message = "Excellent work! You've shown strong empathy and solid knowledge while managing your stress. You're well on your way to becoming a great therapist.";
+    } else if (stats.empathy < 40) {
+        title = "Further Training Recommended";
+        message = "You completed the week, but your interactions often lacked empathy, causing patient and staff stress. Focus on active listening and validating feelings.";
+    } else {
+        title = "Clinical Week Complete";
+        message = "You made it through the week. There are areas for improvement in communication and managing stress, but you have a solid foundation to build on.";
+    }
+    
+    document.getElementById('endTitle').textContent = title;
+    document.getElementById('endMessage').textContent = message;
+    endScreen.classList.remove('hidden');
+}
+
+
+// --- Event Listeners ---
+startButton.addEventListener('click', init);
+restartButton.addEventListener('click', init);
+
+</script>
+</body>
+</html>
