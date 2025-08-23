@@ -8,27 +8,27 @@
     body { margin: 0; overflow: hidden; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
     canvas { display: block; }
 
-    /* Main LINAC console */
-    #console-window {
-      position: absolute; top: 20px; right: 20px; width: 320px; background: rgba(247,247,247,0.9);
+    /* --- UI Panels --- */
+    .ui-panel {
+      position: absolute; top: 20px; width: 340px; background: rgba(247,247,247,0.9);
       border: 1px solid #ccc; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.18);
       z-index: 100; display: flex; flex-direction: column; backdrop-filter: blur(2px);
+      transition: transform 0.4s ease-in-out;
     }
-    #console-header { padding: 10px; background: #ececec; font-weight: 700; cursor: move;
+    .ui-header { padding: 10px; background: #ececec; font-weight: 700; cursor: move;
       border-top-left-radius: 10px; border-top-right-radius: 10px; border-bottom: 1px solid #dcdcdc; text-align: center; }
-    #console-content { padding: 12px; max-height: 80vh; overflow-y: auto; }
-    #console-content button { display: block; width: 100%; margin: 6px 0; padding: 8px 12px; font-size: 14px; cursor: pointer; }
-    #console-content strong { display: block; margin-top: 10px; margin-bottom: 6px; }
+    .ui-content { padding: 12px; max-height: 80vh; overflow-y: auto; }
+    .ui-content button { display: block; width: 100%; margin: 6px 0; padding: 8px 12px; font-size: 14px; cursor: pointer; }
+    .ui-content strong { display: block; margin-top: 10px; margin-bottom: 6px; }
 
-    /* Alignment panel */
-    #align-window {
-      position: absolute; top: 20px; left: 20px; width: 340px; background: rgba(247,247,247,0.9);
-      border: 1px solid #ccc; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.18);
-      z-index: 100; display: flex; flex-direction: column; backdrop-filter: blur(2px);
-    }
-    #align-header { padding: 10px; background: #ececec; font-weight: 700; cursor: move;
-      border-top-left-radius: 10px; border-top-right-radius: 10px; border-bottom: 1px solid #dcdcdc; text-align: center; }
-    #align-content { padding: 12px; }
+    /* Console Specifics */
+    #console-window { right: 20px; }
+    #console-window.hidden { transform: translateX(calc(100% + 40px)); }
+    
+    /* Alignment Specifics */
+    #align-window { left: 20px; }
+    #align-window.hidden { transform: translateX(calc(-100% - 40px)); }
+    
     #align-content .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 6px; }
     #align-content .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 6px; }
     #align-content .row-iso { display: grid; grid-template-columns: 20px 1fr 50px; gap: 5px; align-items: center; margin-bottom: 4px; }
@@ -36,6 +36,41 @@
     #align-content .row-iso input { width: 100%; padding: 4px; border: 1px solid #ccc; border-radius: 4px; }
     #align-content button { width: 100%; padding: 8px 12px; font-size: 13px; cursor: pointer; }
     #alignmentMessage { font-weight: 600; min-height: 2.2em; margin-top: 8px; }
+
+    /* --- Digital Readouts --- */
+    .readout-grid {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 4px 10px;
+        background: #e9e9e9;
+        padding: 8px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-family: 'Courier New', Courier, monospace;
+    }
+    .readout-label { font-weight: bold; text-align: right; }
+    .readout-value { background: #fff; padding: 2px 5px; border-radius: 3px; border: 1px solid #ddd; }
+
+    /* --- Console Toggle Button --- */
+    #console-toggle-button {
+        position: absolute;
+        top: 20px;
+        right: 360px; /* Initial position next to the visible console */
+        width: 40px;
+        height: 40px;
+        background: #333;
+        color: white;
+        border: none;
+        border-radius: 10px 0 0 10px;
+        cursor: pointer;
+        z-index: 101;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        transition: right 0.4s ease-in-out, background-color 0.2s;
+    }
+    #console-toggle-button:hover { background: #555; }
 
     /* Floating labels for parts */
     .component-label { position: absolute; background: rgba(0,0,0,0.7); color: #fff; padding: 3px 7px; border-radius: 4px;
@@ -63,13 +98,26 @@
   </script>
 </head>
 <body>
+  <!-- UI Toggle Button -->
+  <button id="console-toggle-button">«</button>
+
   <!-- LINAC Console -->
-  <div id="console-window">
-    <div id="console-header">LINAC Console</div>
-    <div id="console-content">
+  <div id="console-window" class="ui-panel">
+    <div id="console-header" class="ui-header">LINAC Console</div>
+    <div id="console-content" class="ui-content">
+      <strong>Digital Readouts</strong>
+      <div class="readout-grid">
+        <div class="readout-label">Gantry:</div><div id="readout-gantry" class="readout-value">0.0°</div>
+        <div class="readout-label">FS X:</div><div id="readout-jawX" class="readout-value">0.0 cm</div>
+        <div class="readout-label">FS Y:</div><div id="readout-jawY" class="readout-value">0.0 cm</div>
+        <div class="readout-label">Couch Vrt:</div><div id="readout-couchY" class="readout-value">0.0 cm</div>
+        <div class="readout-label">Couch Lng:</div><div id="readout-couchZ" class="readout-value">0.0 cm</div>
+        <div class="readout-label">Couch Lat:</div><div id="readout-couchX" class="readout-value">0.0 cm</div>
+      </div>
+      <hr>
       <strong>Gantry</strong>
-      <button onclick="rotateGantry(true)">Rotate Gantry ← (CCW)</button>
-      <button onclick="rotateGantry(false)">Rotate Gantry → (CW)</button>
+      <button onclick="rotateGantry(true)">Rotate Gantry → (CW)</button>
+      <button onclick="rotateGantry(false)">Rotate Gantry ← (CCW)</button>
       <hr>
       <strong>Collimator</strong>
       <button onclick="adjustJaws(true)">Open Jaws</button>
@@ -95,9 +143,9 @@
   </div>
 
   <!-- Alignment Console -->
-  <div id="align-window">
-    <div id="align-header">Patient Alignment</div>
-    <div id="align-content">
+  <div id="align-window" class="ui-panel">
+    <div id="align-header" class="ui-header">Patient Alignment</div>
+    <div id="align-content" class="ui-content">
       <div style="font-size:12px; opacity:.9; margin-bottom:6px;">Goal: Align patient tattoos to room lasers at isocenter.</div>
       <div class="row3">
         <button onclick="nudgePatient(-1,0,0)">X− (Lat)</button>
@@ -175,6 +223,7 @@
     let gantryRotatingAssembly;
     let drivestand, connectingArm, acceleratorHousing, verticalArmL, head;
     let couchGroup, couchSupportBase, couchAccordion, couchAccordionVisual, couchTopGroup, couchPlatform;
+    let initialCouchY; // For readout calculation
 
     // Imaging
     let detectorPanel, detectorArm, detectorExtended = false;
@@ -198,8 +247,9 @@
     // Lasers
     let laserX, laserY, laserZ;
 
-    // UI
+    // UI & Readouts
     const alignmentMessageElement = document.getElementById('alignmentMessage');
+    let readoutGantry, readoutJawX, readoutJawY, readoutCouchX, readoutCouchY, readoutCouchZ;
 
     // Labels
     const labels = {};
@@ -268,6 +318,8 @@
       // Controls
       controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true; controls.dampingFactor = 0.08;
+      // Prevent panning below the floor
+      controls.maxPolarAngle = Math.PI / 2;
       
       // Lights
       scene.add(new THREE.AmbientLight(0x808080));
@@ -313,9 +365,8 @@
       // Labels hookup
       hookLabels();
 
-      // UI
-      makeDraggable(document.getElementById('console-window'));
-      makeDraggable(document.getElementById('align-window'));
+      // UI Hookups
+      setupUI();
 
       // Window events
       window.addEventListener('resize', onWindowResize);
@@ -483,7 +534,7 @@
     // ---- Couch ----
     function buildCouch() {
       couchGroup = new THREE.Group(); window.couchGroup = couchGroup;
-      const initialCouchY = (couchBaseHeight/2) + groundY; 
+      initialCouchY = (couchBaseHeight/2) + groundY; 
       couchGroup.position.set(0, initialCouchY, gantryPlaneZTarget + couchSeparationOffset);
       scene.add(couchGroup); enableShadows(couchGroup);
 
@@ -523,7 +574,7 @@
 
       patientModel.rotation.x = -Math.PI/2;
       const patientOnCouchY = (couchPlatformHeight / 2) + 0.28 + 0.01;
-      patientModel.position.set(0, patientOnCouchY, 0.0);
+      patientModel.position.set(0, patientOnCouchY, -0.3);
     }
 
     // ---- Room Lasers ----
@@ -587,6 +638,7 @@
       couchTopGroup.position.z = (Math.random()-0.5) * 0.30;
       couchGroup.position.y    = (couchBaseHeight/2) + groundY + 0.20 + Math.random()*0.20;
       constrainCouch();
+      updateReadouts();
 
       alignmentMessageElement.style.color = '#333';
       alignmentMessageElement.textContent = 'New case loaded. Align tattoos to lasers, then Check Alignment.';
@@ -597,13 +649,13 @@
       couchGroup.position.y    += dy * MOVE_STEP;
       couchTopGroup.position.z += dz * MOVE_STEP;
       constrainCouch();
+      updateReadouts();
     }
 
     function centerCouch() {
       couchTopGroup.position.x = 0;
       couchTopGroup.position.z = 0;
       
-      // This logic needs to align the patient surface to the laser isocenter Y
       const patientSurfaceWorldY = new THREE.Vector3();
       tattooAnterior.getWorldPosition(patientSurfaceWorldY);
       
@@ -611,6 +663,7 @@
       couchGroup.position.y += requiredShiftY;
       
       constrainCouch();
+      updateReadouts();
     }
 
     function checkAlignment() {
@@ -641,23 +694,34 @@
     // ===== LINAC Interactions =====
     function toggleLabels() { labelsVisible = !labelsVisible; if (!labelsVisible) hideAllLabels(); else updateAllLabelVisibility(); };
 
-    function rotateGantry(clockwise = true) { const direction = clockwise ? 1 : -1; window.gantryRotatingAssembly.rotation.z += direction * 0.05; };
+    function rotateGantry(clockwise = true) { 
+        const direction = clockwise ? -1 : 1; // Flipped for IEC convention
+        gantryRotatingAssembly.rotation.z += direction * 0.01; 
+        updateReadouts();
+    };
 
-    function adjustJaws(open = true) { const delta = open ? 0.02 : -0.02; setJawOffset(THREE.MathUtils.clamp(jawOffset + delta, 0.03, headSize*0.4)); };
+    function adjustJaws(open = true) { 
+        const delta = open ? 0.02 : -0.02; 
+        setJawOffset(THREE.MathUtils.clamp(jawOffset + delta, 0.03, headSize*0.4)); 
+        updateReadouts();
+    };
 
     function moveCouch(up = true) {
       couchGroup.position.y += up ? 0.05 : -0.05;
       constrainCouch();
+      updateReadouts();
     };
 
     function moveCouchLongitudinal(towardsGantry = true) {
       const dir = towardsGantry ? -1 : 1; couchTopGroup.position.z += dir * 0.05;
       constrainCouch();
+      updateReadouts();
     };
 
     function moveCouchLateral(left = true) {
       const dir = left ? 1 : -1; couchTopGroup.position.x += dir * 0.05;
       constrainCouch();
+      updateReadouts();
     };
 
     function toggleDetector() {
@@ -672,9 +736,8 @@
             const isoLocal = gantryRotatingAssembly.worldToLocal(machineIsocenter.clone());
             const armStartPos = new THREE.Vector3(0, -newVerticalArmTotalLength / 2, 0);
             
-            const sid = 1.4; // Source-to-Image Distance of 140cm
-            const beamDir = new THREE.Vector3().subVectors(isoLocal, head.position).normalize();
-            const panelPos = new THREE.Vector3().copy(head.position).add(beamDir.multiplyScalar(sid));
+            // The final position of the panel is at the isocenter's Z depth, but maintaining the Y offset of the arm mount
+            const panelPos = new THREE.Vector3(0, armStartPos.y, isoLocal.z);
 
             const armVector = new THREE.Vector3().subVectors(panelPos, armStartPos);
             const armLength = armVector.length();
@@ -692,11 +755,9 @@
             
             // Use lookAt for robust orientation
             const headWorldPos = head.getWorldPosition(new THREE.Vector3());
-            // Define a stable "up" vector for the panel (the gantry's right direction)
             const gantryRight = new THREE.Vector3(1, 0, 0).applyQuaternion(gantryRotatingAssembly.quaternion);
             detectorPanel.up.copy(gantryRight);
             detectorPanel.lookAt(headWorldPos);
-
 
         } else {
             // Logic for RETRACTED state
@@ -723,7 +784,6 @@
 
             // --- kV Detector Side (-X mount) ---
             const detectorStartPos = sideDetectorShortArm.position.clone();
-            // Target position is at the same X,Y as the mount, but at the Z of the isocenter
             const detectorEndPos = new THREE.Vector3(detectorStartPos.x, detectorStartPos.y, isoLocal.z);
             const detectorVector = new THREE.Vector3().subVectors(detectorEndPos, detectorStartPos);
             const detectorArmLength = detectorVector.length();
@@ -759,6 +819,55 @@
       document.getElementById('coneToggleButton').textContent = isConeAttached ? 'Remove Electron Cone' : 'Attach Electron Cone';
     };
 
+    // ===== UI and Readouts =====
+    function setupUI() {
+        // Get readout elements
+        readoutGantry = document.getElementById('readout-gantry');
+        readoutJawX = document.getElementById('readout-jawX');
+        readoutJawY = document.getElementById('readout-jawY');
+        readoutCouchX = document.getElementById('readout-couchX');
+        readoutCouchY = document.getElementById('readout-couchY');
+        readoutCouchZ = document.getElementById('readout-couchZ');
+
+        // Setup console toggle
+        const toggleButton = document.getElementById('console-toggle-button');
+        const consoleWindow = document.getElementById('console-window');
+        const alignWindow = document.getElementById('align-window');
+        let panelsVisible = true;
+        
+        toggleButton.addEventListener('click', () => {
+            panelsVisible = !panelsVisible;
+            consoleWindow.classList.toggle('hidden', !panelsVisible);
+            alignWindow.classList.toggle('hidden', !panelsVisible);
+            toggleButton.innerHTML = panelsVisible ? '«' : '»';
+            toggleButton.style.right = panelsVisible ? '360px' : '20px'; // Adjust position based on console width
+        });
+        
+        // Initial readout update
+        updateReadouts();
+    }
+
+    function updateReadouts() {
+        // Gantry Angle (IEC Convention)
+        let gantryAngle = -(gantryRotatingAssembly.rotation.z * 180 / Math.PI);
+        gantryAngle = (gantryAngle % 360 + 360) % 360; // Normalize to 0-360
+        readoutGantry.textContent = `${gantryAngle.toFixed(1)}°`;
+
+        // Collimator Field Size
+        const fieldSizeX = (jawOffset * 2 * 100).toFixed(1);
+        const fieldSizeY = (jawOffset * 2 * 100).toFixed(1); // Assuming symmetric jaws for now
+        readoutJawX.textContent = `${fieldSizeX} cm`;
+        readoutJawY.textContent = `${fieldSizeY} cm`;
+
+        // Couch Position
+        const couchVrt = ((couchGroup.position.y - initialCouchY) * 100).toFixed(1);
+        const couchLng = (couchTopGroup.position.z * 100).toFixed(1);
+        const couchLat = (couchTopGroup.position.x * 100).toFixed(1);
+        readoutCouchY.textContent = `${couchVrt} cm`;
+        readoutCouchZ.textContent = `${couchLng} cm`;
+        readoutCouchX.textContent = `${couchLat} cm`;
+    }
+
     // Helpers
     function setJawOffset(val){ jawOffset = val; jawXN.position.x = -jawOffset; jawXP.position.x = jawOffset; jawYN.position.y = -jawOffset; jawYP.position.y = jawOffset; }
     function updateAccordion(){ const baseBottomWorldY = couchGroup.position.y - (couchBaseHeight/2); const h = Math.max(0.01, baseBottomWorldY - groundY); couchAccordionVisual.scale.y = h / accordionGeometricHeight; couchAccordionVisual.position.y = h/2; couchAccordion.position.x = couchGroup.position.x; couchAccordion.position.z = couchGroup.position.z; }
@@ -785,7 +894,7 @@
     function animate(){ requestAnimationFrame(animate); controls.update(); if (labelsVisible) updateAllLabelVisibility(); renderer.render(scene, camera); }
 
     // Drag utility for panels
-    function makeDraggable(element){ let pos1=0,pos2=0,pos3=0,pos4=0; const header=document.getElementById(element.id+"-header")||element; header.onmousedown=dragMouseDown; function dragMouseDown(e){ e=e||window.event; e.preventDefault(); pos3=e.clientX; pos4=e.clientY; document.onmouseup=closeDragElement; document.onmousemove=elementDrag; } function elementDrag(e){ e=e||window.event; e.preventDefault(); pos1=pos3-e.clientX; pos2=pos4-e.clientY; pos3=e.clientX; pos4=e.clientY; element.style.top=(element.offsetTop - pos2)+"px"; element.style.left=(element.offsetLeft - pos1)+"px"; } function closeDragElement(){ document.onmouseup=null; document.onmousemove=null; } }
+    function makeDraggable(element){ let pos1=0,pos2=0,pos3=0,pos4=0; const header=element.querySelector(".ui-header")||element; header.onmousedown=dragMouseDown; function dragMouseDown(e){ e=e||window.event; e.preventDefault(); pos3=e.clientX; pos4=e.clientY; document.onmouseup=closeDragElement; document.onmousemove=elementDrag; } function elementDrag(e){ e=e||window.event; e.preventDefault(); pos1=pos3-e.clientX; pos2=pos4-e.clientY; pos3=e.clientX; pos4=e.clientY; element.style.top=(element.offsetTop - pos2)+"px"; element.style.left=(element.offsetLeft - pos1)+"px"; } function closeDragElement(){ document.onmouseup=null; document.onmousemove=null; } }
 
     // Expose functions to global scope for HTML onclick handlers
     window.rotateGantry = rotateGantry;
