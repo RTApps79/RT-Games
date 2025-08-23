@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Linac Alignment Model</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+            display: flex;
+            height: 100vh;
+        }
+        #canvasContainer {
+            flex-grow: 1;
+            position: relative;
+        }
+        #c {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .controls-container {
+            width: 320px;
+            padding: 10px;
+            background-color: #e9e9e9;
+            border-left: 1px solid #ccc;
+            overflow-y: auto;
+        }
+        .section-title {
+            font-weight: bold;
+            font-size: 1em;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .controls button, .controls select {
+            margin: 3px;
+            padding: 6px 10px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        #alignmentMessage {
+            font-weight: bold;
+            margin: 10px 0;
+            min-height: 2.5em;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .button-group span {
+            display: block;
+            font-size: 12px;
+            margin: 5px 0 2px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvasContainer">
+        <canvas id="c"></canvas>
+    </div>
+    <div class="controls-container">
+        <h2 style="text-align: center; margin-top: 0;">Alignment Controls</h2>
+        
+        <div class="section-title">Patient & Couch Controls</div>
+        <div class="controls" id="alignmentControls">
+            <div class="button-group">
+                <span>X Axis</span>
+                <button onclick="movePatientAndCouch(-1, 0, 0)">X- (Left)</button>
+                <button onclick="movePatientAndCouch(1, 0, 0)">X+ (Right)</button>
+            </div>
+            <div class="button-group">
+                <span>Y Axis</span>
+                <button onclick="movePatientAndCouch(0, -1, 0)">Y- (Down)</button>
+                <button onclick="movePatientAndCouch(0, 1, 0)">Y+ (Up)</button>
+            </div>
+            <div class="button-group">
+                <span>Z Axis</span>
+                <button onclick="movePatientAndCouch(0, 0, -1)">Z- (In)</button>
+                <button onclick="movePatientAndCouch(0, 0, 1)">Z+ (Out)</button>
+            </div>
+            <button id="checkAlignBtn" onclick="checkAlignment()" style="width: 100%; margin-top: 10px; background-color: #28a745; color: white; font-weight: bold;">Check Alignment</button>
+        </div>
+        
+        <p id="alignmentMessage">Use the controls to align the patient's tattoos to the lasers.</p>
+        
+        <div class="section-title">Beam Controls</div>
+        <div class="controls" id="beamControls">
+             <button id="clearBeamsBtn" onclick="clearBeams()" style="background-color: #dc3545; color: white;">Clear Beams</button>
+        </div>
+        
+        <button onclick="setupNewLevel()" style="width:100%; margin-top: 20px;">New Level / Reset</button>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.163.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.163.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- Core Components ---
+        let scene, camera, renderer, controls;
+        let isocenter, couch, patientModel, tumor;
+        // ## ADDED TATTOO VARIABLES ##
+        let tattooAnterior, tattooLeft, tattooRight;
+        
+        // --- State Variables ---
+        let tumorOffset = new THREE.Vector3();
+        let userSetPatientPosition = new THREE.Vector3();
+        let alignmentComplete = false;
+        
+        // --- Constants ---
+        const MOVE_STEP = 0.2;
+        const ALIGNMENT_TOLERANCE = 0.2;
+        const COUCH_HEIGHT = 1.5;
+
+        // --- UI Elements ---
+        let alignmentMessageElement;
+
+        function init() {
+            // Scene Setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xdddddd);
+
+            // Renderer Setup
+            const canvas = document.querySelector('#c');
+            const canvasContainer = document.getElementById('canvasContainer');
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+            renderer.shadowMap.enabled = true;
+
+            // Camera & Controls
+            camera = new THREE.PerspectiveCamera(75, canvasContainer.clientWidth / canvasContainer.clientHeight, 0.1, 1000);
+            camera.position.set(0, 15, 30);
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 0, 0);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            directionalLight.position.set(10, 15, 10);
+            directionalLight.castShadow = true;
+            scene.add(ambientLight, directionalLight);
+
+            // Get UI Elements
+            alignmentMessageElement = document.getElementById('alignmentMessage');
+            
+            // Create Objects
+            createSceneObjects();
+            setupNewLevel();
+
+            // Event Listeners
+            window.addEventListener('resize', onWindowResize);
+
+            // Start Animation
+            animate();
+        }
+
+        function createSceneObjects() {
+            // Isocenter and Lasers (Fixed at world origin)
+            isocenter = new THREE.Object3D();
+            scene.add(isocenter);
+            
+            const laserMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, depthTest: false });
+            const laserLength = 30, laserRadius = 0.05;
+            const laserGeo = new THREE.CylinderGeometry(laserRadius, laserRadius, laserLength, 8);
+            
+            const laserX = new THREE.Mesh(laserGeo, laserMaterial);
+            laserX.rotation.z = Math.PI / 2;
+            const laserY = new THREE.Mesh(laserGeo, laserMaterial);
+            const laserZ = new THREE.Mesh(laserGeo, laserMaterial);
+            laserZ.rotation.x = Math.PI / 2;
+            
+            [laserX, laserY, laserZ].forEach(laser => {
+                laser.renderOrder = 1;
+                scene.add(laser);
+            });
+
+            // Patient Model
+            patientModel = new THREE.Group();
+            scene.add(patientModel);
+
+            const patientMat = new THREE.MeshStandardMaterial({ color: 0xAD8C74 });
+
+            // Torso
+            const torsoGeo = new THREE.CylinderGeometry(4, 3.5, 12, 16);
+            const torso = new THREE.Mesh(torsoGeo, patientMat);
+            torso.castShadow = true;
+            patientModel.add(torso);
+            
+            // Head & Neck
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 2, 12), patientMat);
+            neck.position.y = torso.geometry.parameters.height / 2 + 1;
+            patientModel.add(neck);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(2.5, 16, 16), patientMat);
+            head.position.y = neck.position.y + 1.5;
+            head.scale.set(0.8, 1, 1);
+            patientModel.add(head);
+
+            // Arms & Legs
+            const armGeo = new THREE.CylinderGeometry(0.8, 0.6, 11, 12);
+            const leftArm = new THREE.Mesh(armGeo, patientMat);
+            leftArm.position.set(-4.5, 0.5, 0);
+            patientModel.add(leftArm);
+            const rightArm = new THREE.Mesh(armGeo, patientMat);
+            rightArm.position.set(4.5, 0.5, 0);
+            patientModel.add(rightArm);
+            const legGeo = new THREE.CylinderGeometry(1.5, 1, 14, 12);
+            const leftLeg = new THREE.Mesh(legGeo, patientMat);
+            leftLeg.position.set(-1.8, -13, 0);
+            patientModel.add(leftLeg);
+            const rightLeg = new THREE.Mesh(legGeo, patientMat);
+            rightLeg.position.set(1.8, -13, 0);
+            patientModel.add(rightLeg);
+            
+            // Tumor (child of the main patient group)
+            const tumorGeo = new THREE.SphereGeometry(0.7, 32, 32);
+            const tumorMat = new THREE.MeshStandardMaterial({ 
+                color: 0x8B0000, 
+                depthTest: false,
+                transparent: true,
+                opacity: 0.8
+            });
+            tumor = new THREE.Mesh(tumorGeo, tumorMat);
+            tumor.renderOrder = 2; // Render after lasers
+            patientModel.add(tumor);
+
+            // ## CREATE TATTOOS ##
+            const tattooGeo = new THREE.SphereGeometry(0.15, 12, 12);
+            const tattooMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, depthTest: false });
+            tattooAnterior = new THREE.Mesh(tattooGeo, tattooMat);
+            tattooLeft = new THREE.Mesh(tattooGeo, tattooMat);
+            tattooRight = new THREE.Mesh(tattooGeo, tattooMat);
+            [tattooAnterior, tattooLeft, tattooRight].forEach(t => {
+                t.renderOrder = 3; // Render tattoos on top of everything
+                patientModel.add(t);
+            });
+
+            // Couch
+            const couchGeo = new THREE.BoxGeometry(12, COUCH_HEIGHT, 60);
+            const couchMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            couch = new THREE.Mesh(couchGeo, couchMat);
+            couch.receiveShadow = true;
+            scene.add(couch);
+        }
+
+        window.setupNewLevel = function() {
+            alignmentComplete = false;
+
+            // 1. Randomize the tumor's local position inside the patient's torso
+            tumorOffset.set(
+                (Math.random() - 0.5) * 4, // X offset (left/right)
+                (Math.random() - 0.5) * 8, // Y offset (sup/inf)
+                (Math.random() - 0.5) * 4  // Z offset (ant/post)
+            );
+            tumor.position.copy(tumorOffset);
+
+            // ## 2. CALCULATE AND SET TATTOO POSITIONS ##
+            const torsoParams = patientModel.children[0].geometry.parameters; // Torso is the first object
+            const y_norm = (tumorOffset.y + torsoParams.height / 2) / torsoParams.height;
+            const radiusAtY = torsoParams.radiusBottom + (torsoParams.radiusTop - torsoParams.radiusBottom) * y_norm;
+            
+            tattooAnterior.position.set(tumorOffset.x, tumorOffset.y, radiusAtY);
+            tattooLeft.position.set(-radiusAtY, tumorOffset.y, tumorOffset.z);
+            tattooRight.position.set(radiusAtY, tumorOffset.y, tumorOffset.z);
+
+
+            // 3. The correct patient position is the inverse of the tattoo's average position (which corresponds to the tumor)
+            const targetPatientPosition = new THREE.Vector3().copy(isocenter.position).sub(tumorOffset);
+
+            // 4. Start the patient at a random offset from the correct position
+            const initialOffset = new THREE.Vector3(
+                 (Math.random() * 4 + 3) * (Math.random() < 0.5 ? -1 : 1),
+                 (Math.random() * 4 + 3) * (Math.random() < 0.5 ? -1 : 1),
+                 (Math.random() * 4 + 3) * (Math.random() < 0.5 ? -1 : 1)
+            );
+            userSetPatientPosition.copy(targetPatientPosition).add(initialOffset);
+            
+            checkAlignment(); // Provide initial feedback
+        }
+
+        window.movePatientAndCouch = function(dx, dy, dz) {
+            if (alignmentComplete) return;
+            const moveVector = new THREE.Vector3(dx * MOVE_STEP, dy * MOVE_STEP, dz * MOVE_STEP);
+            userSetPatientPosition.add(moveVector);
+        }
+        
+        window.checkAlignment = function() {
+            if (!tumor) return;
+            
+            const tumorWorldPos = new THREE.Vector3();
+            tumor.getWorldPosition(tumorWorldPos);
+            
+            const distance = tumorWorldPos.distanceTo(isocenter.position);
+
+            if (distance < ALIGNMENT_TOLERANCE) {
+                alignmentMessageElement.innerHTML = "Alignment OK! Tumor is at isocenter.";
+                alignmentMessageElement.style.color = "green";
+                alignmentComplete = true;
+            } else {
+                const requiredShift = new THREE.Vector3().subVectors(isocenter.position, tumorWorldPos);
+                let feedback = `Tumor is ${distance.toFixed(1)} units from isocenter. <br/> <b>Required Shifts:</b> `;
+                if (Math.abs(requiredShift.x) > 0.1) feedback += `X: ${requiredShift.x.toFixed(1)} `;
+                if (Math.abs(requiredShift.y) > 0.1) feedback += `Y: ${requiredShift.y.toFixed(1)} `;
+                if (Math.abs(requiredShift.z) > 0.1) feedback += `Z: ${requiredShift.z.toFixed(1)} `;
+                alignmentMessageElement.innerHTML = feedback;
+                alignmentMessageElement.style.color = "red";
+            }
+        }
+
+        function onWindowResize() {
+            if (!camera || !renderer) return;
+            const canvasContainer = document.getElementById('canvasContainer');
+            camera.aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (patientModel && couch) {
+                // Rotate the entire patient model group to lay it flat
+                patientModel.rotation.x = -Math.PI / 2;
+                
+                // Position the patient model based on user controls
+                patientModel.position.copy(userSetPatientPosition);
+
+                // Position the couch relative to the patient
+                const patientBBox = new THREE.Box3().setFromObject(patientModel);
+                const patientBottomY = patientBBox.min.y;
+                couch.position.set(userSetPatientPosition.x, patientBottomY - (COUCH_HEIGHT / 2) - 0.1, userSetPatientPosition.z);
+            }
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        // --- Stubbed Beam Functions ---
+        window.clearBeams = function() { console.log("Clearing beams..."); };
+
+        init();
+    </script>
+</body>
+</html>
+
