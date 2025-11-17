@@ -1,0 +1,140 @@
+<div id="splash">
+  <div class="split sRight"></div>
+  <div class="centralContent">
+    <div class="splashBox">
+      <h1>Who Wants to Be a Millionaire</h1>
+    </div>
+    <h2>Online Homage Game</h2>
+    <h4>Built by Michael Waistell</h4>
+    <p>This free online version was built just for fun to see if I could do it. Enjoy</p>
+    <div id="soundSelect">Audio: <span class="on chosen">On</span> / <span class="off">Off</span></div>
+    <button id="playButton">Play</button>
+  </div>
+  <div class="split sLeft"></div>
+</div>
+<div id="game">
+  <div id="progressBoard">
+    <div id="lifeLines">
+      <div class="lifeLine ll1">50:50</div>
+      <div class="lifeLine ll2">Phone a Friend</div>
+      <div class="lifeLine ll3">Ask the Audience</div>
+    </div>
+    <div id="progressList">
+      <div class="progress" v-for="(item, index) in items" :key="index" :key="item.prize">
+        <div class="qNum">{{index+1}}</div>
+        <div class="prize">£{{item.prize}}</div>
+      </div>
+    </div>
+  </div>
+  <div id="questionsBoard">
+
+    <div id="infoPanel">
+      Select your answer from the 4 choices below
+    </div>
+
+    <div id="takeTheMoney">Take the Money</div>
+
+    <div class="questions" v-for="(question) in questions">
+      <div class="question">
+        {{question.Question}}
+      </div>
+      <div id="answers">
+        <li class="answer A"><div class="questionLetter">A</div>:&nbsp; {{question.A}}</li>
+        <li class="answer B"><div class="questionLetter">B</div>:&nbsp; {{question.B}}</li>
+        <li class="answer C"><div class="questionLetter">C</div>:&nbsp; {{question.C}}</li>
+        <li class="answer D"><div class="questionLetter">D</div>:&nbsp; {{question.D}}</li>
+      </div>
+      <div class="correctAnswer">{{question.Answer}}</div>
+      <div class="answerType">{{question.Type}}</div>
+      <div class="answerTypeNumber">{{question.TypeNumber}}</div>
+
+    </div>
+
+    <div id="phoneAfriendBG">
+      <div id="phoneAfriend">
+        <h3>Select which friend to call:</h3>
+        <p>Think about the type of question being asked and which friend will have the best chance to know the answer.</p>
+        <ul>
+          <li><div class="ident ident1"></div>The correct friend has a 83.33% chance to know the answer.</li>                            
+          <li><div class="ident ident2"></div>If Colin isn't the correct friend, they still have a 50% chance of knowing the answer being the self confessed all round know it all.</li>
+          <li><div class="ident ident3"></div>The rest of your friends only have a 16.67% chance of knowing the answer.</li>                            
+        </ul>
+
+        <div class="friends">
+          <div class="friend friend1">
+            <div class="fName">Max "The Media Geek" Thornton</div>
+            <div class="fTypeNumber">1</div>
+          </div>
+          <div class="friend friend2">
+            <div class="fName">Michael "The Human Museum" Henderson</div>
+            <div class="fTypeNumber">2</div>
+          </div>
+          <div class="friend friend3">
+            <div class="fName">Matt "The Music Maestro" Collins</div>
+            <div class="fTypeNumber">3</div>
+          </div>
+          <div class="friend friend4">
+            <div class="fName">Colin "The All rounder" Fuller</div>
+            <div class="fTypeNumber">4</div>
+          </div>
+          <div class="friend friend5">
+            <div class="fName">Sophie "The Wise Traveller" Palmer</div>
+            <div class="fTypeNumber">5</div>
+          </div>
+          <div class="friend friend6">
+            <div class="fName">Mick "The Fittest Sportsman" Tufton</div>
+            <div class="fTypeNumber">6</div>
+          </div>
+          <div class="friend friend7">
+            <div class="fName">Laura "The Wondering Vet" Sherrington</div>
+            <div class="fTypeNumber">7</div>
+          </div>
+          <div class="friend friend8">
+            <div class="fName">Patricia "The Master Chef" Smith</div>
+            <div class="fTypeNumber">8</div>
+          </div>
+        </div>
+
+        <div class="friendInfo"></div>
+
+        <div class="closeButton">Close</div>
+
+      </div>
+    </div>
+
+    <div id="askAudienceBG">
+      <div id="askAudience">
+        <div class="aaQ barA">
+          <div class="percentage">0</div>
+          <div class="aaBarContainer">
+            <div class="aaBars"></div>
+          </div>
+          <div class="aaLetter">A</div>
+        </div>
+        <div class="aaQ barA">
+          <div class="percentage">0</div>
+          <div class="aaBarContainer">
+            <div class="aaBars"></div>
+          </div>
+          <div class="aaLetter">B</div>
+        </div>
+        <div class="aaQ barC">
+          <div class="percentage">0</div>
+          <div class="aaBarContainer">
+            <div class="aaBars"></div>
+          </div>
+          <div class="aaLetter">C</div>
+        </div>
+        <div class="aaQ barD">
+          <div class="percentage">0</div>
+          <div class="aaBarContainer">
+            <div class="aaBars"></div>
+          </div>
+          <div class="aaLetter">D</div>
+        </div>
+      </div>
+      <div class="closeButton">Close</div>
+    </div>
+  </div>
+
+</div>
