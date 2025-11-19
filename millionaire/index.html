@@ -643,8 +643,8 @@
       <h1>Radiobiology: Millionaire Challenge ⚛️</h1>
     </div>
     <h2>Comprehensive Review Game</h2>
-    <h4>Adapted for Radiation Protection Review</h4>
-    <p>Test your knowledge of cellular effects, dose limits, and monitoring devices across 15 questions!</p>
+    <h4>Includes Radiation Dose Calculations</h4>
+    <p>Test your knowledge of cellular effects, dose limits, and solve Equivalent Dose problems!</p>
     <div id="soundSelect">Audio: <span class="on chosen">On</span> / <span class="off">Off</span></div>
     <button id="playButton">Play</button>
   </div>
@@ -660,7 +660,7 @@
     <div id="progressList">
       <div class="progress" v-for="(item, index) in items" :key="index" :key="item.prize">
         <div class="qNum">{{index+1}}</div>
-        <div class="prize">£{{item.prize}}</div>
+        <div class="prize">${{item.prize}}</div>
       </div>
     </div>
   </div>
@@ -776,22 +776,8 @@
 
 </div>
 <script type="module">
-    // NOTE: This file uses 'import' which requires running in a browser environment that supports ES Modules (standard modern browsers).
+    // NOTE: This file uses 'import' which requires running in a browser environment that supports ES Modules.
     
-    // Randomise questions - NOTE: We are using only one set (radiationQuestions), so the randomiser is mostly bypassed.
-    let questionSet = 1;
-
-    function randomiser(min, max) {
-        // We are forcing set 1 (the specialized radiation questions)
-        return 1;
-    }
-
-    function randomQuestions(qSet) {
-        questionSet = qSet;
-    };
-    randomQuestions(randomiser(1, 3));
-
-
     // Start of Audio and Splash Screen Logic (as provided)
     let sound = 1;
     const audioOn = document.querySelector('span.on');
@@ -867,194 +853,297 @@
     });
 
 
-    // --- RADIATION BIOLOGY QUESTION DATA (New Content) ---
-    const radiationQuestions = [
-        // --- $100 (Type 1: Cellular Biology) ---
-        {
-            "Question": "Which cellular component is considered the most sensitive to radiation damage?",
-            "A": "Mitochondria",
-            "B": "DNA",
-            "C": "Ribosome",
-            "D": "Water",
-            "Answer": "B",
-            "Type": "Cellular Biology",
-            "TypeNumber": 1
-        },
-        // --- $200 (Type 2: Units & Measurement) ---
-        {
-            "Question": "Which SI unit is used to measure **Absorbed Dose**?",
-            "A": "Sievert (Sv)",
-            "B": "Becquerel (Bq)",
-            "C": "Coulombs/kg (C/kg)",
-            "D": "Gray (Gy)",
-            "Answer": "D",
-            "Type": "Units & Measurement",
-            "TypeNumber": 2
-        },
-        // --- $300 (Type 1: Cellular Biology) ---
-        {
-            "Question": "What is the most radioresistant phase of the cell cycle?",
-            "A": "M phase",
-            "B": "G1 phase",
-            "C": "S phase",
-            "D": "G2 phase",
-            "Answer": "C",
-            "Type": "Cellular Biology",
-            "TypeNumber": 1
-        },
-        // --- $500 (Type 3: Radiobiology Principles) ---
-        {
-            "Question": "The Law of Bergonie and Tribondeau states that tissue radiosensitivity is increased by what factor?",
-            "A": "Increased differentiation of cells",
-            "B": "Increased mitotic activity",
-            "C": "Higher RBE",
-            "D": "Lower LET",
-            "Answer": "B",
-            "Type": "Radiobiology Principles",
-            "TypeNumber": 3
-        },
-        // --- $1,000 (Safe Haven) (Type 4: Monitoring & Devices) ---
-        {
-            "Question": "Which radiation monitoring device contains **Lithium Fluoride (LiF)** crystals?",
-            "A": "GM Counter",
-            "B": "OSLs",
-            "C": "Film badges",
-            "D": "TLDs",
-            "Answer": "D",
-            "Type": "Monitoring & Devices",
-            "TypeNumber": 4
-        },
-        // --- $2,000 (Type 5: Cellular Interaction) ---
-        {
-            "Question": "An **Indirect Effect** from ionizing radiation primarily occurs on which molecule?",
-            "A": "DNA",
-            "B": "Protein",
-            "C": "H₂O",
-            "D": "Lipid",
-            "Answer": "C",
-            "Type": "Cellular Interaction",
-            "TypeNumber": 5
-        },
-        // --- $4,000 (Type 6: Quality Factors) ---
-        {
-            "Question": "What is the Quality Factor (QF) for **Alpha Particles**?",
-            "A": "1",
-            "B": "2",
-            "C": "10",
-            "D": "20",
-            "Answer": "D",
-            "Type": "Quality Factors",
-            "TypeNumber": 6
-        },
-        // --- $8,000 (Type 7: Acute Syndromes) ---
-        {
-            "Question": "Which phase of the acute radiation syndromes occurs immediately following total body exposure?",
-            "A": "Latent phase",
-            "B": "Prodromal phase",
-            "C": "Manifest phase",
-            "D": "Recovery phase",
-            "Answer": "B",
-            "Type": "Acute Syndromes",
-            "TypeNumber": 7
-        },
-        // --- $16,000 (Type 8: Cell Survival Curves) ---
-        {
-            "Question": "The variable $D_q$ on a cell survival curve represents which cellular capability?",
-            "A": "Extrapolation number",
-            "B": "Width of the shoulder region (repair)",
-            "C": "Dose after which 37% of cells survive",
-            "D": "Tumor Lethal Dose (TLD)",
-            "Answer": "B",
-            "Type": "Cell Survival Curves",
-            "TypeNumber": 8
-        },
-        // --- $32,000 (Safe Haven) (Type 9: Safety & Dose Limits) ---
-        {
-            "Question": "What is the whole body annual dose limit for a radiation worker (in SI units)?",
-            "A": "10 mSv/yr",
-            "B": "50 mSv/yr",
-            "C": "150 mSv/yr",
-            "D": "5 Sv/yr",
-            "Answer": "B",
-            "Type": "Safety & Dose Limits",
-            "TypeNumber": 9
-        },
-        // --- $64,000 (Type 9: Safety & Dose Limits) ---
-        {
-            "Question": "What is the formula to calculate a radiation worker's **cumulative** dose limit?",
-            "A": "5 mSv x Age",
-            "B": "50 mSv / Age",
-            "C": "10 mSv x Age",
-            "D": "10 mSv x Years Worked",
-            "Answer": "C",
-            "Type": "Safety & Dose Limits",
-            "TypeNumber": 9
-        },
-        // --- $125,000 (Type 4: Monitoring & Devices) ---
-        {
-            "Question": "Areas where the dose may exceed **1 mSv per hour** require what sign to be posted?",
-            "A": "Caution—Radioactive Materials",
-            "B": "Caution—Radiation Area",
-            "C": "Caution—High Radiation Area",
-            "D": "Caution—Very High Radiation Area",
-            "Answer": "C",
-            "Type": "Safety & Regulations",
-            "TypeNumber": 4
-        },
-        // --- $250,000 (Type 7: Acute Syndromes) ---
-        {
-            "Question": "What is the **TD 5/5** (Tolerance Dose) for the Whole Lens of the Eye?",
-            "A": "10 cGy",
-            "B": "100 cGy",
-            "C": "1,000 cGy (10 Gy)",
-            "D": "4,500 cGy (45 Gy)",
-            "Answer": "C",
-            "Type": "Tolerance Doses",
-            "TypeNumber": 7
-        },
-        // --- $500,000 (Type 3: Radiobiology Principles) ---
-        {
-            "Question": "Which of the four R's of radiobiology is described by *hypoxic tumor cells becoming more radiosensitive*?",
-            "A": "Repair of sublethal damage",
-            "B": "Reassortment/Redistribution",
-            "C": "Repopulation",
-            "D": "Reoxygenation",
-            "Answer": "D",
-            "Type": "Radiobiology Modifiers",
-            "TypeNumber": 3
-        },
-        // --- $1,000,000 (Type 9: Safety & Dose Limits) ---
-        {
-            "Question": "The agency that issues licenses to facilities utilizing radiation producing equipment and radioactive isotopes is the:",
-            "A": "NCRP",
-            "B": "ICRP",
-            "C": "NRC",
-            "D": "EPA",
-            "Answer": "C",
-            "Type": "Safety & Regulations",
-            "TypeNumber": 9
-        }
+    // --- DATA MERGING AND QUESTION GENERATION LOGIC ---
+
+    // 1. Original Question Set (Base)
+    const originalQuestions = [
+        { "Question": "Which cellular component is considered the most sensitive to radiation damage?", "A": "Mitochondria", "B": "DNA", "C": "Ribosome", "D": "Water", "Answer": "B", "Type": "Cellular Biology", "TypeNumber": 1 },
+        { "Question": "Which SI unit is used to measure **Absorbed Dose**?", "A": "Sievert (Sv)", "B": "Becquerel (Bq)", "C": "Coulombs/kg (C/kg)", "D": "Gray (Gy)", "Answer": "D", "Type": "Units & Measurement", "TypeNumber": 2 },
+        { "Question": "What is the most radioresistant phase of the cell cycle?", "A": "M phase", "B": "G1 phase", "C": "S phase", "D": "G2 phase", "Answer": "C", "Type": "Cellular Biology", "TypeNumber": 1 },
+        { "Question": "The Law of Bergonie and Tribondeau states that tissue radiosensitivity is increased by what factor?", "A": "Increased differentiation of cells", "B": "Increased mitotic activity", "C": "Higher RBE", "D": "Lower LET", "Answer": "B", "Type": "Radiobiology Principles", "TypeNumber": 3 },
+        { "Question": "Which radiation monitoring device contains **Lithium Fluoride (LiF)** crystals?", "A": "GM Counter", "B": "OSLs", "C": "Film badges", "D": "TLDs", "Answer": "D", "Type": "Monitoring & Devices", "TypeNumber": 4 },
+        { "Question": "An **Indirect Effect** from ionizing radiation primarily occurs on which molecule?", "A": "DNA", "B": "Protein", "C": "H₂O", "D": "Lipid", "Answer": "C", "Type": "Cellular Interaction", "TypeNumber": 5 },
+        { "Question": "What is the Quality Factor (QF) for **Alpha Particles**?", "A": "1", "B": "2", "C": "10", "D": "20", "Answer": "D", "Type": "Quality Factors", "TypeNumber": 6 },
+        { "Question": "Which phase of the acute radiation syndromes occurs immediately following total body exposure?", "A": "Latent phase", "B": "Prodromal phase", "C": "Manifest phase", "D": "Recovery phase", "Answer": "B", "Type": "Acute Syndromes", "TypeNumber": 7 },
+        { "Question": "The variable Dq on a cell survival curve represents which cellular capability?", "A": "Extrapolation number", "B": "Width of the shoulder region (repair)", "C": "Dose after which 37% of cells survive", "D": "Tumor Lethal Dose (TLD)", "Answer": "B", "Type": "Cell Survival Curves", "TypeNumber": 8 },
+        { "Question": "What is the whole body annual dose limit for a radiation worker (in SI units)?", "A": "10 mSv/yr", "B": "50 mSv/yr", "C": "150 mSv/yr", "D": "5 Sv/yr", "Answer": "B", "Type": "Safety & Dose Limits", "TypeNumber": 9 },
+        { "Question": "What is the formula to calculate a radiation worker's **cumulative** dose limit?", "A": "5 mSv x Age", "B": "50 mSv / Age", "C": "10 mSv x Age", "D": "10 mSv x Years Worked", "Answer": "C", "Type": "Safety & Dose Limits", "TypeNumber": 9 },
+        { "Question": "Areas where the dose may exceed **1 mSv per hour** require what sign to be posted?", "A": "Caution—Radioactive Materials", "B": "Caution—Radiation Area", "C": "Caution—High Radiation Area", "D": "Caution—Very High Radiation Area", "Answer": "C", "Type": "Safety & Regulations", "TypeNumber": 4 },
+        { "Question": "What is the **TD 5/5** (Tolerance Dose) for the Whole Lens of the Eye?", "A": "10 cGy", "B": "100 cGy", "C": "1,000 cGy (10 Gy)", "D": "4,500 cGy (45 Gy)", "Answer": "C", "Type": "Tolerance Doses", "TypeNumber": 7 },
+        { "Question": "Which of the four R's of radiobiology is described by *hypoxic tumor cells becoming more radiosensitive*?", "A": "Repair of sublethal damage", "B": "Reassortment/Redistribution", "C": "Repopulation", "D": "Reoxygenation", "Answer": "D", "Type": "Radiobiology Modifiers", "TypeNumber": 3 },
+        { "Question": "The agency that issues licenses to facilities utilizing radiation producing equipment and radioactive isotopes is the:", "A": "NCRP", "B": "ICRP", "C": "NRC", "D": "EPA", "Answer": "C", "Type": "Safety & Regulations", "TypeNumber": 9 }
     ];
 
+    // 2. Source Code Data (Exposure Scenarios for Low Tier)
+    const exposureScenarios = [
+        { text: "A radiation therapist positioning a patient for LINAC treatment.", category: "Occupational" },
+        { text: "A patient undergoing a diagnostic chest X-ray.", category: "Medical" },
+        { text: "A person living next door to a hospital with a radiology department.", category: "Public" },
+        { text: "A nuclear medicine technologist handling radiopharmaceuticals.", category: "Occupational" },
+        { text: "A patient receiving Iodine-131 therapy for thyroid cancer.", category: "Medical" },
+        { text: "Someone hiking in the mountains (higher background radiation).", category: "Public" },
+        { text: "A researcher working with an unsealed radioactive source in a fume hood.", category: "Occupational" },
+        { text: "An airline pilot frequently flying long-haul routes at high altitudes.", category: "Occupational" },
+        { text: "A person eating food containing naturally occurring radioactive materials like Potassium-40.", category: "Public" },
+        { text: "A volunteer comforting a patient during their PET scan procedure.", category: "Medical" },
+        { text: "A worker decommissioning a nuclear facility.", category: "Occupational"},
+        { text: "A member of the public near a transport vehicle carrying radioactive materials (incident-free).", category: "Public"}
+    ];
+
+    // 3. Source Code Data (Math Logic for High Tier)
+    const radiationWeightingFactors = {
+        'X-rays': 1,
+        'Gamma rays': 1,
+        'Beta particles': 1,
+        'Alpha particles': 20,
+        'Neutrons (thermal)': 2.5,
+        'Protons (>2 MeV)': 2
+    };
+
+    // --- Helper Functions ---
+
+    function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function getRandomFloat(min, max, decimals = 1) { const factor = Math.pow(10, decimals); const value = Math.random() * (max - min) + min; return Math.round(value * factor) / factor; }
+    function getRandomElement(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    // Helper to randomize static question options
+    function randomizeStaticQuestion(q) {
+        // Clone to avoid mutating the original reference permanently within one session, 
+        // though reloading solves this, it's safer logic.
+        let newQ = {...q};
+        
+        let answers = [
+            { text: newQ.A, letter: 'A' },
+            { text: newQ.B, letter: 'B' },
+            { text: newQ.C, letter: 'C' },
+            { text: newQ.D, letter: 'D' }
+        ];
+
+        // Identify the correct text
+        let correctText = newQ[newQ.Answer]; 
+
+        // Shuffle the array of answer objects
+        shuffleArray(answers);
+
+        // Reassign answers to new positions
+        newQ.A = answers[0].text;
+        newQ.B = answers[1].text;
+        newQ.C = answers[2].text;
+        newQ.D = answers[3].text;
+
+        // Find where the correct text ended up and update the Answer key
+        if (newQ.A === correctText) newQ.Answer = "A";
+        else if (newQ.B === correctText) newQ.Answer = "B";
+        else if (newQ.C === correctText) newQ.Answer = "C";
+        else if (newQ.D === correctText) newQ.Answer = "D";
+
+        return newQ;
+    }
+
+    // --- Generation Functions ---
+
+    // Generate Tier 1 (Low $) questions from Scenarios
+    function generateScenarioQuestion() {
+        const scenario = getRandomElement(exposureScenarios);
+        // Determine correct answer letter
+        const correctCat = scenario.category;
+        
+        // Options are fixed for this type
+        const opts = [
+            { label: "Occupational", val: "Occupational" },
+            { label: "Medical", val: "Medical" },
+            { label: "Public", val: "Public" },
+            { label: "Background/Other", val: "Background" }
+        ];
+        
+        // Assign A, B, C, D randomly
+        const shuffledOpts = shuffleArray(opts);
+        let correctLetter = "";
+        
+        const qObj = {
+            "Question": "Classify the following exposure scenario: " + scenario.text,
+            "Type": "Exposure Categories",
+            "TypeNumber": 9 // Use 9 (Safety) for hints
+        };
+
+        const letters = ["A", "B", "C", "D"];
+        letters.forEach((l, index) => {
+            qObj[l] = shuffledOpts[index].label;
+            if (shuffledOpts[index].val === correctCat) {
+                correctLetter = l;
+            }
+        });
+        qObj["Answer"] = correctLetter;
+        return qObj;
+    }
+
+    // Generate Tier 3 (High $) questions: Mix of Equivalent Dose & Inverse Square Law
+    function generateMathQuestion() {
+        // Randomly choose between Question Type 1 (Eq Dose) and Type 2 (Inverse Square)
+        const questionType = Math.random() < 0.5 ? "EqDose" : "InvSquare";
+
+        if (questionType === "EqDose") {
+            // --- TYPE 1: EQUIVALENT DOSE (H = D * wR) ---
+            const radTypes = Object.keys(radiationWeightingFactors);
+            const radType = getRandomElement(radTypes);
+            const wR = radiationWeightingFactors[radType];
+            const absorbedDose = getRandomFloat(0.5, 5.0, 1); // mGy
+            const equivalentDose = (absorbedDose * wR).toFixed(2); // mSv
+            
+            // Distractors
+            const d1 = (absorbedDose).toFixed(2); // Forgot wR
+            const d2 = (absorbedDose * (wR + 2)).toFixed(2); // Random offset
+            const d3 = (absorbedDose / 2).toFixed(2); // Random math error
+            
+            let answers = [
+                { text: equivalentDose + " mSv", correct: true },
+                { text: d1 + " mSv", correct: false },
+                { text: d2 + " mSv", correct: false },
+                { text: d3 + " mSv", correct: false }
+            ];
+            
+            answers = shuffleArray(answers);
+            
+            let correctLetter = "";
+            const qObj = {
+                "Question": `Calculate the **Equivalent Dose** if a person receives an Absorbed Dose of **${absorbedDose} mGy** from **${radType}** (wR=${wR}).`,
+                "Type": "Dose Calculations",
+                "TypeNumber": 2 // Matches "Units" expert
+            };
+
+            ["A", "B", "C", "D"].forEach((l, index) => {
+                qObj[l] = answers[index].text;
+                if (answers[index].correct) correctLetter = l;
+            });
+            qObj["Answer"] = correctLetter;
+            return qObj;
+
+        } else {
+            // --- TYPE 2: INVERSE SQUARE LAW (I1/I2 = D2^2/D1^2) ---
+            // Formula: I2 = I1 * (D1/D2)^2
+            
+            // Setup easy numbers for mental math feasibility
+            const intensities = [100, 200, 400, 500, 1000]; // mR/hr
+            const I1 = getRandomElement(intensities);
+            
+            // Setup distances that result in clean(ish) numbers
+            // Example pairs (d1, d2): (1,2), (2,1), (2,4), (1, 0.5)
+            const distancePairs = [
+                {d1: 1, d2: 2}, // Double dist -> 1/4 intensity
+                {d1: 2, d2: 1}, // Half dist -> 4x intensity
+                {d1: 2, d2: 4}, // Double dist -> 1/4 intensity
+                {d1: 3, d2: 1}, // 1/3 dist -> 9x intensity
+                {d1: 1, d2: 0.5} // Half dist -> 4x intensity
+            ];
+            const pair = getRandomElement(distancePairs);
+            const D1 = pair.d1;
+            const D2 = pair.d2;
+
+            // Calculate Correct Answer (I2)
+            const I2 = (I1 * Math.pow((D1 / D2), 2)).toFixed(0);
+
+            // Calculate Distractors
+            // 1. Inverse Linear (Common mistake: forgetting square) -> I1 * (D1/D2)
+            const distInverseLinear = (I1 * (D1 / D2)).toFixed(0);
+            
+            // 2. Direct Square (Mistaking for Direct Square Law) -> I1 * (D2/D1)^2
+            const distDirectSquare = (I1 * Math.pow((D2 / D1), 2)).toFixed(0);
+            
+            // 3. Random Close Value (I2 +/- 25%)
+            const distRandom = (I2 * 1.25).toFixed(0);
+
+            // Ensure unique answers (handle edge cases where formulas overlap)
+            let answers = [
+                { text: I2 + " mR/hr", correct: true },
+                { text: distInverseLinear + " mR/hr", correct: false },
+                { text: distDirectSquare + " mR/hr", correct: false },
+                { text: distRandom + " mR/hr", correct: false }
+            ];
+
+            // Remove duplicates just in case logic produced same numbers
+            answers = answers.filter((v,i,a)=>a.findIndex(t=>(t.text === v.text))===i);
+            // Fill if we lost any due to duplicates
+            while(answers.length < 4) {
+                answers.push({ text: (parseInt(answers[0].text) + getRandomInt(10,50)) + " mR/hr", correct: false });
+            }
+            
+            answers = shuffleArray(answers);
+            
+            let correctLetter = "";
+            const qObj = {
+                "Question": `**Inverse Square Law**: A source has an intensity of **${I1} mR/hr** at **${D1} meter(s)**. What is the intensity at **${D2} meter(s)**?`,
+                "Type": "Inverse Square Law",
+                "TypeNumber": 4 // Matches "Monitoring/Safety" expert
+            };
+
+            ["A", "B", "C", "D"].forEach((l, index) => {
+                qObj[l] = answers[index].text;
+                if (answers[index].correct) correctLetter = l;
+            });
+            qObj["Answer"] = correctLetter;
+            return qObj;
+        }
+    }
+
+
+    // --- BUILD THE GAME DECK ---
+
+    function buildGameDeck() {
+        // Split original questions loosely by difficulty (based on original index)
+        // Original 0-4: Easy ($100-$1000)
+        // Original 5-9: Medium ($2000-$32000)
+        // Original 10-14: Hard ($64k-$1M)
+        
+        // Process static questions through the randomizer so options shuffle on every load
+        const origEasy = originalQuestions.slice(0, 5).map(q => randomizeStaticQuestion(q));
+        const origMed = originalQuestions.slice(5, 10).map(q => randomizeStaticQuestion(q));
+        const origHard = originalQuestions.slice(10, 15).map(q => randomizeStaticQuestion(q));
+
+        // Create Pool 1: Easy (5 Questions Needed)
+        // Mix Original Easy + 5 Generated Scenarios
+        let poolEasy = [...origEasy];
+        for(let i=0; i<5; i++) poolEasy.push(generateScenarioQuestion());
+        poolEasy = shuffleArray(poolEasy);
+        
+        // Create Pool 2: Medium (5 Questions Needed)
+        // Just shuffle the original medium ones for now, or could add more here
+        let poolMed = shuffleArray([...origMed]);
+
+        // Create Pool 3: Hard (5 Questions Needed)
+        // Mix Original Hard + 5 Generated Math Questions
+        let poolHard = [...origHard];
+        for(let i=0; i<5; i++) poolHard.push(generateMathQuestion());
+        poolHard = shuffleArray(poolHard);
+
+        // Select final 15
+        const finalQuestions = [
+            ...poolEasy.slice(0, 5),
+            ...poolMed.slice(0, 5),
+            ...poolHard.slice(0, 5)
+        ];
+
+        return finalQuestions;
+    }
+
+    // Generate the deck for this session
+    const finalGameQuestions = buildGameDeck();
 
     import { createApp, ref } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 
     const app = createApp({
         name: 'Questions',
         data(){
-            // Force loading of the specialized radiationQuestions set (questionSet == 1)
-            if (questionSet == 1) {
-                return{
-                    questions: radiationQuestions, // INJECTING NEW DATA HERE
-                    // Updated prizes to reflect a 15-question game
-                    items: [{prize: 100}, {prize: 200}, {prize: 300}, {prize: 500}, {prize: 1000}, {prize: 2000}, {prize: 4000}, {prize: 8000}, {prize: 16000}, {prize: 32000}, {prize: 64000}, {prize: 125000}, {prize: 250000}, {prize: 500000}, {prize: 1000000}]
-                }
-            } else {
-                // Fallback structure
-                 return{
-                    questions: radiationQuestions,
-                    items: [{prize: 100}, {prize: 200}, {prize: 300}, {prize: 500}, {prize: 1000}, {prize: 2000}, {prize: 4000}, {prize: 8000}, {prize: 16000}, {prize: 32000}, {prize: 64000}, {prize: 125000}, {prize: 250000}, {prize: 500000}, {prize: 1000000}]
-                }
+            return{
+                // Use the randomly generated deck
+                questions: finalGameQuestions, 
+                items: [{prize: 100}, {prize: 200}, {prize: 300}, {prize: 500}, {prize: 1000}, {prize: 2000}, {prize: 4000}, {prize: 8000}, {prize: 16000}, {prize: 32000}, {prize: 64000}, {prize: 125000}, {prize: 250000}, {prize: 500000}, {prize: 1000000}]
             }
         },
         state: {
@@ -1072,13 +1161,18 @@
                 let safePrizes = [1000, 32000, 1000000];
                 let progress = document.querySelectorAll('.progress');
                 let infoPanel = document.querySelector('#infoPanel');
-                let safePrize = '£0';
+                let safePrize = '$0';
                 let nextQuestion;
                 let questionDifficulty = 1;
                 const takeTheMoneyButton = document.querySelector('#takeTheMoney');
                 let randA;
                 const pfClose = document.querySelector('#phoneAfriendBG .closeButton');
                 const aaClose = document.querySelector('#askAudienceBG .closeButton');
+
+                // Helper for randomiser inside methods
+                function randomiser(min, max) {
+                    return Math.floor(Math.random() * (max - min + 1)) + min;
+                }
 
                 setTimeout(function() {
                     let current = document.querySelector('.progress.active.current');
@@ -1113,7 +1207,7 @@
                         }
                         
                         // Check against the updated safe prize values
-                        if (e.querySelector('.prize').innerHTML == '£1000' || e.querySelector('.prize').innerHTML == '£32000' || e.querySelector('.prize').innerHTML == '£1000000') {
+                        if (e.querySelector('.prize').innerHTML == '$1000' || e.querySelector('.prize').innerHTML == '$32000' || e.querySelector('.prize').innerHTML == '$1000000') {
                             e.classList.add('safe');
                         }
 
@@ -1278,7 +1372,7 @@
                                                 history.go(0);
                                             });
 
-                                        }, 5000); // Increased timeout to see the correct answer highlight
+                                        }, 5000); 
 
                                     }
 
@@ -1303,7 +1397,7 @@
                     
                     // Find the previous safe haven prize (answered and safe)
                     const previousSafe = document.querySelector('.progress.answered.safe:not(.current)');
-                    const takeHomeValue = previousSafe ? previousSafe.querySelector('.prize').innerHTML : '£0';
+                    const takeHomeValue = previousSafe ? previousSafe.querySelector('.prize').innerHTML : '$0';
                     
                     const lifeLines = document.querySelectorAll('.lifeLine');
 
@@ -1477,7 +1571,6 @@
                                                 
                                                 // Fallback for 50/50 case where only 1 wrong answer remains
                                                 if (answersRest.length === 0) {
-                                                    // If all remaining answers are correct, give the correct answer as the friend is forced to guess.
                                                     var wrongAnswer = correctAnswer;
                                                 } else {
                                                     let randomGuess = randomiser(0, answersRest.length - 1);
