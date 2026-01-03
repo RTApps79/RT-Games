@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RT Games & Activities Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #041228; color: #e2e8f0; }
+        .hero-banner { background: linear-gradient(135deg, #071a2e 0%, #0f172a 100%); border-bottom: 1px solid #1e293b; }
+        .hero-text { font-family: 'Orbitron', sans-serif; letter-spacing: 2px; color: #4fd1ff; }
+        .category-card { background: #071a2e; border: 1px solid #1e293b; transition: all 0.3s ease; }
+        .category-card:hover { border-color: #4fd1ff; box-shadow: 0 0 20px rgba(79, 209, 255, 0.1); }
+        .game-link { color: #94a3b8; transition: color 0.2s; display: block; padding: 4px 0; }
+        .game-link:hover { color: #4fd1ff; text-decoration: underline; }
+        .workbook-btn { background-color: #1e293b; color: #4fd1ff; border: 1px solid #4fd1ff; transition: all 0.2s; }
+        .workbook-btn:hover { background-color: #4fd1ff; color: #041228; }
+    </style>
+</head>
+<body class="bg-slate-950">
+
+    <header class="hero-banner py-16 px-6 text-center">
+        <div class="container mx-auto">
+            <h1 class="hero-text text-4xl font-bold mb-4 uppercase">RT Learning Hub</h1>
+            <p class="text-slate-400 text-lg max-w-2xl mx-auto">Explore interactive simulations and games designed to master the complexities of Radiation Therapy.</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+            <div class="category-card p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4 text-purple-400 border-b border-purple-400/20 pb-2">Patient Care & Ethics</h3>
+                <nav class="space-y-1 mb-6">
+                    <a href="sdoh/index.html" class="game-link">SDoH Lesson & Activity</a>
+                    <a href="effective_communication.html" class="game-link">Effective Communication Module</a>
+                    <a href="patient_assessment.html" class="game-link">RTT Patient Assessment & Education</a>
+                    <a href="interprofessional_excellence.html" class="game-link">Interprofessional Communication & EI</a>
+                    <a href="onco_conversations_game_index.html" class="game-link">Consultation Conversations</a>
+                    <a href="legal_eagle_game_index.html" class="game-link">Legal Eagle Lineup</a>
+                    <a href="care_commander_game_index.html" class="game-link">Care Commander</a>
+                    <a href="ethical_decision_making/index.html" class="game-link">Ethical Decision Making</a>
+                </nav>
+                <div class="flex flex-wrap gap-2">
+                    <a href="https://github.com/RTApps79/rtt_e_workbook/tree/main/Patient_Care" class="workbook-btn text-xs px-3 py-1 rounded">Patient Care Workbook</a>
+                    <a href="https://github.com/RTApps79/rtt_e_workbook/tree/main/Ethics" class="workbook-btn text-xs px-3 py-1 rounded">Ethics Workbook</a>
+                </div>
+            </div>
+
+            <div class="category-card p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4 text-amber-400 border-b border-amber-400/20 pb-2">Clinical Workflow & Safety</h3>
+                <nav class="space-y-1 mb-6">
+                    <a href="onco_uno_game_index.html" class="game-link">OncoLife UNO: The Clinical Shift</a>
+                    <a href="error_reporter_game_v3_index.html" class="game-link">Error Reporter</a>
+                    <a href="safety_supervisor_game_index.html" class="game-link">Safety Supervisor</a>
+                    <a href="staging_strategist_game_index.html" class="game-link">Staging Strategist</a>
+                    <a href="qa_crusader_game_index.html" class="game-link">QA Crusader</a>
+                    <a href="procedure_pursuit_game_index.html" class="game-link">Procedure Pursuit</a>
+                    <a href="emr_arcade/index.html" class="game-link">EMR Arcade</a>
+                    <a href="3_point_setup/index.html" class="game-link">3-Point Setup</a>
+                </nav>
+                <div class="flex flex-wrap gap-2">
+                    <a href="https://github.com/RTApps79/rtt_e_workbook/tree/main/Clinical_Practice" class="workbook-btn text-xs px-3 py-1 rounded">Clinical Practice</a>
+                    <a href="https://github.com/RTApps79/rtt_e_workbook/tree/main/Treatment_Delivery_Procedures" class="workbook-btn text-xs px-3 py-1 rounded">Delivery Procedures</a>
+                </div>
+            </div>
+
+            <div class="category-card p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4 text-emerald-400 border-b border-emerald-400/20 pb-2">Physics & Biology</h3>
+                <nav class="space-y-1 mb-6">
+                    <a href="rad_units_challenge/index.html" class="game-link">Radiation Units Challenge</a>
+                    <a href="linac-parts/index.html" class="game-link">LINAC Challenge</a>
+                    <a href="cell_defender_game_v2_index.html" class="game-link">Rad-Blaster: Cell Defender</a>
+                    <a href="target_game_index.html" class="game-link">Interaction Interceptor</a>
+                    <a href="bolus_index.html" class="game-link">Bolus Effect Lab</a>
+                    <a href="radbio_game_v3_index.html" class="game-link">RadBio Game</a>
+                    <a href="side_effect_sorcerer_game_v4_index.html" class="game-link">Side Effect Sorcerer</a>
+                </nav>
+                <div class="flex flex-wrap gap-2">
+                    <a href="https://github.com/RTApps79/rtt_e_workbook/tree/main/Radiation_Physics" class="workbook-btn text-xs px-3 py-1 rounded">Physics Workbook</a>
+                    <a href="https://github.com/RTApps79/rtt_e_workbook/tree/main/Radiation_Biology" class="workbook-btn text-xs px-3 py-1 rounded">Biology Workbook</a>
+                </div>
+            </div>
+
+            <div class="category-card p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4 text-rose-400 border-b border-rose-400/20 pb-2">Sectional Anatomy</h3>
+                <nav class="space-y-1 mb-6">
+                    <a href="sectional_anatomy_challenge/index.html" class="game-link">Sectional Anatomy Challenge</a>
+                    <a href="ct-borders/index.html" class="game-link">CT Borders Challenge</a>
+                    <a href="anatomy_atlas_game_index.html" class="game-link">Anatomy Atlas Adventure</a>
+                    <a href="anatomy_angler_game_index.html" class="game-link">Anatomy Angler</a>
+                    <a href="contouring_activity/index.html" class="game-link">Contouring Activity & Worksheet</a>
+                </nav>
+                <div class="flex flex-wrap gap-2">
+                    <a href="https://github.com/RTApps79/rtt_e_workbook/tree/main/Sectional_Anatomy" class="workbook-btn text-xs px-3 py-1 rounded">Anatomy Workbook</a>
+                    <a href="https://github.com/RTApps79/rtt_e_workbook/tree/main/Treatment_Delivery_Procedures/CT_Simulator" class="workbook-btn text-xs px-3 py-1 rounded">CT Sim Workbook</a>
+                </div>
+            </div>
+
+            <div class="category-card p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4 text-cyan-400 border-b border-cyan-400/20 pb-2">Math & Calculations</h3>
+                <nav class="space-y-1 mb-6">
+                    <a href="algebra-refresher/index.html" class="game-link">Algebra Refresher</a>
+                    <a href="ssd_practice/index.html" class="game-link">SSD Calculation Practice</a>
+                    <a href="dose_calc_dash_game_index.html" class="game-link">Dose Calc Dash</a>
+                    <a href="beam_sculptor_game_v2_index.html" class="game-link">Beam Sculptor</a>
+                </nav>
+                <div class="flex flex-wrap gap-2">
+                    <a href="https://github.com/RTApps79/rtt_e_workbook/tree/main/Treatment_Planning" class="workbook-btn text-xs px-3 py-1 rounded">Planning Workbook</a>
+                </div>
+            </div>
+
+            <div class="category-card p-6 rounded-xl">
+                <h3 class="text-xl font-bold mb-4 text-slate-400 border-b border-slate-400/20 pb-2">Orientation & Management</h3>
+                <nav class="space-y-1 mb-6">
+                    <a href="healthcare-roles-speech-quiz/index.html" class="game-link">Healthcare Roles Speech Quiz</a>
+                    <a href="dosimetry_vocabulary/index.html" class="game-link">Dosimetry Vocabulary</a>
+                    <a href="Final_RT_Bit_Life_with_Scenarios.html" class="game-link">RadTherapy: Daily Dose</a>
+                    <a href="gantry_name_game/index.html" class="game-link">Gantry Name Game</a>
+                    <a href="linac_emulator/index.html" class="game-link">LINAC Emulator</a>
+                    <a href="Jeopardy_Reviewv2.html" class="game-link">Jeopardy Review</a>
+                    <a href="vital-signs-challenge/index.html" class="game-link">Vital Signs Challenge</a>
+                </nav>
+                <div class="flex flex-wrap gap-2">
+                    <a href="https://github.com/RTApps79/rtt_e_workbook/tree/main/Orientation_to_Radiation_Therapy" class="workbook-btn text-xs px-3 py-1 rounded">Orientation Workbook</a>
+                    <a href="https://github.com/RTApps79/rtt_e_workbook/tree/main/radonc_manager" class="workbook-btn text-xs px-3 py-1 rounded">RadOnc Manager</a>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="mt-12 p-8 bg-slate-900/50 rounded-2xl border border-slate-800 text-center">
+            <h4 class="text-lg font-bold mb-4 text-white">Advanced System Resources</h4>
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="https://github.com/RTApps79/rtt_e_workbook/tree/main/patient_library" class="workbook-btn px-6 py-2 rounded-lg font-semibold">Access Patient Library</a>
+                <a href="https://github.com/RTApps79/rtt_e_workbook" class="workbook-btn px-6 py-2 rounded-lg font-semibold">Main E-Workbook Root</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-20 py-10 border-t border-slate-800 text-center text-slate-500 text-sm">
+        <p>&copy; 2026 Radiation Therapy Learning Ecosystem. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
