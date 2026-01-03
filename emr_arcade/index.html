@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Dynamics: Interprofessional Communication & EI Arcade</title>
+    <style>
+        /* --- Styles Merged from Previous and Arcade Game --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #041228; /* Dark theme from your RadOnc Manager */
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background-color: #071a2e;
+            padding: 25px 35px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 95%;
+            max-width: 1000px;
+            margin-bottom: 30px;
+            border: 1px solid #1e293b;
+        }
+        h1, h2, h3, h4 { color: #4fd1ff; }
+        h1 { text-align: center; border-bottom: 2px solid #4fd1ff; padding-bottom: 15px; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 2px; }
+        
+        /* --- Flip Page & Arcade Styles --- */
+        .flip-lesson-container { border: 1px solid #0ea5e9; padding: 20px; border-radius: 8px; background-color: #0f172a; margin-bottom: 30px; }
+        .lesson-page { display: none; padding: 20px; background-color: #1e293b; border-radius: 8px; min-height: 400px; border: 1px solid #334155; }
+        .lesson-page.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .key-principle { background-color: #0c4a6e; padding: 12px; margin-bottom:10px; border-left: 4px solid #0ea5e9; border-radius: 4px; color: #f0f9ff; }
+        
+        /* Arcade Game Section (Integrated from EMR_Arcade_Game.html) */
+        #arcade-box { border: 4px double #4fd1ff; padding: 20px; background-color: #020617; text-align: center; margin-top: 20px; }
+        .arcade-question { font-size: 1.2rem; margin-bottom: 20px; color: #fbbf24; font-family: 'Courier New', Courier, monospace; }
+        .arcade-choices button { background-color: #1e293b; color: #4fd1ff; border: 2px solid #4fd1ff; padding: 12px; margin: 8px; cursor: pointer; border-radius: 5px; width: 45%; transition: 0.3s; }
+        .arcade-choices button:hover { background-color: #4fd1ff; color: #020617; }
+        #arcade-score { font-size: 1.5rem; color: #4ade80; margin-top: 15px; }
+
+        /* Case Study Styles */
+        .case-study { margin-bottom: 35px; padding: 25px; border: 1px solid #334155; border-radius: 10px; background-color: #111827; }
+        .case-summary { background-color: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #fbbf24; }
+        .prompt-question { background-color: #334155; border: 1px solid #475569; padding: 12px; margin-bottom: 10px; border-radius: 6px; font-weight: 500; color: #f1f5f9; }
+        textarea { width: 100%; padding: 12px; background-color: #0f172a; color: white; border: 1px solid #334155; border-radius: 6px; resize: vertical; margin-bottom: 20px; }
+
+        .lesson-navigation button, .start-btn { background-color: #0ea5e9; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 0 10px; }
+        .lesson-navigation button:disabled { background-color: #475569; cursor: not-allowed; }
+        .page-indicator { color: #94a3b8; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>TeamSTEPPS: Interprofessional Excellence</h1>
+
+    <div class="flip-lesson-container" id="lesson-container">
+        <div id="lesson-pages">
+            <div class="lesson-page active">
+                <h2>Page 1: The High-Stakes Environment</h2>
+                <p>In Radiation Oncology, communication is a **Safety Critical Task**. Similar to the "Safety Rating" in your department management simulations, poor interprofessional communication is the #1 cause of medical errors.</p>
+                <div class="key-principle"><strong>The Multidisciplinary Engine:</strong> You are the link between the physician's intent, the dosimetrist's plan, and the patient's biological reality.</div>
+                <p>Emotional Intelligence (EI) allows you to navigate these high-pressure handoffs without triggering defensiveness or missing critical cues.</p>
+            </div>
+
+            <div class="lesson-page">
+                <h2>Page 2: The EI Toolkit</h2>
+                <p>Emotional Intelligence consists of four "Power-Ups" for your career:</p>
+                <ul>
+                    <li class="key-principle"><strong>Self-Awareness:</strong> Recognizing if you are "hangry," tired, or rushed *before* you talk to a peer.</li>
+                    <li class="key-principle"><strong>Self-Regulation:</strong> The "Abort" button for a sarcastic comment when a dosimetrist asks for a re-scan.</li>
+                    <li class="key-principle"><strong>Social Awareness:</strong> Seeing that the RO is dealing with a difficult palliative consult and choosing a better time for a routine question.</li>
+                    <li class="key-principle"><strong>Relationship Management:</strong> Building a "Trust Bank" so that when a real emergency happens, the team moves as one.</li>
+                </ul>
+            </div>
+
+            <div class="lesson-page">
+                <h2>Page 3: Interprofessional Arcade Challenge</h2>
+                <p>Test your rapid-response communication skills! Select the best EI-driven response for each scenario.</p>
+                
+                <div id="arcade-box">
+                    <div id="arcade-question" class="arcade-question">Ready to start?</div>
+                    <div id="arcade-choices" class="arcade-choices">
+                        <button onclick="startArcade()">Start Challenge</button>
+                    </div>
+                    <div id="arcade-score">Score: 0</div>
+                </div>
+            </div>
+
+            <div class="lesson-page">
+                <h2>Page 4: From Arcade to Clinic</h2>
+                <p>Great work on the skill-check! Now we move from rapid-fire choices to deep critical thinking. In the next section, you will analyze full patient cases where communication was the difference between a "Good Catch" and a "Safety Event."</p>
+                <button class="start-btn" onclick="showActivity()">Proceed to Case Studies</button>
+            </div>
+        </div>
+
+        <div class="lesson-navigation" id="lesson-nav">
+            <button id="prevBtn" onclick="changePage(-1)" disabled>Previous</button>
+            <span class="page-indicator" id="page-indicator">Page 1 of 4</span>
+            <button id="nextBtn" onclick="changePage(1)">Next</button>
+        </div>
+    </div>
+
+    <div id="activity-section" style="display:none;">
+        <h2>Clinical Application Activity</h2>
+        
+        <div class="case-study">
+            <h3>Case 1: Setup Discrepancy (Inter-RTT)</h3>
+            <div class="case-summary">
+                <p><strong>Patient:</strong> Mary Peterson (Breast Tangents)</p>
+                <p><strong>Scenario:</strong> You are treating Mary Peterson. Your partner, a senior therapist, insists on treating even though the lasers are 3mm off on the medial mark. They say, "It's fine, we've treated her like this for 3 days." You feel uncomfortable and notice the shift is towards the lung.</p>
+            </div>
+            <div class="prompt-question"><strong>Analysis:</strong> How do you use <strong>Assertive Communication</strong> and <strong>Self-Regulation</strong> to address this without creating a hostile environment with your senior peer?</div>
+            <textarea placeholder="Type your response..."></textarea>
+            
+            <div class="prompt-question"><strong>SBAR Handover:</strong> If you cannot resolve this, write the "R" (Recommendation) part of an SBAR to your Lead Therapist or Physicist.</div>
+            <textarea placeholder="Recommendation: I recommend that..."></textarea>
+        </div>
+
+        <div class="case-study">
+            <h3>Case 2: The Critical Feedback Loop (RTT to MD/RN)</h3>
+            <div class="case-summary">
+                <p><strong>Patient:</strong> David Garcia (Lung 3D-CRT)</p>
+                <p><strong>Scenario:</strong> David arrives for Fx 15. During setup, he mentions sharp chest pain and you notice his O2 Sat is 89% (Baseline 96%). The RO is currently in a meeting. The nurse is busy with a different patient.</p>
+            </div>
+            <div class="prompt-question"><strong>EI Application:</strong> Using <strong>Relationship Management</strong>, how do you interrupt the nurse/MD effectively? Draft your SBAR for this urgent escalation.</div>
+            <textarea placeholder="S: ... B: ... A: ... R: ..."></textarea>
+        </div>
+
+        <div style="text-align: center;">
+            <button class="start-btn" onclick="window.print()">Save/Print Final Reflection</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Lesson Navigation Logic ---
+    let currentPage = 0;
+    const pages = document.querySelectorAll('.lesson-page');
+    const indicator = document.getElementById('page-indicator');
+
+    function changePage(dir) {
+        pages[currentPage].classList.remove('active');
+        currentPage += dir;
+        pages[currentPage].classList.add('active');
+        
+        document.getElementById('prevBtn').disabled = currentPage === 0;
+        document.getElementById('nextBtn').disabled = currentPage === pages.length - 1;
+        indicator.textContent = `Page ${currentPage + 1} of ${pages.length}`;
+    }
+
+    function showActivity() {
+        document.getElementById('lesson-container').style.display = 'none';
+        document.getElementById('activity-section').style.display = 'block';
+    }
+
+    // --- Arcade Game Logic (Integrated from EMR_Arcade_Game.html) ---
+    let arcadeScore = 0;
+    let arcadeIndex = 0;
+    const arcadeQuestions = [
+        {
+            q: "A physicist is distracted while checking your machine QA. How do you confirm a change?",
+            options: ["Wait and hope it's right", "Use Closed-Loop: 'Confirming, shift is 2mm posterior?'", "Write a note on their desk", "Proceed; they saw the screen"],
+            answer: "Use Closed-Loop: 'Confirming, shift is 2mm posterior?'"
+        },
+        {
+            q: "A peer is consistently 5 mins late, making you rush. Best EI approach?",
+            options: ["Be 10 mins late tomorrow", "Report them immediately", "Self-Regulate; talk privately about impact on patient flow", "Complain to the Dosimetrist"],
+            answer: "Self-Regulate; talk privately about impact on patient flow"
+        },
+        {
+            q: "The RO gives an instruction that contradicts the plan notes. Action?",
+            options: ["Follow RO; they are the boss", "Follow Plan; it's the law", "Assertive Check: 'Dr. X, I see a discrepancy here, can we verify?'", "Ask the patient"],
+            answer: "Assertive Check: 'Dr. X, I see a discrepancy here, can we verify?'"
+        }
+    ];
+
+    function startArcade() {
+        arcadeScore = 0;
+        arcadeIndex = 0;
+        renderArcade();
+    }
+
+    function renderArcade() {
+        if (arcadeIndex >= arcadeQuestions.length) {
+            document.getElementById('arcade-question').textContent = "Challenge Complete!";
+            document.getElementById('arcade-choices').innerHTML = `<button onclick="startArcade()">Play Again</button>`;
+            return;
+        }
+        const currentQ = arcadeQuestions[arcadeIndex];
+        document.getElementById('arcade-question').textContent = currentQ.q;
+        const choiceBox = document.getElementById('arcade-choices');
+        choiceBox.innerHTML = '';
+        currentQ.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.textContent = opt;
+            btn.onclick = () => handleArcadeAnswer(opt);
+            choiceBox.appendChild(btn);
+        });
+    }
+
+    function handleArcadeAnswer(choice) {
+        if (choice === arcadeQuestions[arcadeIndex].answer) {
+            arcadeScore += 10;
+            alert("Correct! +10 Team Points");
+        } else {
+            arcadeScore -= 5;
+            alert("Incorrect. Safety Rating Decreased (-5)");
+        }
+        arcadeIndex++;
+        document.getElementById('arcade-score').textContent = `Score: ${arcadeScore}`;
+        renderArcade();
+    }
+</script>
+</body>
+</html>
